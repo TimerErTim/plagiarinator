@@ -1,0 +1,9 @@
+[env]
+_.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
+
+[tasks.install_dependencies]
+run = "pip install -r requirements.txt -e ."
+
+[tasks.compile_dependencies]
+run = "pip install pip-tools && pip-compile -o requirements.txt"
+depends_post = ["install_dependencies"]

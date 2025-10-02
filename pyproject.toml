@@ -1,0 +1,23 @@
+[project]
+name = "plagiarinator"
+version = "0.1.0"
+description = "A tool for plagiarism detection with both GUI and CLI."
+authors = [
+    { name = "Tim Peko", email = "timerertim@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.14"
+license = { text = "MIT" }
+dependencies = [
+    "tree_sitter",
+]
+    
+
+[project.scripts]
+plagiarinator = "plagiarinator.cli:main"
+
+[project.gui-scripts]
+plagiarinator-gui = "plagiarinator.gui:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
