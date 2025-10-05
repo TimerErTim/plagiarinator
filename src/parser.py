@@ -1,4 +1,12 @@
+from pathlib import Path
+import sys
+from typing import Optional
+import tree_sitter
+import tree_sitter_languages
+from tree_sitter import Tree as AST
+
 # --- Language inference helpers ------------------------------------------------
+
 
 EXT_TO_LANG = {
     # C family
@@ -54,11 +62,11 @@ def parse_code(code: bytes, lang_name: str) -> AST:
     Build a Tree-sitter parser for the given language and parse the code.
     """
     try:
-        parser = get_parser(lang_name)  # provided by tree_sitter_languages
+        parser = tree_sitter_languages.get_parser(lang_name)  # provided by tree_sitter_languages
     except Exception:
         # Fallback: build from language object if parser helper not available
-        lang = get_language(lang_name)
-        parser = Parser()
+        lang = tree_sitter_languages.get_language(lang_name)
+        parser = tree_sitter.Parser()
         parser.set_language(lang)
     tree = parser.parse(code)
     return tree
@@ -70,6 +78,7 @@ def build_asts(left_code: bytes, right_code: bytes, lang_name: str) -> tuple[AST
     left_ast = parse_code(left_code, lang_name)
     right_ast = parse_code(right_code, lang_name)
     return left_ast, right_ast
+
 
 def load_asts(left_path: Path, right_path: Path, lang_name: str | None = None) -> tuple[AST, AST]:
     """

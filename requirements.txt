@@ -4,5 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt
 #
+apted==1.0.3
+    # via plagiarinator (pyproject.toml)
 tree-sitter==0.25.2
     # via plagiarinator (pyproject.toml)
