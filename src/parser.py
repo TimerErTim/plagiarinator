@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 from typing import Optional
 import tree_sitter
-import tree_sitter_languages
+import tree_sitter_language_pack as tslp
 from tree_sitter import Tree as AST
 
 # --- Language inference helpers ------------------------------------------------
@@ -62,10 +62,10 @@ def parse_code(code: bytes, lang_name: str) -> AST:
     Build a Tree-sitter parser for the given language and parse the code.
     """
     try:
-        parser = tree_sitter_languages.get_parser(lang_name)  # provided by tree_sitter_languages
+        parser = tslp.get_parser(lang_name)  # provided by tree_sitter_language_pack
     except Exception:
         # Fallback: build from language object if parser helper not available
-        lang = tree_sitter_languages.get_language(lang_name)
+        lang = tslp.get_language(lang_name)
         parser = tree_sitter.Parser()
         parser.set_language(lang)
     tree = parser.parse(code)
