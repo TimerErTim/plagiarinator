@@ -1,6 +1,9 @@
 from typing import Collection, Iterator, List
+import threading
 import numpy as np
 import radiate as rd
+import concurrent.futures
+from tree_sitter import Tree as AST
 
 from plagiarinator.run import Config, similarity_trees, MetricWeight
 from .dataset_loader import load_balanced_pairs
@@ -30,10 +33,16 @@ batched_dataset = batched_shuffled(dataset)
 def evaluate_config(config: Config) -> float:
     batch = next(batched_dataset)
     total_error = 0.0
-    for (left, right), target_plagiarism, (left_path, right_path) in batch:
+
+    def error_fn(input) -> float:
+        (left, right, target_plagiarism, config) = input
         value = similarity_trees(left, right, config)
-        error = abs(value - target_plagiarism)
-        total_error += error
+        return abs(value - target_plagiarism)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = executor.map(error_fn, ((left, right, target_plagiarism, config) for (left, right), target_plagiarism, (left_path, right_path) in batch), chunksize=5)
+
+    total_error = sum(results)
     print(f"Total error: {total_error}")
     return total_error / len(batch)
 
@@ -73,7 +82,7 @@ engine = rd.GeneticEngine(
     codec=codec,
     fitness_func=lambda x: evaluate_config(parse_config_from_genotype(x)),
     objectives="min",
-    executor=rd.WorkerPool(),
+    executor=rd.Executor.WorkerPool(),
 )
 
 print(f"Running engine...")
