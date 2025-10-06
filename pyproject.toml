@@ -14,8 +14,8 @@ dependencies = [
     "apted",
     "argparse",
     "numpy",
+    "radiate",
 ]
-    
 
 [project.scripts]
 plagiarinator = "plagiarinator.cli:main"
@@ -24,4 +24,4 @@ plagiarinator = "plagiarinator.cli:main"
 plagiarinator-gui = "plagiarinator.gui:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "plagiarinator"}

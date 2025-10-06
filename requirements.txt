@@ -10,6 +10,8 @@ argparse==1.4.0
     # via plagiarinator (pyproject.toml)
 numpy==2.3.3
     # via plagiarinator (pyproject.toml)
+radiate==0.0.8
+    # via plagiarinator (pyproject.toml)
 tree-sitter==0.25.2
     # via
     #   plagiarinator (pyproject.toml)
