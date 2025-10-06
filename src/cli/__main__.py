@@ -16,8 +16,12 @@ try:
     result = similarity_files(args.left, args.right, config=Config(
         pqgram_p=2,
         pqgram_q=2,
-        pqgram_weight=MetricWeight(x_scale=1.0, exponent=2.0),
-        ted_weight=MetricWeight(x_scale=1.0, exponent=1.0),
+        wl_subtree_jaccard_rounds=2,
+        pqgram_weight=MetricWeight(x_scale=1.0, exponent=2.0, weight=1.0),
+        ted_weight=MetricWeight(x_scale=1.0, exponent=1.0, weight=1.0),
+        node_cosine_weight=MetricWeight(x_scale=1.0, exponent=1.0, weight=1.0),
+        bigram_cosine_weight=MetricWeight(x_scale=1.0, exponent=1.0, weight=1.0),
+        wl_subtree_jaccard_weight=MetricWeight(x_scale=1.0, exponent=1.0, weight=1.0),
     ), lang_name=args.lang)
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)

@@ -6,7 +6,6 @@ from typing import Callable
 from run import MetricWeight
 
 
-
 # Node type normalization: reduce identifiers/literals to canonical tokens
 def normalize_node_type(node_type: str) -> str:
     t = node_type.lower()
@@ -24,7 +23,7 @@ def normalize_node_type(node_type: str) -> str:
 
 class MetricRunner:
     def __init__(
-        self, 
+        self,
         name: str,
         metric_fn: Callable[[AST, AST], float],
         weight: MetricWeight,
@@ -56,18 +55,23 @@ class MetricRunner:
         Each runner's output is as per its __call__, and the outputs are combined as a weighted sum,
         with x_scale weights normalized to sum to 1.0.
         """
-        outputs = [(runner(left, right), runner.name) for runner in others]
-        combined = sum(v for (v, _) in outputs)
+        outputs = [(runner(left, right), runner.weight.weight, runner.name) for runner in others]
+
+        weights = [w for (_, w, _) in outputs]
+        weights_sum = sum(weights)
+        weights = [w / weights_sum for w in weights]  # normalize weights to sum to 1.0
+        combined = sum(v * w for ((v, _, _), w) in zip(outputs, weights))
         # Clamp to [0.0, 1.0]
-        average = max(0.0, min(1.0, combined / len(outputs)))
-        return CombinedMetricResult(results=[MetricResult(name=name, value=value) for (value, name) in outputs], average=average)
+        return CombinedMetricResult(results=[MetricResult(name=name, value=value) for (value, _, name) in outputs], combined=max(0.0, min(1.0, combined)))
+
 
 @dataclass(frozen=True)
 class MetricResult:
     name: str
     value: float
 
+
 @dataclass(frozen=True)
 class CombinedMetricResult:
     results: list[MetricResult]
-    average: float
+    combined: float
