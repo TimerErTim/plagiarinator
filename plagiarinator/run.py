@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from tree_sitter import Tree as AST
 from parser import load_asts
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from metrics.common import CombinedMetricResult
 
 
 @dataclass(frozen=True)
@@ -24,7 +28,7 @@ class MetricWeight:
     weight: float
 
 
-def similarity_trees(left: AST, right: AST, config: Config) -> float:
+def similarity_trees(left: AST, right: AST, config: Config) -> CombinedMetricResult:
     """
     Calculate the similarity between two trees and returns a percentage between 0.0 and 1.0.
     """
@@ -57,9 +61,9 @@ def similarity_trees(left: AST, right: AST, config: Config) -> float:
     result = MetricRunner.run_all(
         left, right, pqgram_metric, node_cosine_metric, bigram_cosine_metric, wl_subtree_jaccard_metric
     )
-    return result.combined
+    return result
 
 
-def similarity_files(left: Path, right: Path, config: Config, lang_name: str | None = None) -> float:
+def similarity_files(left: Path, right: Path, config: Config, lang_name: str | None = None) -> CombinedMetricResult:
     left, right = load_asts(left, right, lang_name=lang_name)
     return similarity_trees(left, right, config)
