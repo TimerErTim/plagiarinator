@@ -7,6 +7,7 @@ from tree_sitter import Tree as AST
 
 from plagiarinator.run import Config, similarity_trees, MetricWeight
 from .dataset_loader import load_balanced_pairs
+from plagiarinator.common.multithreading import thread_batched_map
 
 rd.random.seed(42)
 
@@ -37,10 +38,14 @@ def evaluate_config(config: Config) -> float:
     def error_fn(input) -> float:
         (left, right, target_plagiarism, config) = input
         value = similarity_trees(left, right, config)
-        return abs(value - target_plagiarism)
+        return abs(value - target_plagiarism)   
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = executor.map(error_fn, ((left, right, target_plagiarism, config) for (left, right), target_plagiarism, (left_path, right_path) in batch), chunksize=5)
+    results = thread_batched_map(
+        error_fn, 
+        ((left, right, target_plagiarism, config) for (left, right), target_plagiarism, (left_path, right_path) in batch),
+        chunk_size=32,
+        worker_count=1,
+    )
 
     total_error = sum(results)
     print(f"Total error: {total_error}")

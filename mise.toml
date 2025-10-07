@@ -1,9 +1,18 @@
+[tools]
+python = { version = "3.13" }
+
+[settings.python]
+compile = true
+default_packages_file = "base-requirements.txt"
+
+
 [env]
-_.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
+_.python.venv = { path = "venv", create = true } # use a specific python version
+PYTHON_BUILD_FREE_THREADING=1
 
 [tasks.install_dependencies]
 run = "pip install -r requirements.txt -e ."
 
 [tasks.compile_dependencies]
-run = "pip install pip-tools && pip-compile -o requirements.txt"
+run = "pip-compile -o requirements.txt"
 depends_post = ["install_dependencies"]
