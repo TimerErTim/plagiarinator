@@ -6,14 +6,12 @@ authors = [
     { name = "Tim Peko", email = "timerertim@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { text = "MIT" }
 dependencies = [
     "apted",
     "argparse",
     "numpy",
-    # required because default build from source is broken (README.md not found)
-    "radiate @ git+https://github.com/pkalivas/radiate#subdirectory=py-radiate@master", 
 ]
 
 [project.scripts]

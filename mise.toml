@@ -1,14 +1,12 @@
 [tools]
-python = { version = "3.13" }
+# we can activate once 3.14 is officially released
+#python = { version = "3.14" }
 
 [settings.python]
-compile = true
 default_packages_file = "base-requirements.txt"
 
-
 [env]
-_.python.venv = { path = "venv", create = true } # use a specific python version
-PYTHON_BUILD_FREE_THREADING=1
+_.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
 
 [tasks.install_dependencies]
 run = "pip install -r requirements.txt -e ."
