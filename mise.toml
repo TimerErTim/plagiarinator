@@ -14,3 +14,7 @@ run = "pip install -r requirements.txt -e ."
 [tasks.compile_dependencies]
 run = "pip-compile -o requirements.txt"
 depends_post = ["install_dependencies"]
+
+[tasks."run:genetic_evolution"]
+dir = "{{ config_root }}"
+run = "cargo run --release --manifest-path scripts/radiate_config_optimizer/Cargo.toml"
