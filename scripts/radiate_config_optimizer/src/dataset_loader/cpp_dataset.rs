@@ -104,7 +104,7 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
 
         let plagiarized_group_paths = plagiarized_groups.into_iter()
             .map(|plagiarized_group| {
-                plagiarized_group.into_iter().map(|student_id| student_id_to_path.get(&student_id).unwrap().clone()).collect_vec()
+                plagiarized_group.into_iter().map(|student_id| student_id_to_path.get(&student_id).cloned()).filter_map(|i| i).collect_vec()
             }).collect_vec();
         let plagiarzed_paths_set = FxHashSet::from_iter(plagiarized_group_paths.iter().flatten().cloned());
 
