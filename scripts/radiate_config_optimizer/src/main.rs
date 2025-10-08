@@ -55,7 +55,7 @@ fn main() {
     .fitness_fn(|config| {
         evaluate_config(config, global_dataset)
     })
-    .executor(Executor::FixedSizedWorkerPool(16))
+    .executor(Executor::WorkerPool)
     .build();
 
     let result = engine.run(|epoch| {
