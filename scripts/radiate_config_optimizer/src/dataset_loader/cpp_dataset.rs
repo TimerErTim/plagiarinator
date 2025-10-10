@@ -114,7 +114,7 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
             .flatten()
             .collect_vec();
 
-        let unplagiarized_paths_set = student_id_to_path.values().filter(|k| !plagiarzed_paths_set.contains(k.clone())).cloned().collect::<FxHashSet<_>>();
+        let unplagiarized_paths_set = student_id_to_path.values().filter(|k| !plagiarzed_paths_set.contains(*k)).cloned().collect::<FxHashSet<_>>();
 
         let unplagiarzed_paths = fastrand::choose_multiple(unplagiarized_paths_set, plagiarzed_paths_set.len());
 

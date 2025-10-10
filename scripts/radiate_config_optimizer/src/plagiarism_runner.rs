@@ -3,14 +3,14 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetricWeight {
     pub x_scale: f64,
     pub exponent: f64,
     pub weight: f64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub pqgram_p: i32,
     pub pqgram_q: i32,
