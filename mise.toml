@@ -1,4 +1,5 @@
 [tools]
+rust = "nightly"
 # we can activate once 3.14 is officially released
 #python = { version = "3.14" }
 
