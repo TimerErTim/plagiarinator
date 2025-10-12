@@ -174,6 +174,7 @@ impl PersistingCheckpointer {
             best_score: score.clone(),
             global_generation: new_global_generation,
         };
+        metrics_vec.push(new_generation_metrics);
 
         let new_metrics = Metrics {
             metrics: metrics_vec,
@@ -202,8 +203,8 @@ impl EventHandler<EngineEvent<Config>> for MetricsEventHandler {
         let handler = &self.0;
         match event.data() {
             EngineEvent::EpochComplete{index, metrics, best, score} => {
-                println!("|{}| Epoch complete: {}", *index, score.as_f32());
-                println!("|{}| Best config: {:?}", *index, best);
+                println!("|{}| Epoch complete: Loss {}", *index, score.as_f32());
+                println!("|{}| Epoch complete: Best {:?}", *index, best);
                 handler.persist_metrics(best, score, metrics, *index);
             },
             EngineEvent::EngineImprovement { index, best, score } => {
