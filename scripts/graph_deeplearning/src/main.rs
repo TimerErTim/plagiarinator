@@ -20,7 +20,7 @@ pub fn main() {
 
     let num_features = 20;
     let num_nodes = 1500;
-    let num_edges = 1499;
+    let num_edges = 1200;
 
     let sample_nodes: Tensor<InfBackend, 2, Float> = Tensor::random(
         [num_nodes, num_features],
@@ -32,10 +32,12 @@ pub fn main() {
         burn::tensor::Distribution::Uniform(0.0, num_nodes as f64 - 1.0),
         &device,
     );
-    let graph = Graph {
+    let mut graph = Graph {
         nodes: sample_nodes,
         edges: sample_edges,
     };
+    graph.normalize_edges();
+    graph.make_bidirectional();
 
     let mut out_features = 30;
     let mut weights = Tensor::ones([num_features, out_features], &device);

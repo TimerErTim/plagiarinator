@@ -3,16 +3,62 @@ use std::{
     num::NonZeroUsize,
 };
 
-use burn::{prelude::Backend, tensor::Int, Tensor};
-use fxhash::FxHashMap;
+use burn::{Tensor, prelude::Backend, tensor::{Int, Slice}};
+use fxhash::{FxHashMap, FxHashSet};
 
+/// Undirected Graph Representation
 #[derive(Debug, Clone)]
 pub struct Graph<B: Backend> {
     /// Shape: [num_nodes, num_features]
     pub nodes: Tensor<B, 2>,
     // Shape: [num_edges, 2]
-    // [source_node, target_node]
+    // [node_1, node_2]
     pub edges: Tensor<B, 2, Int>,
+}
+
+impl<B: Backend> Graph<B> {
+    pub fn new(nodes: Tensor<B, 2>, edges: Tensor<B, 2, Int>) -> Self {
+        Graph { nodes, edges }
+    }
+
+    /// Makes sure that every edge/src->target pair is present at most once.
+    pub fn normalize_edges(&mut self) where B::IntElem: Into<i64> {
+        let mut seen_edges = FxHashSet::<[i64; 2]>::default();
+        let mut unique_indices = Vec::with_capacity(self.edges.shape()[0]);
+        for (idx, edge) in self.edges.clone().iter_dim(0).enumerate() {
+            let edge = edge.squeeze::<1>();
+            let source = edge.clone().slice(0..1).into_scalar().into() as i64;
+            let target = edge.slice(1..2).into_scalar().into() as i64;
+            if !seen_edges.contains(&[source, target]) && !seen_edges.contains(&[target, source]) {
+                seen_edges.insert([source, target]);
+                unique_indices.push(Slice::index(idx as isize));
+            }
+        }
+        let new_edges = unique_indices.into_iter().map(|idx| self.edges.clone().slice_dim(0, idx));
+        self.edges = Tensor::cat(new_edges.collect(), 0);
+    }
+
+    /// Makes sure that for every x->y edge, there is a y->x edge.
+    pub fn make_bidirectional(&mut self) where B::IntElem: Into<i64> {
+        let mut edge_states = FxHashMap::<[i64; 2], bool>::default();
+        for edge in self.edges.clone().iter_dim(0) {
+            let edge = edge.squeeze::<1>();
+            let source = edge.clone().slice(0..1).into_scalar().into() as i64;
+            let target = edge.clone().slice(1..2).into_scalar().into() as i64;
+            // If this edge is in the map, the other direction is already present
+            if edge_states.contains_key(&[source, target]) {
+                edge_states.entry([source, target]).insert_entry(false);
+                continue;
+            }
+            // Otherwise, set that we need to add the other direction if not already present
+            edge_states.entry([target, source]).or_insert(true);
+        }
+        let device = self.edges.device();
+        let new_edges = edge_states.into_iter().filter(|(_, state)| *state).map(|(edge, _)| {
+            Tensor::<B, 2, Int>::from_ints([[edge[0], edge[1]]], &device)
+        });
+        self.edges = Tensor::cat(std::iter::once(self.edges.clone()).chain(new_edges).collect(), 0);
+    }
 }
 
 impl<B: Backend> Display for Graph<B> {
