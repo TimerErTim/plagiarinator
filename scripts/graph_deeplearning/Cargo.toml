@@ -1,0 +1,9 @@
+[package]
+name = "graph_deeplearning"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+data_loading = { path = "../data_loading" }
+burn = {workspace = true}
+fxhash = { workspace = true }

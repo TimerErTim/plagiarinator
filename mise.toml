@@ -1,10 +1,14 @@
-[tools]
-rust = "nightly"
-# we can activate once 3.14 is officially released
-#python = { version = "3.14" }
+[settings]
+experimental = true
+idiomatic_version_file_enable_tools = ["rust"]
 
 [settings.python]
 default_packages_file = "base-requirements.txt"
+
+[tools]
+# we can activate once 3.14 is officially released
+#python = { version = "3.14" }
+
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
@@ -19,3 +23,7 @@ depends_post = ["install_dependencies"]
 [tasks."run:genetic_evolution"]
 dir = "{{ config_root }}"
 run = "cargo run --release --manifest-path scripts/radiate_config_optimizer/Cargo.toml"
+
+[tasks."run:graph_deeplearning"]
+dir = "{{ config_root }}"
+run = "cargo run --release --package graph_deeplearning"

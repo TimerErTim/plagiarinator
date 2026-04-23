@@ -1,0 +1,12 @@
+[package]
+name = "data_loading"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fastrand = { workspace = true }
+fxhash = { workspace = true }
+itertools = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }

@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "scripts/data_loading",
+    "scripts/graph_deeplearning",
+]
+resolver = "2"
+
+
+[workspace.dependencies]
+serde = "1.0.228"
+serde_json = "1.0.145"
+tempfile = "3.23.0"
+itertools = "0.14.0"
+fastrand = "2.3.0"
+fxhash = "0.2.1"
+burn  = { version =  "0.20.1", features = ["ndarray", "autodiff"], default-features = false}

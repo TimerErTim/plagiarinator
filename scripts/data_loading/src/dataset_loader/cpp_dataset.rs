@@ -95,7 +95,6 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
     let mut parsed_dataset = LanguageDataset::new("cpp");
     let dataset_root = dataset_root.as_ref();
     let gt_path = dataset_root.join("ground-truth-static-anon.txt");
-    let src_path = dataset_root.join("src");
     let gt = read_ground_truth_static(gt_path)?;
 
     for (assignment_id, plagiarized_groups) in gt {

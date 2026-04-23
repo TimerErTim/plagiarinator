@@ -1,5 +1,5 @@
 {
     "rust-analyzer.linkedProjects": [
-        "${workspaceFolder}/scripts/radiate_config_optimizer/Cargo.toml",
+        "${workspaceFolder}/Cargo.toml",
     ]
 }
