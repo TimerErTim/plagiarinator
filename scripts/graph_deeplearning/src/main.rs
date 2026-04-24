@@ -36,8 +36,7 @@ pub fn main() {
         nodes: sample_nodes,
         edges: sample_edges,
     };
-    graph.normalize_edges();
-    graph.make_bidirectional();
+    graph.deduplicate_edges();
 
     let mut out_features = 30;
     let mut weights = Tensor::ones([num_features, out_features], &device);
@@ -54,7 +53,7 @@ pub fn main() {
         NonZeroUsize::new(1).unwrap(),
     );
 
-    for _ in 0..10 {
+    for _ in 0..2 {
         let new_out_feat = (out_features as f32 * 1.5) as usize;
         weights = Tensor::ones([out_features, new_out_feat], &device);
         bias = Tensor::zeros([new_out_feat], &device);
