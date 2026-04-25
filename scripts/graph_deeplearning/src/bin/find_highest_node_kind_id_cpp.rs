@@ -2,7 +2,7 @@ use std::fs::File;
 
 use data_loading::dataset_loader::load_dataset;
 use fxhash::FxHashMap;
-use graph_deeplearning::parsing::parse_cpp_to_tree;
+use graph_deeplearning::loading::parse_cpp_to_tree;
 
 fn main() {
     let dataset_path = "datasets/c_cpp_plagiarism";

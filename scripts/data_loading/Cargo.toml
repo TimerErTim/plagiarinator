@@ -10,3 +10,4 @@ itertools = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
+rand = { workspace = true }

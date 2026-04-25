@@ -79,7 +79,7 @@ impl<B: Backend> Graph<B> {
     }
 
     // Every node is onehot encoded with the node kind id
-    pub fn from_treesitter_ast(ast: Tree, device: B::Device) -> Self {
+    pub fn from_treesitter_ast(ast: Tree, device: &B::Device) -> Option<Self> {
         let mut nodes = Vec::with_capacity(ast.root_node().descendant_count());
         let mut edges = Vec::with_capacity(ast.root_node().descendant_count());
         let mut cursor = ast.walk();
@@ -106,13 +106,17 @@ impl<B: Backend> Graph<B> {
                 }
             }
         }
-        let nodes_tensor = Tensor::cat(nodes.iter().map(|node| Tensor::<_, 1, Int>::from_ints([*node as i32 - 1], &device)).collect(), 0);
-        // Somehow first edge is always [0, 0] so we skip it
-        let edges_tensor = Tensor::stack::<2>(edges.iter().skip(1).map(|edge| Tensor::<_, 1, Int>::from_ints(edge.as_slice(), &device)).collect(), 0);
-        Graph {
-            nodes: nodes_tensor.one_hot(u16::MAX as usize).float(),
-            edges: edges_tensor,
+        let nodes_tensors = nodes.iter().map(|node| Tensor::<_, 1, Int>::from_ints([*node as i32 - 1], device)).collect::<Vec<_>>();
+        if nodes_tensors.is_empty() {
+            return None;
         }
+        let nodes_tensor = Tensor::cat(nodes_tensors, 0);
+        // Somehow first edge is always [0, 0] so we skip it
+        let edges_tensor = Tensor::stack::<2>(edges.iter().skip(1).map(|edge| Tensor::<_, 1, Int>::from_ints(edge.as_slice(), device)).collect(), 0);
+        Some(Graph {
+            nodes: nodes_tensor.unsqueeze().float(),
+            edges: edges_tensor,
+        })
     }
 }
 
@@ -215,4 +219,12 @@ where
         nodes: pseudo_nodes,
         edges: pseudo_edges,
     };
+}
+
+#[derive(Debug, Clone)]
+pub struct PlagiarismTrainItem<B: Backend> {
+    pub graph_1: Graph<B>,
+    pub graph_2: Graph<B>,
+    /// True if plagiarization, false otherwise
+    pub label: bool,
 }
