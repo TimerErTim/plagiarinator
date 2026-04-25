@@ -1,4 +1,4 @@
-use std::num::{NonZeroU16, NonZeroUsize};
+use std::{fs::File, io::BufReader, num::{NonZeroU16, NonZeroUsize}};
 
 use burn::{
     nn::norm::NormalizationRecordItem,
@@ -8,10 +8,7 @@ use burn::{
 };
 use data_loading::dataset_loader::load_dataset;
 
-use crate::model::Graph;
-
-mod layers;
-mod model;
+use graph_deeplearning::{layers::{GraphCompressionLayer, GraphCompressionLayerConfig}, model::Graph, parsing::parse_cpp_to_tree};
 
 pub fn main() {
     type InfBackend = burn::backend::NdArray;
@@ -36,36 +33,20 @@ pub fn main() {
         nodes: sample_nodes,
         edges: sample_edges,
     };
-    graph.deduplicate_edges();
+    graph.normalize_edges();
 
     let mut out_features = 30;
-    let mut weights = Tensor::ones([num_features, out_features], &device);
-    let mut bias = Tensor::zeros([out_features], &device);
+    let mut layer = GraphCompressionLayerConfig::new(num_features, out_features).init(&device);
 
     println!("pre_collapsed graph: {graph}");
 
-    let mut collapsed_graph = model::edge_pseudonodes(
-        &device,
-        graph,
-        weights.clone(),
-        bias.clone(),
-        NonZeroUsize::new(1).unwrap(),
-        NonZeroUsize::new(1).unwrap(),
-    );
+    let mut collapsed_graph = layer.forward(graph);
 
-    for _ in 0..2 {
+    for _ in 0..10 {
         let new_out_feat = (out_features as f32 * 1.5) as usize;
-        weights = Tensor::ones([out_features, new_out_feat], &device);
-        bias = Tensor::zeros([new_out_feat], &device);
+        layer = GraphCompressionLayerConfig::new(out_features, new_out_feat).init(&device);
         out_features = new_out_feat;
-        collapsed_graph = model::edge_pseudonodes(
-            &device,
-            collapsed_graph,
-            weights.clone(),
-            bias.clone(),
-            NonZeroUsize::new(1).unwrap(),
-            NonZeroUsize::new(1).unwrap(),
-        );
+        collapsed_graph = layer.forward(collapsed_graph);
         collapsed_graph.nodes = burn::tensor::activation::relu(collapsed_graph.nodes);
     }
 
@@ -73,5 +54,13 @@ pub fn main() {
 
     let dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
 
+
+    for pairs in dataset.cpp_dataset.plagiarized_pairs.iter() {
+        let ast = parse_cpp_to_tree(BufReader::new(File::open(pairs.left_path.clone()).unwrap()));
+        println!("loading ast left_path: {}", pairs.left_path.display());
+        ast.print_dot_graph(&File::create(pairs.left_path.clone().with_extension("dot")).unwrap());
+        let left_graph = Graph::<InfBackend>::from_treesitter_ast(ast, device);
+        println!("left_graph: {left_graph}");
+    }
     println!("Hello, world!");
 }
