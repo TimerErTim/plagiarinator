@@ -4,6 +4,10 @@ use burn::{Tensor, config::Config, module::{Module, Param, Parameter}, nn::{Init
 
 use crate::model::{Graph, edge_pseudonodes};
 
+mod decider;
+
+pub use decider::*;
+
 
 #[derive(Config, Debug)]
 pub struct GraphCompressionLayerConfig {

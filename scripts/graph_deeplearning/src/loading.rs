@@ -35,13 +35,50 @@ pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
     tree
 }
 
+pub fn make_testset<B: Backend>(
+    plagiarized_pairs: Vec<FilePair>,
+    authentic_pairs: Vec<FilePair>,
+    device: &B::Device,
+) -> Vec<PlagiarismTrainItem<B>>
+where
+    B::Device: Send + 'static + UnwindSafe,
+{
+    let mut items = Vec::with_capacity(plagiarized_pairs.len() + authentic_pairs.len());
+    for (pair, label) in plagiarized_pairs
+        .into_iter()
+        .map(|pair| (pair, true))
+        .chain(authentic_pairs.into_iter().map(|pair| (pair, false)))
+    {
+        if let (Some(graph_1), Some(graph_2)) = (
+            Graph::from_treesitter_ast(
+                parse_cpp_to_tree(BufReader::new(File::open(pair.left_path.clone()).expect(
+                    &format!("Failed to open file: {}", pair.left_path.display()),
+                ))),
+                device,
+            ),
+            Graph::from_treesitter_ast(
+                parse_cpp_to_tree(BufReader::new(File::open(pair.right_path.clone()).expect(
+                    &format!("Failed to open file: {}", pair.right_path.display()),
+                ))),
+                device,
+            ),
+        ) {
+            items.push(PlagiarismTrainItem {
+                graph_1,
+                graph_2,
+                label,
+            });
+        }
+    }
+    items
+}
+
 pub fn make_trainset_loader<B: Backend>(
     plagiarized_pairs: Vec<FilePair>,
     authentic_pairs: Vec<FilePair>,
-    batch_size: usize,
     mut rng: impl Rng + Send + 'static + UnwindSafe,
     device: &B::Device,
-) -> impl Iterator<Item = Vec<PlagiarismTrainItem<B>>> + Sized + Send + 'static + UnwindSafe
+) -> impl Iterator<Item = PlagiarismTrainItem<B>> + Sized + Send + 'static + UnwindSafe
 where
     B::Device: Send + 'static + UnwindSafe,
 {
@@ -56,7 +93,7 @@ where
         }
     }
     let device = device.clone();
-    let mut items = std::iter::repeat_with(move || {
+    let items = std::iter::repeat_with(move || {
         let mut all_pairs = plagiarized_pairs
             .iter()
             .map(|pair| (pair, true))
@@ -84,17 +121,7 @@ where
             label: label,
         })
     });
-    let mut batch = Vec::with_capacity(batch_size);
-    std::iter::from_fn(move || {
-        while let Some(item) = items.next() {
-            batch.push(item);
-            if batch.len() == batch_size {
-                let batch = std::mem::replace(&mut batch, Vec::with_capacity(batch_size));
-                return Some(batch);
-            }
-        }
-        None
-    })
+    items
 }
 
 static PREFETCH_COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -148,12 +175,38 @@ impl<I: Iterator<Item = T> + Send + 'static + UnwindSafe, T: Send + 'static> Ite
     }
 }
 
-pub trait IterUtilsExt<T>: Iterator<Item = T> + Sized {
+pub trait IterUtilsExt<T>: Iterator<Item = T> {
     fn prefetch(self, buffer_size: usize) -> PrefetchIterator<Self, T>
     where
-        Self: Send + 'static + UnwindSafe,
+        Self: Send + 'static + UnwindSafe + Sized,
         T: Send + 'static,
     {
         PrefetchIterator::new(self, buffer_size)
     }
+
+    fn chunked(self, chunk_size: usize) -> impl Iterator<Item = Vec<T>>
+    where
+        Self: Sized + 'static,
+        T: 'static,
+    {
+        chunked_iter(self, chunk_size)
+    }
 }
+
+pub fn chunked_iter<T>(mut iterator: impl Iterator<Item = T>, chunk_size: usize) -> impl Iterator<Item = Vec<T>>
+where
+    T: 'static,
+{
+    let mut chunk = Vec::with_capacity(chunk_size);
+        std::iter::from_fn(move || {
+            while let Some(item) = iterator.next() {
+                chunk.push(item);
+                if chunk.len() == chunk_size {
+                    let chunk = std::mem::replace(&mut chunk, Vec::with_capacity(chunk_size));
+                    return Some(chunk);
+                }
+            }
+            None
+        })
+}
+
