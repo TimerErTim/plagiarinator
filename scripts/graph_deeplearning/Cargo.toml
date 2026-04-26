@@ -7,6 +7,7 @@ edition = "2021"
 # Default: CPU via Burn's NdArray backend. Enable `cuda` for NVIDIA GPUs (see workspace `burn` + `burn/cuda`).
 default = []
 cuda = ["burn/cuda"]
+cubecl-cpu = ["burn/cpu"]
 
 [dependencies]
 data_loading = { path = "../data_loading" }
