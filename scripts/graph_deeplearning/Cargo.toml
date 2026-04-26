@@ -3,9 +3,14 @@ name = "graph_deeplearning"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+# Default: CPU via Burn's NdArray backend. Enable `cuda` for NVIDIA GPUs (see workspace `burn` + `burn/cuda`).
+default = []
+cuda = ["burn/cuda"]
+
 [dependencies]
 data_loading = { path = "../data_loading" }
-burn = {workspace = true}
+burn = { workspace = true }
 fxhash = { workspace = true }
 rand = { workspace = true }
 tree-sitter = "0.26.8"

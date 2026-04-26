@@ -1,18 +1,30 @@
-use std::{fs::File, io::BufReader, num::{NonZeroU16, NonZeroUsize}};
-
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::{loss::BinaryCrossEntropyLossConfig, norm::NormalizationRecordItem}, optim::{AdamConfig, AdamWConfig, GradientsParams, Optimizer}, prelude::Backend, tensor::{Float, Int, ops::IntTensorOps}
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer}, prelude::Backend
 };
-use data_loading::dataset_loader::{LanguageDataset, load_dataset};
+#[cfg(feature = "cuda")]
+use burn::backend::cuda::CudaDevice;
+#[cfg(not(feature = "cuda"))]
+use burn::backend::ndarray::NdArrayDevice;
+use data_loading::dataset_loader::load_dataset;
 
-use graph_deeplearning::{loading::{IterUtilsExt, PrefetchIterator, chunked_iter, make_testset, make_trainset_loader, parse_cpp_to_tree}, model::{Graph, PlagiarismTrainItem}, nn::{GraphCompressionLayer, GraphCompressionLayerConfig, PlagiarismDecider, PlagiarismDeciderConfig}};
+use graph_deeplearning::{loading::{PrefetchIterator, chunked_iter, make_testset, make_trainset_loader}, model::PlagiarismTrainItem, nn::{PlagiarismDecider, PlagiarismDeciderConfig}};
 use rand::SeedableRng;
 
 
 pub fn main() {
+    #[cfg(feature = "cuda")]
+    type InfBackend = burn::backend::Cuda;
+    #[cfg(not(feature = "cuda"))]
     type InfBackend = burn::backend::NdArray;
     type AdBackend = Autodiff<InfBackend>;
-    let device = burn::backend::ndarray::NdArrayDevice::Cpu;
+    #[cfg(feature = "cuda")]
+    let device = CudaDevice::default();
+    #[cfg(not(feature = "cuda"))]
+    let device = NdArrayDevice::Cpu;
+    #[cfg(feature = "cuda")]
+    println!("graph_deeplearning: using Burn CUDA backend, device {device:?}");
+    #[cfg(not(feature = "cuda"))]
+    println!("graph_deeplearning: using Burn NdArray backend (CPU)");
     AdBackend::seed(&device, 32);
     let batch_size = 32;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(32);
