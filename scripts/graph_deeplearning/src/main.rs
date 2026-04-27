@@ -9,7 +9,7 @@ use burn::backend::cuda::CudaDevice;
 use burn::backend::ndarray::NdArrayDevice;
 use data_loading::dataset_loader::load_dataset;
 
-use graph_deeplearning::{loading::{PrefetchIterator, chunked_iter, make_testset, make_trainset_loader}, model::PlagiarismTrainItem, nn::{PlagiarismDecider, PlagiarismDeciderConfig}};
+use graph_deeplearning::{loading::{PrefetchIterator, chunked_iter, make_testset, make_trainset_loader}, model::PlagiarismTrainItem, nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig}};
 use rand::SeedableRng;
 
 
@@ -35,7 +35,7 @@ pub fn main() {
     println!("graph_deeplearning: using Burn NdArray backend (CPU)");
 
     AdBackend::seed(&device, 32);
-    let batch_size = 32;
+    let batch_size = 4;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(32);
     let validation_interval = 10;
     let learning_rate = 0.01;
@@ -60,7 +60,12 @@ pub fn main() {
         64,
         64,
         0.1,
-        vec![96, 128, 192, 256],
+        vec![
+            PlagiarismDeciderLayerConfig::new(96, 1024),
+            PlagiarismDeciderLayerConfig::new(128, 512),
+            PlagiarismDeciderLayerConfig::new(192, 256),
+            PlagiarismDeciderLayerConfig::new(256, 128),
+        ],
     );
     let mut model = model_config.init::<AdBackend>(&device);
     println!("model: {model}");
@@ -72,6 +77,7 @@ pub fn main() {
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
 
+    let mut total_loss = Tensor::zeros([1], &device);
     for (idx, batch) in batched_loader.enumerate() {
         let losses = batch.into_iter().map(|item| {
             let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
@@ -79,13 +85,15 @@ pub fn main() {
             loss
         }).collect();
         let average_loss = Tensor::cat(losses, 0).mean();
+        total_loss = total_loss.add(average_loss.clone().inner());
         let mut grads = average_loss.backward();
         let param_grads = GradientsParams::from_module(&mut grads, &model);
         model = optimizer.step(learning_rate, model, param_grads);
 
         if idx % validation_interval == 0 {
             let validation_output = validate(model.valid(), &cpp_test_items);
-            println!("step {idx}, \tvalidation_output: {validation_output:?}");
+            println!("step {idx}, training_loss: {:.02}, validation_output: {validation_output:?}", (total_loss.clone() / (validation_interval as f64)).into_scalar());
+            total_loss = total_loss.slice_fill([0], 0.0);
         }
     }
 }
