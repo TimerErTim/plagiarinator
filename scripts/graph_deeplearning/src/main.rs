@@ -42,7 +42,7 @@ pub fn main() {
 
     let mut dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
     // Make equal split of plagiarized and authentic pairs
-    let len = dataset.cpp_dataset.plagiarized_pairs.len().min(dataset.cpp_dataset.authentic_pairs.len());
+    let len = dataset.cpp_dataset.plagiarized_pairs.len().max(dataset.cpp_dataset.authentic_pairs.len());
     let rem_plagiarized_pairs = dataset.cpp_dataset.plagiarized_pairs.iter().skip(len).cloned().collect::<Vec<_>>();
     let rem_authentic_pairs = dataset.cpp_dataset.authentic_pairs.iter().skip(len).cloned().collect::<Vec<_>>();
     dataset.cpp_dataset.plagiarized_pairs = dataset.cpp_dataset.plagiarized_pairs.into_iter().take(len).collect();

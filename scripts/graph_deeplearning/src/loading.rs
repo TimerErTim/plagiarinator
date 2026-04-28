@@ -101,14 +101,23 @@ where
     }
     let device = device.clone();
     let items = std::iter::repeat_with(move || {
-        let mut all_pairs = plagiarized_pairs
-            .iter()
-            .map(|pair| (pair, true))
-            .chain(authentic_pairs.iter().map(|pair| (pair, false)))
+        // Pad both lists to be equal in length by repeating elements as necessary
+        let max_len = plagiarized_pairs.len().max(authentic_pairs.len());
+
+        let padded_plagiarized = (0..max_len)
+            .map(|i| (&plagiarized_pairs[i % plagiarized_pairs.len()], true));
+
+        let padded_authentic = (0..max_len)
+            .map(|i| (&authentic_pairs[i % authentic_pairs.len()], false));
+
+        let mut all_pairs = padded_plagiarized
+            .chain(padded_authentic)
             .map(|(pair, label)| (shuffle_pair(&pair, &mut rng), label))
             .collect::<Vec<_>>();
+
         all_pairs.shuffle(&mut rng);
         all_pairs
+
     })
     .flatten()
     .filter_map(move |(pair, label)| {
