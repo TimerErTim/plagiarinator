@@ -57,7 +57,7 @@ pub struct PlagiarismDecider<B: Backend> {
 }
 
 impl<B: Backend> PlagiarismDecider<B> {
-    pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> where B::IntElem: Into<i64> {
+    pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
         let compress_graph = |graph: Graph<B, Int>| {
             let embedded_nodes = self.embedding.forward(graph.nodes.swap_dims(0, 1));
             let embedded_graph = Graph::new(embedded_nodes.squeeze(), graph.edges);

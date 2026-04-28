@@ -1,7 +1,7 @@
 #[cfg(feature = "cubecl-cpu")]
 use burn::backend::cpu::CpuDevice;
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer}, prelude::Backend
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend
 };
 #[cfg(feature = "cuda")]
 use burn::backend::cuda::CudaDevice;
@@ -9,7 +9,7 @@ use burn::backend::cuda::CudaDevice;
 use burn::backend::ndarray::NdArrayDevice;
 use data_loading::dataset_loader::load_dataset;
 
-use graph_deeplearning::{loading::{PrefetchIterator, chunked_iter, make_testset, make_trainset_loader}, model::PlagiarismTrainItem, nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig}};
+use graph_deeplearning::{loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader}, model::PlagiarismTrainItem, nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig}};
 use rand::SeedableRng;
 
 
@@ -38,17 +38,21 @@ pub fn main() {
     let batch_size = 4;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(32);
     let validation_interval = 10;
-    let learning_rate = 0.01;
+    let learning_rate = 0.001;
 
     let mut dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
     // Make equal split of plagiarized and authentic pairs
     let len = dataset.cpp_dataset.plagiarized_pairs.len().min(dataset.cpp_dataset.authentic_pairs.len());
+    let rem_plagiarized_pairs = dataset.cpp_dataset.plagiarized_pairs.iter().skip(len).cloned().collect::<Vec<_>>();
+    let rem_authentic_pairs = dataset.cpp_dataset.authentic_pairs.iter().skip(len).cloned().collect::<Vec<_>>();
     dataset.cpp_dataset.plagiarized_pairs = dataset.cpp_dataset.plagiarized_pairs.into_iter().take(len).collect();
     dataset.cpp_dataset.authentic_pairs = dataset.cpp_dataset.authentic_pairs.into_iter().take(len).collect();
 
-    let (cpp_train_dataset, cpp_test_dataset) = dataset.cpp_dataset.split_dataset(0.8, &mut rng);
+    let (cpp_train_dataset, mut cpp_test_dataset) = dataset.cpp_dataset.split_dataset(0.8, &mut rng);
+    cpp_test_dataset.plagiarized_pairs.extend(rem_plagiarized_pairs);
+    cpp_test_dataset.authentic_pairs.extend(rem_authentic_pairs);
     let num_train_items = cpp_train_dataset.plagiarized_pairs.len() + cpp_train_dataset.authentic_pairs.len();
-    let cpp_test_items = make_testset::<InfBackend>(cpp_test_dataset.plagiarized_pairs, cpp_test_dataset.authentic_pairs, &device);
+    let cpp_test_items = make_testset_loader::<InfBackend>(cpp_test_dataset.plagiarized_pairs, cpp_test_dataset.authentic_pairs, &device);
     let train_loader = make_trainset_loader::<AdBackend>(cpp_train_dataset.plagiarized_pairs, cpp_train_dataset.authentic_pairs, rng.clone(), &device);
     
     let train_loader = PrefetchIterator::new(train_loader, batch_size * 2);
@@ -73,6 +77,7 @@ pub fn main() {
 
     // init optimizer and loss function
     let mut optimizer = AdamConfig::new()
+        .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
         .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
@@ -81,6 +86,7 @@ pub fn main() {
     for (idx, batch) in batched_loader.enumerate() {
         let losses = batch.into_iter().map(|item| {
             let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
+            dbg!(prediction.clone().into_scalar());
             let loss = loss_fn.forward(prediction.clone(), Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
             loss
         }).collect();
@@ -91,7 +97,7 @@ pub fn main() {
         model = optimizer.step(learning_rate, model, param_grads);
 
         if idx % validation_interval == 0 {
-            let validation_output = validate(model.valid(), &cpp_test_items);
+            let validation_output = validate(model.valid(), cpp_test_items.iter());
             println!("step {idx}, training_loss: {:.02}, validation_output: {validation_output:?}", (total_loss.clone() / (validation_interval as f64)).into_scalar());
             total_loss = total_loss.slice_fill([0], 0.0);
         }
@@ -107,11 +113,11 @@ pub struct ValidationOutput {
     pub false_negative: usize,
 }
 
-pub fn validate<B: Backend>(model: PlagiarismDecider<B>, test_dataset: &Vec<PlagiarismTrainItem<B>>) -> ValidationOutput
+pub fn validate<B: Backend>(model: PlagiarismDecider<B>, test_dataset: impl Iterator<Item = PlagiarismTrainItem<B>>) -> ValidationOutput
 where
-    B::IntElem: Into<i64>,
     B::FloatElem: Into<f64>,
 {
+    let mut item_counts = 0;
     let mut average_loss = 0.0;
     let mut true_positive = 0;
     let mut true_negative = 0;
@@ -121,9 +127,10 @@ where
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
     
     for item in test_dataset {
-        let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
+        let prediction = model.forward(item.graph_1, item.graph_2);
         let loss = loss_fn.forward(prediction.clone(), Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
         average_loss += loss.into_scalar().into();
+        item_counts += 1;
         match (prediction.into_scalar().into() > 0.5, item.label) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
@@ -133,7 +140,7 @@ where
     }
 
     ValidationOutput {
-        average_loss: average_loss / test_dataset.len() as f64,
+        average_loss: average_loss / item_counts as f64,
         true_positive,
         true_negative,
         false_positive,

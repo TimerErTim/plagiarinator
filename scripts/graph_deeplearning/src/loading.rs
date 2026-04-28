@@ -35,42 +35,49 @@ pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
     tree
 }
 
-pub fn make_testset<B: Backend>(
+pub struct PlagiarismTestSetLoader<B: Backend> {
+    plagiarized_pairs: Vec<FilePair>,
+    authentic_pairs: Vec<FilePair>,
+    device: B::Device,
+}
+
+impl<B: Backend> PlagiarismTestSetLoader<B> {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = PlagiarismTrainItem<B>> + use<'a, B> {
+        let all_pairs = self
+            .plagiarized_pairs
+            .iter()
+            .map(|pair| (pair, true))
+            .chain(self.authentic_pairs.iter().map(|pair| (pair, false)));
+        all_pairs.filter_map(|(pair, label)| {
+            Some(PlagiarismTrainItem {
+                graph_1: Graph::from_treesitter_ast(
+                    parse_cpp_to_tree(BufReader::new(File::open(pair.left_path.clone()).expect(
+                        &format!("Failed to open file: {}", pair.left_path.display()),
+                    ))),
+                    &self.device,
+                )?,
+                graph_2: Graph::from_treesitter_ast(
+                    parse_cpp_to_tree(BufReader::new(File::open(pair.right_path.clone()).expect(
+                        &format!("Failed to open file: {}", pair.right_path.display()),
+                    ))),
+                    &self.device,
+                )?,
+                label,
+            })
+        })
+    }
+}
+
+pub fn make_testset_loader<B: Backend>(
     plagiarized_pairs: Vec<FilePair>,
     authentic_pairs: Vec<FilePair>,
     device: &B::Device,
-) -> Vec<PlagiarismTrainItem<B>>
-where
-    B::Device: Send + 'static + UnwindSafe,
-{
-    let mut items = Vec::with_capacity(plagiarized_pairs.len() + authentic_pairs.len());
-    for (pair, label) in plagiarized_pairs
-        .into_iter()
-        .map(|pair| (pair, true))
-        .chain(authentic_pairs.into_iter().map(|pair| (pair, false)))
-    {
-        if let (Some(graph_1), Some(graph_2)) = (
-            Graph::from_treesitter_ast(
-                parse_cpp_to_tree(BufReader::new(File::open(pair.left_path.clone()).expect(
-                    &format!("Failed to open file: {}", pair.left_path.display()),
-                ))),
-                device,
-            ),
-            Graph::from_treesitter_ast(
-                parse_cpp_to_tree(BufReader::new(File::open(pair.right_path.clone()).expect(
-                    &format!("Failed to open file: {}", pair.right_path.display()),
-                ))),
-                device,
-            ),
-        ) {
-            items.push(PlagiarismTrainItem {
-                graph_1,
-                graph_2,
-                label,
-            });
-        }
+) -> PlagiarismTestSetLoader<B> {
+    PlagiarismTestSetLoader {
+        plagiarized_pairs,
+        authentic_pairs,
+        device: device.clone(),
     }
-    items
 }
 
 pub fn make_trainset_loader<B: Backend>(
@@ -193,20 +200,22 @@ pub trait IterUtilsExt<T>: Iterator<Item = T> {
     }
 }
 
-pub fn chunked_iter<T>(mut iterator: impl Iterator<Item = T>, chunk_size: usize) -> impl Iterator<Item = Vec<T>>
+pub fn chunked_iter<T>(
+    mut iterator: impl Iterator<Item = T>,
+    chunk_size: usize,
+) -> impl Iterator<Item = Vec<T>>
 where
     T: 'static,
 {
     let mut chunk = Vec::with_capacity(chunk_size);
-        std::iter::from_fn(move || {
-            while let Some(item) = iterator.next() {
-                chunk.push(item);
-                if chunk.len() == chunk_size {
-                    let chunk = std::mem::replace(&mut chunk, Vec::with_capacity(chunk_size));
-                    return Some(chunk);
-                }
+    std::iter::from_fn(move || {
+        while let Some(item) = iterator.next() {
+            chunk.push(item);
+            if chunk.len() == chunk_size {
+                let chunk = std::mem::replace(&mut chunk, Vec::with_capacity(chunk_size));
+                return Some(chunk);
             }
-            None
-        })
+        }
+        None
+    })
 }
-
