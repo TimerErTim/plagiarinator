@@ -117,7 +117,6 @@ where
 
         all_pairs.shuffle(&mut rng);
         all_pairs
-
     })
     .flatten()
     .filter_map(move |(pair, label)| {

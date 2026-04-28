@@ -15,4 +15,4 @@ fastrand = "2.3.0"
 fxhash = "0.2.1"
 rand = "0.10.1"
 # NdArray+autodiff for CPU; `graph_deeplearning` enables `burn/cuda` when built with `--features cuda`.
-burn  = { version =  "0.20.1", features = ["ndarray", "autodiff"], default-features = false}
+burn  = { version =  "0.20.1", features = ["ndarray", "autodiff", "openblas"], default-features = false}

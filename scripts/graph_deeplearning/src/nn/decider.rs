@@ -59,8 +59,8 @@ pub struct PlagiarismDecider<B: Backend> {
 impl<B: Backend> PlagiarismDecider<B> {
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
         let compress_graph = |graph: Graph<B, Int>| {
-            let embedded_nodes = self.embedding.forward(graph.nodes.swap_dims(0, 1));
-            let embedded_graph = Graph::new(embedded_nodes.squeeze(), graph.edges);
+            let embedded_nodes = self.embedding.forward(graph.nodes);
+            let embedded_graph = Graph::new(embedded_nodes.squeeze_dim(0), graph.edges);
             let mut extracted_graph = embedded_graph;
             for (pooling_layer, norm_layer) in &self.compression_layers {
                 extracted_graph = pooling_layer.forward(extracted_graph);
@@ -68,15 +68,17 @@ impl<B: Backend> PlagiarismDecider<B> {
                 extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
             }
             let nodes_features = extracted_graph.nodes;
-            let dropped_nodes_features = self.dropout.forward(nodes_features);
-            dropped_nodes_features.max_dim(0).squeeze::<1>()
+            nodes_features.max_dim(0).squeeze_dim::<1>(0)
         };
         let compressed_graph_1 = compress_graph(graph_1);
         let compressed_graph_2 = compress_graph(graph_2);
-        let comparator_input = Tensor::cat(vec![compressed_graph_1, compressed_graph_2], 0);
+        let comparator_input_left = Tensor::cat(vec![compressed_graph_1.clone(), compressed_graph_2.clone()], 0);
+        let comparator_input_right = Tensor::cat(vec![compressed_graph_2, compressed_graph_1], 0);
+        let comparator_input = Tensor::stack::<2>(vec![comparator_input_left, comparator_input_right], 0);
+        let comparator_input = self.dropout.forward(comparator_input);
 
         let comparator_output = silu(self.comparator.forward(comparator_input));
         let output = self.output.forward(comparator_output);
-        sigmoid(output)
+        sigmoid(output).mean()
     }
 }
