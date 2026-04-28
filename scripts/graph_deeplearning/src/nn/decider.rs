@@ -31,17 +31,13 @@ impl PlagiarismDeciderConfig {
             };
             compression_layers.push((GraphDiffPoolConfig::new(prev_layer_features, layer_config.output_features, layer_config.num_clusters), LayerNormConfig::new(layer_config.output_features)));
         }
-        let last_layer_features = if let Some(last_layer) = compression_layers.last() {
-            last_layer.0.output_features
-        } else {
-            self.embedding_size
-        };
+        let all_layer_features = compression_layers.iter().map(|(pool_config, norm_config)| pool_config.output_features).sum();
 
         PlagiarismDecider {
             embedding: EmbeddingConfig::new(self.num_classes, self.embedding_size).init(device),
             compression_layers: compression_layers.into_iter().map(|(pool_config, norm_config)| (pool_config.init(device), norm_config.init(device))).collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
-            comparator: LinearConfig::new(last_layer_features * 2, self.comparator_size).init(device),
+            comparator: LinearConfig::new(all_layer_features, self.comparator_size).init(device),
             output: LinearConfig::new(self.comparator_size, 1).init(device),
         }
     }
@@ -59,6 +55,7 @@ pub struct PlagiarismDecider<B: Backend> {
 impl<B: Backend> PlagiarismDecider<B> {
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
         let compress_graph = |graph: Graph<B, Int>| {
+            let mut max_features_steps = Vec::with_capacity(self.compression_layers.len());
             let embedded_nodes = self.embedding.forward(graph.nodes);
             let embedded_graph = Graph::new(embedded_nodes.squeeze_dim(0), graph.edges);
             let mut extracted_graph = embedded_graph;
@@ -66,15 +63,13 @@ impl<B: Backend> PlagiarismDecider<B> {
                 extracted_graph = pooling_layer.forward(extracted_graph);
                 extracted_graph.nodes = silu(extracted_graph.nodes);
                 extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
+                max_features_steps.push(extracted_graph.nodes.clone().max_dim(0).squeeze_dim::<1>(0));
             }
-            let nodes_features = extracted_graph.nodes;
-            nodes_features.max_dim(0).squeeze_dim::<1>(0)
+            Tensor::cat(max_features_steps, 0)
         };
         let compressed_graph_1 = compress_graph(graph_1);
         let compressed_graph_2 = compress_graph(graph_2);
-        let comparator_input_left = Tensor::cat(vec![compressed_graph_1.clone(), compressed_graph_2.clone()], 0);
-        let comparator_input_right = Tensor::cat(vec![compressed_graph_2, compressed_graph_1], 0);
-        let comparator_input = Tensor::stack::<2>(vec![comparator_input_left, comparator_input_right], 0);
+        let comparator_input = sigmoid(compressed_graph_1).mul(sigmoid(compressed_graph_2));
         let comparator_input = self.dropout.forward(comparator_input);
 
         let comparator_output = silu(self.comparator.forward(comparator_input));
