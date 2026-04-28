@@ -8,19 +8,16 @@ edition = "2021"
 default = []
 cuda = ["burn/cuda"]
 cubecl-cpu = ["burn/cpu"]
+torch = ["burn/tch"]
 
 [dependencies]
 data_loading = { path = "../data_loading" }
 burn = { workspace = true }
 fxhash = { workspace = true }
 rand = { workspace = true }
+thiserror = { workspace = true }
 tree-sitter = "0.26.8"
 tree-sitter-python = "0.25.0"
 tree-sitter-cpp = "0.23.4"
 
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.test.package."*"]
-opt-level = 3
 

@@ -9,6 +9,8 @@ use burn::{
 use fxhash::{FxHashMap, FxHashSet};
 use tree_sitter::Tree;
 
+use crate::model::FlattenedAST;
+
 #[derive(Debug, Clone)]
 pub struct Graph<B: Backend, D: TensorKind<B> = Float> {
     /// Shape: [num_nodes, num_features]
@@ -57,46 +59,25 @@ impl<B: Backend, D: TensorKind<B> + BasicOps<B>> Display for Graph<B, D> {
 
 impl<B: Backend> Graph<B, Int> {
     pub fn from_treesitter_ast(ast: Tree, device: &B::Device) -> Option<Self> {
-        let mut nodes = Vec::with_capacity(ast.root_node().descendant_count());
-        let mut edges = Vec::with_capacity(ast.root_node().descendant_count());
-        let mut cursor = ast.walk();
-        let mut walking_stack = vec![(0, cursor.node())];
-        while cursor.goto_next_sibling() {
-            let node = cursor.node();
-            let node_kind = node.kind_id();
-            nodes.push(node_kind);
-            walking_stack.push((nodes.len() - 1, node));
-        }
-        while let Some((nodes_idx, node)) = walking_stack.pop() {
-            cursor.reset(node);
-            if !cursor.goto_first_child() {
-                continue;
-            }
-            loop {
-                let child_node = cursor.node();
-                let child_node_kind = child_node.kind_id();
-                nodes.push(child_node_kind);
-                edges.push([(nodes.len() - 1) as i32, nodes_idx as i32]);
-                walking_stack.push((nodes.len() - 1, child_node));
-                if !cursor.goto_next_sibling() {
-                    break;
-                }
-            }
-        }
-        let nodes_tensors = nodes
+        Self::from_flattened_ast(&FlattenedAST::from_treesitter_ast(ast), device)
+    }
+
+    pub fn from_flattened_ast(ast: &FlattenedAST, device: &B::Device) -> Option<Self> {
+        let nodes_tensors = ast.nodes
             .iter()
-            .map(|node| Tensor::<_, 1, Int>::from_ints([*node as i32 - 1], device))
+            .map(|node| Tensor::<_, 1, Int>::from_ints([node.kind_id as i32 - 1], device))
             .collect::<Vec<_>>();
         if nodes_tensors.is_empty() {
             return None;
         }
         let nodes_tensor = Tensor::cat(nodes_tensors, 0);
-        let mut edges_tensor = Tensor::zeros([nodes.len(), nodes.len()], device);
-        for edge in edges.into_iter().skip(1) {
-            edges_tensor = edges_tensor.slice_fill([edge[1] as usize, edge[0] as usize], 1.0);
+        
+        let mut edges_tensor = Tensor::zeros([ast.nodes.len(), ast.nodes.len()], device);
+        for (src, dst) in ast.edges.iter() {
+            edges_tensor = edges_tensor.slice_fill([*src as usize, *dst as usize], 1.0);
         }
         Some(Graph {
-            nodes: nodes_tensor.unsqueeze(),
+            nodes: nodes_tensor.unsqueeze_dim(1),
             edges: edges_tensor,
         })
     }

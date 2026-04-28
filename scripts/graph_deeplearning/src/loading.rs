@@ -1,21 +1,15 @@
 use std::{
-    any::Any,
-    fs::File,
-    io::{BufReader, Read},
-    marker::PhantomData,
-    panic::{catch_unwind, UnwindSafe},
-    sync::{
+    any::Any, fs::File, io::{BufReader, Read}, marker::PhantomData, panic::{UnwindSafe, catch_unwind}, path::Path, sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Receiver,
-    },
-    thread::{self, JoinHandle},
+    }, thread::{self, JoinHandle}
 };
 
 use burn::prelude::Backend;
 use data_loading::dataset_loader::FilePair;
 use rand::{seq::SliceRandom, Rng, RngExt};
 
-use crate::model::{Graph, PlagiarismTrainItem};
+use crate::model::{FlattenedAST, Graph, ParsedFile, PlagiarismTrainItem};
 
 pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
     let mut parser = tree_sitter::Parser::new();
@@ -33,6 +27,17 @@ pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
         )
         .expect("Failed to parse C++ code");
     tree
+}
+
+pub fn parse_cpp_file(path: impl AsRef<Path>) -> ParsedFile {
+    let path = path.as_ref();
+    let file_content = std::fs::read_to_string(path).expect("Failed to read file");
+    let ast = parse_cpp_to_tree(file_content.as_bytes());
+    ParsedFile {
+        file_path: path.to_path_buf(),
+        file_content,
+        ast: FlattenedAST::from_treesitter_ast(ast),
+    }
 }
 
 pub struct PlagiarismTestSetLoader<B: Backend> {
