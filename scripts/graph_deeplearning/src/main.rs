@@ -133,6 +133,15 @@ pub fn main() {
 
     let mut total_loss = Tensor::zeros([1], &device);
     for (idx, batch) in batched_loader.enumerate() {
+        if idx % validation_interval == 0 {
+            let validation_output = validate(model.valid(), cpp_test_items.iter());
+            println!(
+                "step {idx}, training_loss: {:.02}, validation_output: {validation_output:?}",
+                (total_loss.clone() / (validation_interval as f64)).into_scalar()
+            );
+            total_loss = total_loss.slice_fill([0], 0.0);
+        }
+
         let targets = Tensor::from_data(
             batch
                 .iter()
@@ -157,15 +166,6 @@ pub fn main() {
         let mut grads = loss.backward();
         let param_grads = GradientsParams::from_module(&mut grads, &model);
         model = optimizer.step(learning_rate, model, param_grads);
-
-        if idx % validation_interval == 0 {
-            let validation_output = validate(model.valid(), cpp_test_items.iter());
-            println!(
-                "step {idx}, training_loss: {:.02}, validation_output: {validation_output:?}",
-                (total_loss.clone() / (validation_interval as f64)).into_scalar()
-            );
-            total_loss = total_loss.slice_fill([0], 0.0);
-        }
     }
 }
 
