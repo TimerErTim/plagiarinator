@@ -61,14 +61,14 @@ pub fn main() {
     // init model
     let model_config = PlagiarismDeciderConfig::new(
         u16::MAX as usize,
-        32,
-        128,
+        64,
+        64,
         0.1,
         vec![
             PlagiarismDeciderLayerConfig::new(96, 1024),
-            PlagiarismDeciderLayerConfig::new(256, 256),
-            PlagiarismDeciderLayerConfig::new(512, 64),
-            PlagiarismDeciderLayerConfig::new(1024, 4),
+            PlagiarismDeciderLayerConfig::new(128, 512),
+            PlagiarismDeciderLayerConfig::new(192, 256),
+            PlagiarismDeciderLayerConfig::new(256, 128),
         ],
     );
     let mut model = model_config.init::<AdBackend>(&device);

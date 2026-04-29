@@ -68,17 +68,15 @@ impl<B: Backend> PlagiarismDecider<B> {
                 extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
             }
             let nodes_features = extracted_graph.nodes;
-            nodes_features.max_dim(0).squeeze_dim::<1>(0)
+            let dropped_nodes_features = self.dropout.forward(nodes_features);
+            dropped_nodes_features.max_dim(0).squeeze::<1>()
         };
         let compressed_graph_1 = compress_graph(graph_1);
         let compressed_graph_2 = compress_graph(graph_2);
-        let comparator_input_left = Tensor::cat(vec![compressed_graph_1.clone(), compressed_graph_2.clone()], 0);
-        let comparator_input_right = Tensor::cat(vec![compressed_graph_2, compressed_graph_1], 0);
-        let comparator_input = Tensor::stack::<2>(vec![comparator_input_left, comparator_input_right], 0);
-        let comparator_input = self.dropout.forward(comparator_input);
+        let comparator_input = Tensor::cat(vec![compressed_graph_1, compressed_graph_2], 0);
 
         let comparator_output = silu(self.comparator.forward(comparator_input));
         let output = self.output.forward(comparator_output);
-        sigmoid(output).mean()
+        sigmoid(output)
     }
 }
