@@ -109,7 +109,11 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
 
         let plagiarized_path_pairs = plagiarized_group_paths
             .iter().cloned()
-            .map(|group| all_pairs(group))
+            .map(|group| {
+                let mut pairs: Vec<_> = group.iter().map(|path| (path.clone(), path.clone())).collect();
+                pairs.extend(all_pairs(group));
+                pairs
+            })
             .flatten()
             .collect_vec();
 
