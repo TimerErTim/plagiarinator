@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 #[derive(Debug, Clone)]
 pub struct FlattenedAST {
     pub nodes: Vec<ASTNode>,
@@ -29,9 +27,9 @@ impl ASTNode {
 impl FlattenedAST {
     pub fn from_treesitter_ast(ast: tree_sitter::Tree) -> Self {
         let mut nodes = Vec::with_capacity(ast.root_node().descendant_count());
-        let mut edges = VecDeque::with_capacity(ast.root_node().descendant_count());
+        let mut edges = Vec::with_capacity(ast.root_node().descendant_count());
         let mut cursor = ast.walk();
-        let mut walking_stack = vec![(0, cursor.node())];
+        let mut walking_stack = vec![(0, ast.root_node())];
 
         // Add the root node
         nodes.push(ASTNode::from_treesitter_node(cursor.node()));
@@ -50,15 +48,14 @@ impl FlattenedAST {
             loop {
                 let child_node = cursor.node();
                 nodes.push(ASTNode::from_treesitter_node(child_node));
-                edges.push_back((nodes.len() - 1, parent_idx));
+                edges.push((nodes.len() - 1, parent_idx));
                 walking_stack.push((nodes.len() - 1, child_node));
                 if !cursor.goto_next_sibling() {
                     break;
                 }
             }
         }
-        edges.pop_front();
 
-        FlattenedAST { nodes, edges: edges.into() }
+        FlattenedAST { nodes, edges: edges }
     }
 }

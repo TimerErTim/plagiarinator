@@ -1,6 +1,6 @@
 use std::num::{NonZero, NonZeroUsize};
 
-use burn::{Tensor, config::Config, module::{Module, Param, Parameter}, nn::{Initializer, Linear, LinearConfig}, prelude::Backend, tensor::activation::{leaky_relu, softmax}};
+use burn::{Tensor, config::Config, module::{Module, Param, Parameter}, nn::{Initializer, Linear, LinearConfig}, prelude::Backend, tensor::activation::{leaky_relu, log_softmax, softmax}};
 
 use crate::model::{Graph, graph_convolution};
 
@@ -69,7 +69,7 @@ impl GraphDiffPoolConfig {
 
 impl<B: Backend> GraphDiffPool<B> {
     pub fn forward(&self, input: Graph<B>) -> Graph<B> {        
-        let soft_assignments = softmax(self.pooling_layer.forward(input.clone()).nodes, 0);
+        let soft_assignments = log_softmax(self.pooling_layer.forward(input.clone()).nodes, 0);
         let node_embeddings = leaky_relu(self.embed_layer.forward(input.clone()).nodes, 0.1);
         let super_nodes = soft_assignments.clone().transpose().matmul(node_embeddings);
         let super_edges = soft_assignments.clone().transpose().matmul(input.edges).matmul(soft_assignments);

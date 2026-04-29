@@ -1,16 +1,10 @@
 use burn::{
-    config::Config,
-    module::Module,
-    nn::{
+    Tensor, config::Config, module::Module, nn::{
         Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear,
         LinearConfig,
-    },
-    prelude::Backend,
-    tensor::{
-        activation::{leaky_relu, sigmoid, silu},
-        Int,
-    },
-    Tensor,
+    }, prelude::{Backend, ToElement}, tensor::{
+        Int, activation::{leaky_relu, sigmoid, silu}
+    }
 };
 
 use crate::{
@@ -81,7 +75,12 @@ pub struct PlagiarismDecider<B: Backend> {
 
 impl<B: Backend> PlagiarismDecider<B> {
     pub fn embed_nodes(&self, nodes: Tensor<B, 2, Int>) -> Tensor<B, 2> {
-        self.embedding.forward(nodes.swap_dims(0, 1)).squeeze_dim(0)
+        self.embedding.forward(nodes.clone().swap_dims(0, 1)).squeeze_dim(0)
+    }
+
+    pub fn embed_graph(&self, graph: Graph<B, Int>) -> Graph<B> {
+        let embedded_nodes = self.embed_nodes(graph.nodes);
+        Graph::new(embedded_nodes, graph.edges)
     }
 
     pub fn compress_embedded_graph(&self, embedded_graph: Graph<B>) -> Tensor<B, 1> {
@@ -91,7 +90,7 @@ impl<B: Backend> PlagiarismDecider<B> {
             extracted_graph.nodes = silu(extracted_graph.nodes);
             extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
         }
-        extracted_graph.nodes.mean_dim(0).squeeze::<1>()
+        extracted_graph.nodes.mean_dim(0).squeeze_dim(0)
     }
 
     pub fn predict_embedded_graphs(
@@ -108,10 +107,9 @@ impl<B: Backend> PlagiarismDecider<B> {
     }
 
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
-        let embedded_nodes = self.embed_nodes(graph_1.nodes);
-        let embedded_graph_1 = Graph::new(embedded_nodes, graph_1.edges);
-        let embedded_nodes = self.embed_nodes(graph_2.nodes);
-        let embedded_graph_2 = Graph::new(embedded_nodes, graph_2.edges);
-        self.predict_embedded_graphs(embedded_graph_1, embedded_graph_2)
+        self.predict_embedded_graphs(
+            self.embed_graph(graph_1),
+            self.embed_graph(graph_2)
+        )
     }
 }

@@ -109,7 +109,7 @@ pub fn main() {
 
     // init model
     let model_config = PlagiarismDeciderConfig::new(
-        u16::MAX as usize,
+        u16::MAX as usize + 1,
         64,
         128,
         0.1,
@@ -153,15 +153,13 @@ pub fn main() {
         let predictions = Tensor::cat(
             batch
                 .into_iter()
-                .map(|item| {
-                    let prediction = model.forward(item.graph_1, item.graph_2);
-                    dbg!(prediction.clone().into_scalar());
-                    prediction
-                })
+                .map(|item| model.forward(item.graph_1, item.graph_2))
                 .collect(),
             0,
         );
-        let loss = loss_fn.forward(predictions.clone(), targets.clone());
+
+        println!("predictions: {}\ntargets: {}", predictions.to_data(), targets.to_data());
+        let loss = loss_fn.forward(predictions, targets);
         total_loss = total_loss.add(loss.clone().inner());
         let mut grads = loss.backward();
         let param_grads = GradientsParams::from_module(&mut grads, &model);
@@ -185,23 +183,20 @@ pub fn validate<B: Backend>(
 where
     B::FloatElem: Into<f64>,
 {
-    let mut item_counts = 0;
-    let mut average_loss = 0.0;
     let mut true_positive = 0;
     let mut true_negative = 0;
     let mut false_positive = 0;
     let mut false_negative = 0;
     let device = model.devices().first().unwrap().clone();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
+    let mut predictions = Vec::with_capacity(test_dataset.size_hint().0);
+    let mut targets = Vec::with_capacity(test_dataset.size_hint().0);
 
     for item in test_dataset {
-        let prediction = model.forward(item.graph_1, item.graph_2);
-        let loss = loss_fn.forward(
-            prediction.clone(),
-            Tensor::from_ints([if item.label { 1 } else { 0 }], &device),
+        let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
+        predictions.push(prediction.clone());
+         targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device),
         );
-        average_loss += loss.into_scalar().into();
-        item_counts += 1;
         match (prediction.into_scalar().into() > 0.5, item.label) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
@@ -211,7 +206,7 @@ where
     }
 
     ValidationOutput {
-        average_loss: average_loss / item_counts as f64,
+        average_loss: loss_fn.forward(Tensor::cat(predictions, 0), Tensor::cat(targets, 0)).into_scalar().into(),
         true_positive,
         true_negative,
         false_positive,
