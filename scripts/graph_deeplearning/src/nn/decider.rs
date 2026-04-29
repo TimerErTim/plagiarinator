@@ -41,7 +41,7 @@ impl PlagiarismDeciderConfig {
             embedding: EmbeddingConfig::new(self.num_classes, self.embedding_size).init(device),
             compression_layers: compression_layers.into_iter().map(|(pool_config, norm_config)| (pool_config.init(device), norm_config.init(device))).collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
-            comparator: LinearConfig::new(last_layer_features * 2, self.comparator_size).init(device),
+            comparator: LinearConfig::new(last_layer_features, self.comparator_size).init(device),
             output: LinearConfig::new(self.comparator_size, 1).init(device),
         }
     }
@@ -67,13 +67,11 @@ impl<B: Backend> PlagiarismDecider<B> {
                 extracted_graph.nodes = silu(extracted_graph.nodes);
                 extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
             }
-            let nodes_features = extracted_graph.nodes;
-            let dropped_nodes_features = self.dropout.forward(nodes_features);
-            dropped_nodes_features.max_dim(0).squeeze::<1>()
+            extracted_graph.nodes.mean_dim(0).squeeze::<1>()
         };
         let compressed_graph_1 = compress_graph(graph_1);
         let compressed_graph_2 = compress_graph(graph_2);
-        let comparator_input = Tensor::cat(vec![compressed_graph_1, compressed_graph_2], 0);
+        let comparator_input = self.dropout.forward(compressed_graph_1.sub(compressed_graph_2).abs());
 
         let comparator_output = silu(self.comparator.forward(comparator_input));
         let output = self.output.forward(comparator_output);
