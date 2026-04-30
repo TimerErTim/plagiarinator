@@ -43,7 +43,7 @@ pub fn main() {
     };
     println!("graph_deeplearning: using Burn device {device:?}");
 
-    let seed = 36;
+    let seed = 41;
     let batch_size = 4;
     let validation_interval = 10;
     let learning_rate = 0.001;
