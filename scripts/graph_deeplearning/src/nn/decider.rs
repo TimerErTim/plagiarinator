@@ -75,7 +75,7 @@ impl PlagiarismDeciderConfig {
 
 #[derive(Module, Debug)]
 pub struct PlagiarismDecider<B: Backend> {
-    embedding: Embedding<B>,
+    pub embedding: Embedding<B>,
     compression_layers: Vec<(GraphDiffPool<B>, LayerNorm<B>)>,
     dropout: Dropout,
     comparator: Linear<B>,

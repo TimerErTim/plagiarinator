@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use burn::{
     backend::Autodiff,
     grad_clipping::GradientClippingConfig,
@@ -10,8 +12,8 @@ use burn::{
 use data_loading::dataset_loader::load_dataset;
 
 use graph_deeplearning::{
-    loading::{chunked_iter, make_testset_loader, make_trainset_loader, PrefetchIterator},
-    model::PlagiarismTrainItem,
+    loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader, parse_cpp_file},
+    model::{Graph, PlagiarismTrainItem, analyze_plagiarism},
     nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig},
 };
 use rand::SeedableRng;
@@ -93,8 +95,8 @@ pub fn main() {
     let num_train_items =
         cpp_train_dataset.plagiarized_pairs.len() + cpp_train_dataset.authentic_pairs.len();
     let cpp_test_items = make_testset_loader::<InfBackend>(
-        cpp_test_dataset.plagiarized_pairs,
-        cpp_test_dataset.authentic_pairs,
+        cpp_test_dataset.plagiarized_pairs.clone(),
+        cpp_test_dataset.authentic_pairs.clone(),
         &device,
     );
     let train_loader = make_trainset_loader::<AdBackend>(
@@ -140,6 +142,9 @@ pub fn main() {
                 (total_loss.clone() / (validation_interval as f64)).into_scalar()
             );
             total_loss = total_loss.slice_fill([0], 0.0);
+            let item = cpp_test_dataset.plagiarized_pairs.iter().find(|i| i.left_path != i.right_path).cloned().unwrap();
+            let analyzed_output = analyze_plagiarism(parse_cpp_file(item.left_path), parse_cpp_file(item.right_path), model.clone()).unwrap();
+            serde_json::to_writer_pretty(File::create(format!("out/analyzed_output_{idx}.json")).unwrap(), &analyzed_output).unwrap();
         }
 
         let targets = Tensor::from_data(

@@ -6,10 +6,11 @@ use std::path::PathBuf;
 pub use ast::*;
 use burn::{
     module::Module,
-    prelude::Backend,
-    tensor::{activation::softmax, backend::AutodiffBackend, Int},
+    prelude::{Backend, ToElement},
+    tensor::{Int, activation::softmax, backend::AutodiffBackend},
 };
 pub use graph::*;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::nn::PlagiarismDecider;
@@ -22,10 +23,11 @@ pub struct PlagiarismTrainItem<B: Backend> {
     pub label: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlagiarismInsights {
+    pub plagiarism_score: f64,
     pub file_1: AnalyzedFile,
     pub file_2: AnalyzedFile,
-    pub plagiarism_score: f64,
 }
 
 #[derive(Debug, Error)]
@@ -34,6 +36,7 @@ pub enum PlagiarismAnalysisError {
     EmptyAST,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyzedFile {
     pub file_path: PathBuf,
     pub file_content: String,
@@ -41,6 +44,8 @@ pub struct AnalyzedFile {
     pub ast_nodes: Vec<(f64, ASTNode)>,
 }
 
+
+#[derive(Debug, Clone)]
 pub struct ParsedFile {
     pub file_path: PathBuf,
     pub file_content: String,
@@ -52,8 +57,6 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
     file_2: ParsedFile,
     model: PlagiarismDecider<B>,
 ) -> Result<PlagiarismInsights, PlagiarismAnalysisError>
-where
-    B::FloatElem: Into<f64>,
 {
     // Mark model as not requiring gradients
     let model = model.no_grad();
@@ -74,7 +77,7 @@ where
 
     // Perform forward pass in order to get the plagiarism likelihood score
     let score = model.predict_embedded_graphs(embedded_graph_1, embedded_graph_2);
-    let score_float = score.clone().into_scalar().into();
+    let score_float = score.clone().into_scalar().to_f64();
 
     // Perform backward pass in order to get the gradients/influence contribution of the embedded nodes
     let mut grads = score.backward();
@@ -84,8 +87,8 @@ where
             .unwrap()
             .abs()
             .sum_dim(1),
-        0,
-    );
+            0,
+        );
     let node_2_importance = softmax(
         embedded_nodes_2
             .grad_remove(&mut grads)
@@ -107,7 +110,7 @@ where
                 .zip(
                     node_1_importance
                         .iter_dim(0)
-                        .map(|weight_t| weight_t.into_scalar().into()),
+                        .map(|weight_t| weight_t.into_scalar().to_f64()),
                 )
                 .map(|(node, weight)| (weight, node))
                 .collect(),
@@ -122,7 +125,7 @@ where
                 .zip(
                     node_2_importance
                         .iter_dim(0)
-                        .map(|weight_t| weight_t.into_scalar().into()),
+                        .map(|weight_t| weight_t.into_scalar().to_f64()),
                 )
                 .map(|(node, weight)| (weight, node))
                 .collect(),

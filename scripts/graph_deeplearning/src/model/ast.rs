@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone)]
 pub struct FlattenedAST {
     pub nodes: Vec<ASTNode>,
@@ -5,12 +7,28 @@ pub struct FlattenedAST {
     pub edges: Vec<(usize, usize)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ASTNode {
     pub kind_id: u16,
     pub kind_name: String,
     pub is_named: bool,
-    pub range: tree_sitter::Range,
+    pub range: FileRange,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileRange {
+    pub start_line: usize,
+    pub start_column: usize,
+    pub end_line: usize,
+    pub end_column: usize,
+    pub start_byte: usize,
+    pub end_byte: usize,
+}
+
+impl FileRange {
+    pub fn from_treesitter_range(range: tree_sitter::Range) -> Self {
+        Self { start_line: range.start_point.row, start_column: range.start_point.column, end_line: range.end_point.row, end_column: range.end_point.column, start_byte: range.start_byte, end_byte: range.end_byte }
+    }
 }
 
 impl ASTNode {
@@ -19,7 +37,7 @@ impl ASTNode {
             kind_id: node.kind_id(),
             kind_name: node.kind().to_string(),
             is_named: node.is_named(),
-            range: node.range(),
+            range: FileRange::from_treesitter_range(node.range()),
         }
     }
 }
