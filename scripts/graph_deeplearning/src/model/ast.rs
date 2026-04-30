@@ -10,7 +10,7 @@ pub struct ASTNode {
     pub kind_id: u16,
     pub kind_name: String,
     pub is_named: bool,
-    pub range: tree_sitter::Range
+    pub range: tree_sitter::Range,
 }
 
 impl ASTNode {
@@ -56,6 +56,6 @@ impl FlattenedAST {
             }
         }
 
-        FlattenedAST { nodes, edges: edges }
+        FlattenedAST { nodes, edges }
     }
 }

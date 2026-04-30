@@ -27,19 +27,37 @@ impl LanguageDataset {
         }
     }
 
-    pub(crate) fn add_plagiarized_pair(&mut self, left_path: impl Into<PathBuf>, right_path: impl Into<PathBuf>) {
+    pub(crate) fn add_plagiarized_pair(
+        &mut self,
+        left_path: impl Into<PathBuf>,
+        right_path: impl Into<PathBuf>,
+    ) {
         let left_path = left_path.into();
         let right_path = right_path.into();
-        self.plagiarized_pairs.push(FilePair { left_path, right_path });
+        self.plagiarized_pairs.push(FilePair {
+            left_path,
+            right_path,
+        });
     }
 
-    pub(crate) fn add_authentic_pair(&mut self, left_path: impl Into<PathBuf>, right_path: impl Into<PathBuf>) {
+    pub(crate) fn add_authentic_pair(
+        &mut self,
+        left_path: impl Into<PathBuf>,
+        right_path: impl Into<PathBuf>,
+    ) {
         let left_path = left_path.into();
         let right_path = right_path.into();
-        self.authentic_pairs.push(FilePair { left_path, right_path });
+        self.authentic_pairs.push(FilePair {
+            left_path,
+            right_path,
+        });
     }
 
-    pub fn split_dataset(&self, ratio: f32, rng: &mut impl Rng) -> (LanguageDataset, LanguageDataset) {
+    pub fn split_dataset(
+        &self,
+        ratio: f32,
+        rng: &mut impl Rng,
+    ) -> (LanguageDataset, LanguageDataset) {
         use rand::seq::SliceRandom;
 
         // Clone and shuffle pairs
@@ -85,5 +103,8 @@ pub fn load_dataset(
 ) -> Result<PlagiarismDataset, String> {
     let cpp_dataset = load_cpp_dataset(cpp_dataset_root)?;
     let python_dataset = LanguageDataset::new("python");
-    Ok(PlagiarismDataset { cpp_dataset, python_dataset })
+    Ok(PlagiarismDataset {
+        cpp_dataset,
+        python_dataset,
+    })
 }

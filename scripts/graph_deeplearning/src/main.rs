@@ -158,7 +158,11 @@ pub fn main() {
             0,
         );
 
-        println!("predictions: {}\ntargets: {}", predictions.to_data(), targets.to_data());
+        println!(
+            "predictions: {}\ntargets: {}",
+            predictions.to_data(),
+            targets.to_data()
+        );
         let loss = loss_fn.forward(predictions, targets);
         total_loss = total_loss.add(loss.clone().inner());
         let mut grads = loss.backward();
@@ -195,8 +199,7 @@ where
     for item in test_dataset {
         let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
         predictions.push(prediction.clone());
-         targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device),
-        );
+        targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
         match (prediction.into_scalar().into() > 0.5, item.label) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
@@ -206,7 +209,10 @@ where
     }
 
     ValidationOutput {
-        average_loss: loss_fn.forward(Tensor::cat(predictions, 0), Tensor::cat(targets, 0)).into_scalar().into(),
+        average_loss: loss_fn
+            .forward(Tensor::cat(predictions, 0), Tensor::cat(targets, 0))
+            .into_scalar()
+            .into(),
         true_positive,
         true_negative,
         false_positive,

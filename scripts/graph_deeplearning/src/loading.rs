@@ -1,8 +1,15 @@
 use std::{
-    any::Any, fs::File, io::{BufReader, Read}, marker::PhantomData, panic::{UnwindSafe, catch_unwind}, path::Path, sync::{
+    any::Any,
+    fs::File,
+    io::{BufReader, Read},
+    marker::PhantomData,
+    panic::{catch_unwind, UnwindSafe},
+    path::Path,
+    sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Receiver,
-    }, thread::{self, JoinHandle}
+    },
+    thread::{self, JoinHandle},
 };
 
 use burn::prelude::Backend;
@@ -56,15 +63,19 @@ impl<B: Backend> PlagiarismTestSetLoader<B> {
         all_pairs.filter_map(|(pair, label)| {
             Some(PlagiarismTrainItem {
                 graph_1: Graph::from_treesitter_ast(
-                    parse_cpp_to_tree(BufReader::new(File::open(pair.left_path.clone()).expect(
-                        &format!("Failed to open file: {}", pair.left_path.display()),
-                    ))),
+                    parse_cpp_to_tree(BufReader::new(
+                        File::open(pair.left_path.clone()).unwrap_or_else(|_| {
+                            panic!("Failed to open file: {}", pair.left_path.display())
+                        }),
+                    )),
                     &self.device,
                 )?,
                 graph_2: Graph::from_treesitter_ast(
-                    parse_cpp_to_tree(BufReader::new(File::open(pair.right_path.clone()).expect(
-                        &format!("Failed to open file: {}", pair.right_path.display()),
-                    ))),
+                    parse_cpp_to_tree(BufReader::new(
+                        File::open(pair.right_path.clone()).unwrap_or_else(|_| {
+                            panic!("Failed to open file: {}", pair.right_path.display())
+                        }),
+                    )),
                     &self.device,
                 )?,
                 label,
@@ -109,15 +120,15 @@ where
         // Pad both lists to be equal in length by repeating elements as necessary
         let max_len = plagiarized_pairs.len().max(authentic_pairs.len());
 
-        let padded_plagiarized = (0..max_len)
-            .map(|i| (&plagiarized_pairs[i % plagiarized_pairs.len()], true));
+        let padded_plagiarized =
+            (0..max_len).map(|i| (&plagiarized_pairs[i % plagiarized_pairs.len()], true));
 
-        let padded_authentic = (0..max_len)
-            .map(|i| (&authentic_pairs[i % authentic_pairs.len()], false));
+        let padded_authentic =
+            (0..max_len).map(|i| (&authentic_pairs[i % authentic_pairs.len()], false));
 
         let mut all_pairs = padded_plagiarized
             .chain(padded_authentic)
-            .map(|(pair, label)| (shuffle_pair(&pair, &mut rng), label))
+            .map(|(pair, label)| (shuffle_pair(pair, &mut rng), label))
             .collect::<Vec<_>>();
 
         all_pairs.shuffle(&mut rng);
@@ -127,18 +138,22 @@ where
     .filter_map(move |(pair, label)| {
         Some(PlagiarismTrainItem {
             graph_1: Graph::from_treesitter_ast(
-                parse_cpp_to_tree(BufReader::new(File::open(pair.left_path.clone()).expect(
-                    &format!("Failed to open file: {}", pair.left_path.display()),
-                ))),
+                parse_cpp_to_tree(BufReader::new(
+                    File::open(pair.left_path.clone()).unwrap_or_else(|_| {
+                        panic!("Failed to open file: {}", pair.left_path.display())
+                    }),
+                )),
                 &device,
             )?,
             graph_2: Graph::from_treesitter_ast(
-                parse_cpp_to_tree(BufReader::new(File::open(pair.right_path.clone()).expect(
-                    &format!("Failed to open file: {}", pair.right_path.display()),
-                ))),
+                parse_cpp_to_tree(BufReader::new(
+                    File::open(pair.right_path.clone()).unwrap_or_else(|_| {
+                        panic!("Failed to open file: {}", pair.right_path.display())
+                    }),
+                )),
                 &device,
             )?,
-            label: label,
+            label,
         })
     });
     items
@@ -222,7 +237,7 @@ where
 {
     let mut chunk = Vec::with_capacity(chunk_size);
     std::iter::from_fn(move || {
-        while let Some(item) = iterator.next() {
+        for item in iterator.by_ref() {
             chunk.push(item);
             if chunk.len() == chunk_size {
                 let chunk = std::mem::replace(&mut chunk, Vec::with_capacity(chunk_size));

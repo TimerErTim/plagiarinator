@@ -1,22 +1,26 @@
-use std::hash::BuildHasher;
-use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 use std::fs;
+use std::path::{Path, PathBuf};
 
-use fxhash::{FxBuildHasher, FxHashMap, FxHashSet, FxHasher};
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
 use itertools::Itertools;
 
 use crate::dataset_loader::LanguageDataset;
 
-
-
 /// Reads the ground-truth-static-anon.txt format into a map of assignment -> groups of student ids.
-fn read_ground_truth_static(gt_path: impl AsRef<Path>) -> Result<FxHashMap<String, Vec<Vec<String>>>, String> {
+fn read_ground_truth_static(
+    gt_path: impl AsRef<Path>,
+) -> Result<FxHashMap<String, Vec<Vec<String>>>, String> {
     let gt_path = gt_path.as_ref();
-    let content = fs::read_to_string(gt_path)
-        .map_err(|e| format!("Failed to read ground truth file {}: {}", gt_path.display(), e))?;
+    let content = fs::read_to_string(gt_path).map_err(|e| {
+        format!(
+            "Failed to read ground truth file {}: {}",
+            gt_path.display(),
+            e
+        )
+    })?;
 
-    let mut assignment_to_groups: FxHashMap<String, Vec<Vec<String>>> = FxHashMap::with_hasher(FxBuildHasher::new());
+    let mut assignment_to_groups: FxHashMap<String, Vec<Vec<String>>> =
+        FxHashMap::with_hasher(FxBuildHasher::new());
     let mut current_assignment: Option<String> = None;
 
     for raw_line in content.lines() {
@@ -62,7 +66,9 @@ fn assignment_dir(dataset_root: &Path, assignment_id: &str) -> PathBuf {
 fn find_student_files(assignment_dir: impl AsRef<Path>) -> FxHashMap<String, PathBuf> {
     let assignment_dir = assignment_dir.as_ref();
     let mut id_to_path: FxHashMap<String, PathBuf> = FxHashMap::default();
-    let Ok(entries) = fs::read_dir(assignment_dir) else { return id_to_path; };
+    let Ok(entries) = fs::read_dir(assignment_dir) else {
+        return id_to_path;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
         if !path.is_file() {
@@ -101,25 +107,40 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
         let assignment_dir = assignment_dir(dataset_root, &assignment_id);
         let student_id_to_path = find_student_files(assignment_dir);
 
-        let plagiarized_group_paths = plagiarized_groups.into_iter()
+        let plagiarized_group_paths = plagiarized_groups
+            .into_iter()
             .map(|plagiarized_group| {
-                plagiarized_group.into_iter().map(|student_id| student_id_to_path.get(&student_id).cloned()).filter_map(|i| i).collect_vec()
-            }).collect_vec();
-        let plagiarzed_paths_set = FxHashSet::from_iter(plagiarized_group_paths.iter().flatten().cloned());
+                plagiarized_group
+                    .into_iter()
+                    .map(|student_id| student_id_to_path.get(&student_id).cloned())
+                    .flatten()
+                    .collect_vec()
+            })
+            .collect_vec();
+        let plagiarzed_paths_set =
+            FxHashSet::from_iter(plagiarized_group_paths.iter().flatten().cloned());
 
         let plagiarized_path_pairs = plagiarized_group_paths
-            .iter().cloned()
-            .map(|group| {
-                let mut pairs: Vec<_> = group.iter().map(|path| (path.clone(), path.clone())).collect();
+            .iter()
+            .cloned()
+            .flat_map(|group| {
+                let mut pairs: Vec<_> = group
+                    .iter()
+                    .map(|path| (path.clone(), path.clone()))
+                    .collect();
                 pairs.extend(all_pairs(group));
                 pairs
             })
-            .flatten()
             .collect_vec();
 
-        let unplagiarized_paths_set = student_id_to_path.values().filter(|k| !plagiarzed_paths_set.contains(*k)).cloned().collect::<FxHashSet<_>>();
+        let unplagiarized_paths_set = student_id_to_path
+            .values()
+            .filter(|k| !plagiarzed_paths_set.contains(*k))
+            .cloned()
+            .collect::<FxHashSet<_>>();
 
-        let unplagiarzed_paths = fastrand::choose_multiple(unplagiarized_paths_set, plagiarzed_paths_set.len());
+        let unplagiarzed_paths =
+            fastrand::choose_multiple(unplagiarized_paths_set, plagiarzed_paths_set.len());
 
         let authentic_path_pairs = all_pairs(unplagiarzed_paths);
 
@@ -143,7 +164,9 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
 
 fn is_cpp_file(path: impl AsRef<Path>) -> bool {
     let path = path.as_ref();
-    path.extension().map(|ext| ext == "cpp" || ext == "hpp").unwrap_or(false)
+    path.extension()
+        .map(|ext| ext == "cpp" || ext == "hpp")
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -166,18 +189,28 @@ mod tests {
         // files under src/A2016/Z1/Z1
         let assign_dir = root.join("src").join("A2016").join("Z1").join("Z1");
         fs::create_dir_all(&assign_dir).unwrap();
-        for sid in ["student001.cpp", "student002.cpp", "student003.cpp", "student004.cpp", "student005.cpp", "student006.cpp", "student007.cpp"] {
+        for sid in [
+            "student001.cpp",
+            "student002.cpp",
+            "student003.cpp",
+            "student004.cpp",
+            "student005.cpp",
+            "student006.cpp",
+            "student007.cpp",
+        ] {
             fs::write(assign_dir.join(sid), "int main(){}\n").unwrap();
         }
 
         let dataset = load_cpp_dataset(root).unwrap();
         assert!(!dataset.plagiarized_pairs.is_empty());
         assert!(!dataset.authentic_pairs.is_empty());
-        for e in dataset.plagiarized_pairs.iter().chain(dataset.authentic_pairs.iter()) {
+        for e in dataset
+            .plagiarized_pairs
+            .iter()
+            .chain(dataset.authentic_pairs.iter())
+        {
             assert!(e.left_path.is_file());
             assert!(e.right_path.is_file());
         }
     }
 }
-
-

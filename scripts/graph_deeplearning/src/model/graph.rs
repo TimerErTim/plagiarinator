@@ -1,12 +1,10 @@
-use std::{
-    fmt::{Display, Write},
-    num::NonZeroUsize,
-};
+use std::fmt::{Display, Write};
 
 use burn::{
-    Tensor, prelude::Backend, tensor::{BasicOps, Float, Int, Slice, TensorKind}
+    prelude::Backend,
+    tensor::{BasicOps, Float, Int, TensorKind},
+    Tensor,
 };
-use fxhash::{FxHashMap, FxHashSet};
 use tree_sitter::Tree;
 
 use crate::model::FlattenedAST;
@@ -22,19 +20,18 @@ pub struct Graph<B: Backend, D: TensorKind<B> = Float> {
 
 impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
     pub fn new(nodes: Tensor<B, 2, D>, edges: Tensor<B, 2, Float>) -> Self {
-        Graph {
-            nodes,
-            edges,
-        }
+        Graph { nodes, edges }
     }
 
     /// Makes sure that every edge/src->target pair is present at most once.
-    pub fn normalized_adjacency_matrix(&self) -> Tensor<B, 2, Float>
-    {
+    pub fn normalized_adjacency_matrix(&self) -> Tensor<B, 2, Float> {
         let degree_matrix = self.edges.clone().sum_dim(0) + 1; // For every node, sum the edges reachable from it
         let degree_matrix_sqrt = degree_matrix.powf_scalar(-0.5); // Inverse square root of the degree matrix
-        let normalized_adjacency_matrix = self.edges.clone().mul(degree_matrix_sqrt.clone()).mul(degree_matrix_sqrt.transpose());
-        normalized_adjacency_matrix
+
+        self.edges
+            .clone()
+            .mul(degree_matrix_sqrt.clone())
+            .mul(degree_matrix_sqrt.transpose())
     }
 
     /// Switches the source and target of the edges
@@ -56,7 +53,12 @@ impl<B: Backend, D: TensorKind<B> + BasicOps<B>> Display for Graph<B, D> {
             f,
             "Graph (Nodes: {}, Edges: {})",
             self.nodes.shape()[0],
-            self.edges.clone().greater_elem(0.0).int().sum().into_scalar()
+            self.edges
+                .clone()
+                .greater_elem(0.0)
+                .int()
+                .sum()
+                .into_scalar()
         )?;
         writeln!(f, "Nodes: {}", self.nodes)?;
         Ok(())
@@ -72,7 +74,8 @@ impl<B: Backend> Graph<B, Int> {
     /// Assumes that the AST edges point from child to parent
     /// Returns a graph with bidirectional edges from child to parent
     pub fn from_flattened_ast(ast: &FlattenedAST, device: &B::Device) -> Option<Self> {
-        let nodes_tensors = ast.nodes
+        let nodes_tensors = ast
+            .nodes
             .iter()
             .map(|node| Tensor::<_, 1, Int>::from_ints([node.kind_id as i32], device))
             .collect::<Vec<_>>();
@@ -80,10 +83,11 @@ impl<B: Backend> Graph<B, Int> {
             return None;
         }
         let nodes_tensor = Tensor::cat(nodes_tensors, 0);
-        
-        let mut edges_tensor = Tensor::zeros([nodes_tensor.shape()[0], nodes_tensor.shape()[0]], device);
+
+        let mut edges_tensor =
+            Tensor::zeros([nodes_tensor.shape()[0], nodes_tensor.shape()[0]], device);
         for (src, dst) in ast.edges.iter() {
-            edges_tensor = edges_tensor.slice_fill([*dst as usize, *src as usize], 1.0);
+            edges_tensor = edges_tensor.slice_fill([(*dst), (*src)], 1.0);
         }
         let mut graph = Graph {
             nodes: nodes_tensor.unsqueeze_dim(1),
@@ -100,9 +104,9 @@ pub fn graph_convolution<B: Backend>(
     bias: Option<Tensor<B, 1>>,
 ) -> Graph<B> {
     let normalized_adjacency_matrix = graph.normalized_adjacency_matrix();
-    // Aggregate features of nodes pointing to us, transpose would result in features we point to 
+    // Aggregate features of nodes pointing to us, transpose would result in features we point to
     // (but transposing would be required for all downstream operations)
-    let mut neighbor_features = normalized_adjacency_matrix  
+    let mut neighbor_features = normalized_adjacency_matrix
         .matmul(graph.nodes)
         .matmul(weights);
     if let Some(bias) = bias {
