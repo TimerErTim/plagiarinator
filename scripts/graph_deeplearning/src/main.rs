@@ -1,20 +1,13 @@
-use std::fs::File;
+use std::{fs::File, path::PathBuf};
 
 use burn::{
-    backend::Autodiff,
-    grad_clipping::GradientClippingConfig,
-    module::{AutodiffModule, Module},
-    nn::loss::BinaryCrossEntropyLossConfig,
-    optim::{decay::WeightDecayConfig, AdamConfig, GradientsParams, Optimizer},
-    prelude::Backend,
-    Tensor,
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}
 };
+use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
 
 use graph_deeplearning::{
-    loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader, parse_cpp_file},
-    model::{Graph, PlagiarismTrainItem, analyze_plagiarism},
-    nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig},
+    get_model_config, loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader, parse_cpp_file}, model::{Graph, PlagiarismTrainItem, analyze_plagiarism}, nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig}
 };
 use rand::SeedableRng;
 
@@ -47,10 +40,18 @@ pub fn main() {
 
     let seed = 41;
     let batch_size = 4;
-    let validation_interval = 10;
+    let validation_interval = 50;
+    let checkpoint_interval = 100;
     let learning_rate = 0.001;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
     AdBackend::seed(&device, seed);
+    let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
+
+    let checkpoint_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/checkpoints"));
+    std::fs::create_dir_all(&checkpoint_dir).unwrap();
+    let analysis_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/analysis"));
+    std::fs::create_dir_all(&analysis_dir).unwrap();
+    
 
     let mut dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
     // Make equal split of plagiarized and authentic pairs
@@ -110,19 +111,7 @@ pub fn main() {
     let batched_loader = chunked_iter(train_loader, batch_size);
 
     // init model
-    let model_config = PlagiarismDeciderConfig::new(
-        u16::MAX as usize + 1,
-        64,
-        128,
-        0.1,
-        vec![
-            PlagiarismDeciderLayerConfig::new(128, 1024),
-            PlagiarismDeciderLayerConfig::new(392, 128),
-            PlagiarismDeciderLayerConfig::new(1024, 16),
-            PlagiarismDeciderLayerConfig::new(4096, 1),
-        ],
-    );
-    let mut model = model_config.init::<AdBackend>(&device);
+    let mut model = get_model_config().init::<AdBackend>(&device);
     println!("model: {model}");
     println!("num_train_items: {num_train_items}");
 
@@ -132,9 +121,21 @@ pub fn main() {
         .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
+    let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
 
     let mut total_loss = Tensor::zeros([1], &device);
     for (idx, batch) in batched_loader.enumerate() {
+        if idx % checkpoint_interval == 0 {
+            // Save model
+            let mut store = burn::store::BurnpackStore::from_file(checkpoint_dir.join(format!("model_{}_{idx}.bpk", &run_timestamp)))
+                .metadata("run_timestamp", run_timestamp.clone())
+                .metadata("step", idx.to_string());
+            store.collect_from(&model).unwrap();
+
+            let recorder = NamedMpkGzFileRecorder::<FullPrecisionSettings>::new();
+            model.clone().save_file(checkpoint_dir.join(format!("model_{}_{idx}", &run_timestamp)), &recorder).unwrap();
+        }
+
         if idx % validation_interval == 0 {
             let validation_output = validate(model.valid(), cpp_test_items.iter());
             println!(
@@ -144,7 +145,7 @@ pub fn main() {
             total_loss = total_loss.slice_fill([0], 0.0);
             let item = cpp_test_dataset.plagiarized_pairs.iter().find(|i| i.left_path != i.right_path).cloned().unwrap();
             let analyzed_output = analyze_plagiarism(parse_cpp_file(item.left_path), parse_cpp_file(item.right_path), model.clone()).unwrap();
-            serde_json::to_writer_pretty(File::create(format!("out/analyzed_output_{idx}.json")).unwrap(), &analyzed_output).unwrap();
+            serde_json::to_writer_pretty(File::create(analysis_dir.join(format!("analyzed_output_{idx}.json"))).unwrap(), &analyzed_output).unwrap();
         }
 
         let targets = Tensor::from_data(

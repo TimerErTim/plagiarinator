@@ -13,6 +13,7 @@ default_packages_file = "base-requirements.txt"
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
 TORCH_CUDA_VERSION="cu128"
+MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260430_183001/checkpoints/model_20260430_183001_3200.bpk"
 
 [tasks.install_dependencies]
 run = "pip install -r requirements.txt -e ."

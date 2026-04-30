@@ -81,22 +81,19 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
 
     // Perform backward pass in order to get the gradients/influence contribution of the embedded nodes
     let mut grads = score.backward();
-    let node_1_importance = softmax(
-        embedded_nodes_1
+    let node_1_importance =         embedded_nodes_1
             .grad_remove(&mut grads)
             .unwrap()
-            .abs()
-            .sum_dim(1),
-            0,
-        );
-    let node_2_importance = softmax(
+            .sum_dim(1);
+    let node_2_importance = 
         embedded_nodes_2
-            .grad_remove(&mut grads)
-            .unwrap()
-            .abs()
-            .sum_dim(1),
-        0,
-    );
+        .grad_remove(&mut grads)
+        .unwrap()
+        .sum_dim(1);
+    // Scale importance
+    let highest_value = node_1_importance.clone().max_abs().max_pair(node_2_importance.clone().max_abs()).unsqueeze();
+    let node_1_importance = node_1_importance.div(highest_value.clone());
+    let node_2_importance = node_2_importance.div(highest_value);
 
     // Transform data into insights
     let insights = PlagiarismInsights {
