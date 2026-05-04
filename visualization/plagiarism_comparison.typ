@@ -1,17 +1,20 @@
 #import "@preview/lilaq:0.6.0" as lq;
-#set page(fill: gray.lighten(80%), width: auto, height: auto, margin: 1em);
+#import "@preview/catppuccin:1.1.0": latte
+#let base-colors = latte.colors.pairs().filter(((_, color)) => color.accent == false).map(((name, color)) => (name, color.rgb)).to-dict()
+#let accent-colors = latte.colors.pairs().filter(((_, color)) => color.accent == true).map(((name, color)) => (name, color.rgb)).to-dict()
+#set page(fill: base-colors.base, width: auto, height: auto, margin: 1em);
 
-#let analysis = json("../out/plag1-self.json")
+#let analysis = json("../out/plag2.json")
 
 #let highlight_file(
   file,
   color_fn: weight => gradient
     .linear(
-      color.red.darken(50%).transparentize(50%),
-      color.gray.transparentize(98%),
-      color.green.darken(50%).transparentize(50%),
+      accent-colors.green.transparentize(60%),
+      white.transparentize(100%),
+      accent-colors.red.transparentize(60%),
     )
-    .sample(50% + weight * 75%),
+    .sample(50% + calc.abs(weight) * 25%),
 ) = {
   let file_lines = file.file_content.split("\n")
   let file_symbols = file_lines.map(line => line.split("").slice(1).map(symbol => (0, symbol)))

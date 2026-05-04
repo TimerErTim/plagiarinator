@@ -1,6 +1,7 @@
 use std::fmt::{Display, Write};
 
 use burn::{
+    nn::SwiGlu,
     prelude::Backend,
     tensor::{BasicOps, Float, Int, TensorKind},
     Tensor,
@@ -19,7 +20,9 @@ pub struct Graph<B: Backend, D: TensorKind<B> = Float> {
 }
 
 impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
-    pub fn new(nodes: Tensor<B, 2, D>, edges: Tensor<B, 2, Float>) -> Self {
+    pub fn new(nodes: Tensor<B, 2, D>, edges: Tensor<B, 2, Float>) -> Self where D: BasicOps<B> {
+        assert_eq!(nodes.shape()[0], edges.shape()[0], "Number of nodes and edges must match");
+        assert_eq!(edges.shape()[0], edges.shape()[1], "Adjacency matrix must be square");
         Graph { nodes, edges }
     }
 
@@ -44,6 +47,27 @@ impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
         // Symmetrize the edge matrix: edges = edges + edges^T, but clamp to 1.0 (since it's adjacency)
         let edges_t = self.edges.clone().transpose();
         self.edges = self.edges.clone().max_pair(edges_t);
+    }
+
+    pub fn remove_node(&mut self, node_index: usize) -> Result<(), String>
+    where
+        D: BasicOps<B>,
+    {
+        if self.nodes.shape()[0] <= 1 {
+            return Err(format!("Cannot remove node {node_index} from graph with only one node"));
+        }
+
+        self.nodes.inplace(|nodes| {
+            let elements = nodes.shape()[0];
+            nodes.narrow(0, node_index, elements - 1)
+        });
+        self.edges.inplace(|edges| {
+            let elements = edges.shape()[0];
+            edges
+                .narrow(0, node_index, elements - 1)
+                .narrow(1, node_index, elements - 1)
+        });
+        Ok(())
     }
 }
 
@@ -94,24 +118,22 @@ impl<B: Backend> Graph<B, Int> {
             edges: edges_tensor,
         };
         graph.make_symmetric();
+        // Remove root node due increase numerical stability
+        graph.remove_node(0).ok()?;
         Some(graph)
     }
 }
 
 pub fn graph_convolution<B: Backend>(
     graph: Graph<B, Float>,
-    weights: Tensor<B, 2>,
-    bias: Option<Tensor<B, 1>>,
+    swiglu: SwiGlu<B>,
 ) -> Graph<B> {
     let normalized_adjacency_matrix = graph.normalized_adjacency_matrix();
     // Aggregate features of nodes pointing to us, transpose would result in features we point to
     // (but transposing would be required for all downstream operations)
-    let mut neighbor_features = normalized_adjacency_matrix
-        .matmul(graph.nodes)
-        .matmul(weights);
-    if let Some(bias) = bias {
-        neighbor_features = neighbor_features + bias.unsqueeze();
-    }
+    let neighbor_features = normalized_adjacency_matrix
+        .matmul(graph.nodes);
+    let neighbor_features = swiglu.forward(neighbor_features);
     Graph {
         nodes: neighbor_features,
         edges: graph.edges,

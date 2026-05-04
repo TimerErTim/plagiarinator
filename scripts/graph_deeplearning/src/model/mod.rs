@@ -104,6 +104,7 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
                 .ast
                 .nodes
                 .into_iter()
+                .skip(1)
                 .zip(
                     node_1_importance
                         .iter_dim(0)
@@ -119,6 +120,7 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
                 .ast
                 .nodes
                 .into_iter()
+                .skip(1) // Because we removed the root node in graph
                 .zip(
                     node_2_importance
                         .iter_dim(0)

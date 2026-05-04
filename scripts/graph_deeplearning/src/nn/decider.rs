@@ -1,16 +1,10 @@
 use burn::{
-    config::Config,
-    module::Module,
-    nn::{
+    Tensor, config::Config, module::Module, nn::{
         Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear,
-        LinearConfig,
-    },
-    prelude::Backend,
-    tensor::{
-        activation::{sigmoid, silu},
-        Int,
-    },
-    Tensor,
+        LinearConfig, SwiGlu, SwiGluConfig,
+    }, prelude::Backend, tensor::{
+        Int, activation::{sigmoid, silu}
+    }
 };
 
 use crate::{
@@ -98,10 +92,9 @@ impl<B: Backend> PlagiarismDecider<B> {
         let mut extracted_graph = embedded_graph;
         for (pooling_layer, norm_layer) in &self.compression_layers {
             extracted_graph = pooling_layer.forward(extracted_graph);
-            extracted_graph.nodes = silu(extracted_graph.nodes);
             extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
         }
-        extracted_graph.nodes.mean_dim(0).squeeze_dim(0)
+        extracted_graph.nodes.max_dim(0).squeeze_dim(0)
     }
 
     pub fn predict_embedded_graphs(

@@ -1,9 +1,9 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Initializer, Linear, LinearConfig},
+    nn::{Initializer, Linear, LinearConfig, SwiGlu, SwiGluConfig},
     prelude::Backend,
-    tensor::activation::{leaky_relu, log_softmax},
+    tensor::activation::{leaky_relu, log_softmax, silu},
 };
 
 use crate::model::{graph_convolution, Graph};
@@ -25,16 +25,15 @@ pub struct GraphConvolutionConfig {
 
 #[derive(Module, Debug)]
 pub struct GraphConvolution<B: Backend> {
-    weights: Linear<B>,
+    swiglu: SwiGlu<B>,
 }
 
 impl GraphConvolutionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> GraphConvolution<B> {
-        let config = LinearConfig::new(self.input_features, self.output_features)
+        GraphConvolution { swiglu: SwiGluConfig::new(self.input_features, self.output_features)
             .with_bias(self.with_bias)
-            .with_initializer(self.initializer.clone());
-        let weights = config.init(device);
-        GraphConvolution { weights }
+            .with_initializer(self.initializer.clone())
+            .init(device) }
     }
 }
 
@@ -42,8 +41,7 @@ impl<B: Backend> GraphConvolution<B> {
     pub fn forward(&self, input: Graph<B>) -> Graph<B> {
         graph_convolution(
             input,
-            self.weights.weight.val(),
-            self.weights.bias.as_ref().map(|bias| bias.val()),
+            self.swiglu.clone(),
         )
     }
 }
@@ -83,7 +81,7 @@ impl GraphDiffPoolConfig {
 impl<B: Backend> GraphDiffPool<B> {
     pub fn forward(&self, input: Graph<B>) -> Graph<B> {
         let soft_assignments = log_softmax(self.pooling_layer.forward(input.clone()).nodes, 0);
-        let node_embeddings = leaky_relu(self.embed_layer.forward(input.clone()).nodes, 0.1);
+        let node_embeddings = self.embed_layer.forward(input.clone()).nodes;
         let super_nodes = soft_assignments.clone().transpose().matmul(node_embeddings);
         let super_edges = soft_assignments
             .clone()

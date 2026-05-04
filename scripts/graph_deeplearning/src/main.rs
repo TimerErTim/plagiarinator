@@ -39,7 +39,7 @@ pub fn main() {
     println!("graph_deeplearning: using Burn device {device:?}");
 
     let seed = 41;
-    let batch_size = 4;
+    let batch_size = 8;
     let validation_interval = 50;
     let checkpoint_interval = 100;
     let learning_rate = 0.001;
