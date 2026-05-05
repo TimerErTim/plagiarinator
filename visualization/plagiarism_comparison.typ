@@ -4,7 +4,7 @@
 #let accent-colors = latte.colors.pairs().filter(((_, color)) => color.accent == true).map(((name, color)) => (name, color.rgb)).to-dict()
 #set page(fill: base-colors.base, width: auto, height: auto, margin: 1em);
 
-#let analysis = json("../out/plag2.json")
+#let analysis = json("../out/auth2.json")
 
 #let highlight_file(
   file,

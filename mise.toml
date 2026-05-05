@@ -13,7 +13,7 @@ typst = "0.14.2"
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
-MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260504_192451/checkpoints/model_20260504_192451_600.bpk"
+MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260504_215922/checkpoints/model_20260504_215922_3000.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 
@@ -31,3 +31,7 @@ run = "cargo run --release --manifest-path scripts/radiate_config_optimizer/Carg
 [tasks."run:graph_deeplearning"]
 dir = "{{ config_root }}"
 run = "cargo run --release --package graph_deeplearning"
+
+[tasks."build:graph_inference"]
+dir = "{{ config_root }}"
+run = "cargo build --release --package graph_deeplearning --bin run_inference"

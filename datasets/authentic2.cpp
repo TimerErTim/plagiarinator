@@ -1,33 +1,31 @@
-#include <cstdio>
-#include <cmath>
+#include <iostream>
+#include <vector>
 
-bool check_prime(unsigned int candidate) {
-    if (candidate < 2) return false;
-    if (candidate == 2 || candidate == 3) return true;
-    if (candidate % 2 == 0 || candidate % 3 == 0) return false;
-
-    unsigned int limit = static_cast<unsigned int>(std::sqrt(candidate));
-    for (unsigned int d = 5; d <= limit; d += 6) {
-        if (candidate % d == 0 || candidate % (d + 2) == 0)
+bool is_prime(int n) {
+    if (n < 2) return false;
+    if (n == 2) return true;
+    if (n % 2 == 0) return false;
+    for (int i = 3; i * (long long)i <= n; i += 2) {
+        if (n % i == 0)
             return false;
     }
     return true;
 }
 
 int main() {
-    const int target_count = 1000;
-    int found = 0;
-    unsigned int candidate = 2;
-    bool first = true;
-    while (found < target_count) {
-        if (check_prime(candidate)) {
-            if (!first) std::printf(" ");
-            std::printf("%u", candidate);
-            ++found;
-            first = false;
+    std::vector<int> primes;
+    int candidate = 2;
+    while (primes.size() < 1000) {
+        if (is_prime(candidate)) {
+            primes.push_back(candidate);
         }
-        ++candidate;
+        candidate++;
     }
-    std::printf("\n");
+    for (size_t i = 0; i < primes.size(); ++i) {
+        std::cout << primes[i];
+        if (i != primes.size() - 1)
+            std::cout << " ";
+    }
+    std::cout << std::endl;
     return 0;
 }
