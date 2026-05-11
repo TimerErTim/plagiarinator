@@ -49,6 +49,7 @@ impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
         self.edges = self.edges.clone().max_pair(edges_t);
     }
 
+    /// Removes a node from the graph, removing all edges pointing to and from the node
     pub fn remove_node(&mut self, node_index: usize) -> Result<(), String>
     where
         D: BasicOps<B>,
@@ -117,7 +118,7 @@ impl<B: Backend> Graph<B, Int> {
             nodes: nodes_tensor.unsqueeze_dim(1),
             edges: edges_tensor,
         };
-        graph.make_symmetric();
+        // graph.make_symmetric();  // Remove symmetry if structural information is important
         // Remove root node due increase numerical stability
         graph.remove_node(0).ok()?;
         Some(graph)

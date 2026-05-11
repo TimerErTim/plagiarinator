@@ -42,7 +42,7 @@ pub fn main() {
     let batch_size = 8;
     let validation_interval = 50;
     let checkpoint_interval = 100;
-    let learning_rate = 0.001;
+    let learning_rate = 0.002;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
     AdBackend::seed(&device, seed);
     let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();

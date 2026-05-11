@@ -13,7 +13,7 @@ typst = "0.14.2"
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
-MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260504_215922/checkpoints/model_20260504_215922_3000.bpk"
+MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260511_160716/checkpoints/model_20260511_160716_2300.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 

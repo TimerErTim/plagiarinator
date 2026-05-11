@@ -136,6 +136,11 @@ where
     })
     .flatten()
     .filter_map(move |(pair, label)| {
+        // Skip self-plagiarism pairs, because model architecture forces similarity to be 1.0 anyways
+        if pair.left_path == pair.right_path {
+            return None;
+        }
+
         Some(PlagiarismTrainItem {
             graph_1: Graph::from_treesitter_ast(
                 parse_cpp_to_tree(BufReader::new(

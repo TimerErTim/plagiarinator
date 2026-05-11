@@ -43,6 +43,7 @@ impl ASTNode {
 }
 
 impl FlattenedAST {
+    // Assumes that the AST edges point from tree child to tree parent
     pub fn from_treesitter_ast(ast: tree_sitter::Tree) -> Self {
         let mut nodes = Vec::with_capacity(ast.root_node().descendant_count());
         let mut edges = Vec::with_capacity(ast.root_node().descendant_count());
