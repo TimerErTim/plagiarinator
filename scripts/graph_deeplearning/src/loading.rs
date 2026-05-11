@@ -97,7 +97,7 @@ pub fn make_testset_loader<B: Backend>(
 }
 
 pub fn make_trainset_loader<B: Backend>(
-    plagiarized_pairs: Vec<FilePair>,
+    mut plagiarized_pairs: Vec<FilePair>,
     authentic_pairs: Vec<FilePair>,
     mut rng: impl Rng + Send + 'static + UnwindSafe,
     device: &B::Device,
@@ -115,6 +115,10 @@ where
             pair.clone()
         }
     }
+    
+    // Skip self-plagiarism pairs, because model architecture forces similarity to be 1.0 anyways
+    plagiarized_pairs.retain(|pair| pair.left_path != pair.right_path);
+    
     let device = device.clone();
     let items = std::iter::repeat_with(move || {
         // Pad both lists to be equal in length by repeating elements as necessary
@@ -136,11 +140,6 @@ where
     })
     .flatten()
     .filter_map(move |(pair, label)| {
-        // Skip self-plagiarism pairs, because model architecture forces similarity to be 1.0 anyways
-        if pair.left_path == pair.right_path {
-            return None;
-        }
-
         Some(PlagiarismTrainItem {
             graph_1: Graph::from_treesitter_ast(
                 parse_cpp_to_tree(BufReader::new(
