@@ -3,7 +3,7 @@ use burn::{
     module::Module,
     nn::{Initializer, Linear, LinearConfig, SwiGlu, SwiGluConfig},
     prelude::Backend,
-    tensor::activation::{leaky_relu, log_softmax, silu},
+    tensor::activation::{leaky_relu, log_softmax, silu, softmax},
 };
 
 use crate::model::{graph_convolution, Graph};
@@ -80,7 +80,7 @@ impl GraphDiffPoolConfig {
 
 impl<B: Backend> GraphDiffPool<B> {
     pub fn forward(&self, input: Graph<B>) -> Graph<B> {
-        let soft_assignments = log_softmax(self.pooling_layer.forward(input.clone()).nodes, 0);
+        let soft_assignments = softmax(self.pooling_layer.forward(input.clone()).nodes, 1);
         let node_embeddings = self.embed_layer.forward(input.clone()).nodes;
         let super_nodes = soft_assignments.clone().transpose().matmul(node_embeddings);
         let super_edges = soft_assignments
