@@ -28,13 +28,12 @@ impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
 
     /// Makes sure that every edge/src->target pair is present at most once.
     pub fn normalized_adjacency_matrix(&self) -> Tensor<B, 2, Float> {
-        let degree_matrix = self.edges.clone().sum_dim(0) + 1; // For every node, sum the edges reachable from it
-        let degree_matrix_sqrt = degree_matrix.powf_scalar(-0.5); // Inverse square root of the degree matrix
+        let degree_matrix = self.edges.clone().sum_dim(1) + 1; // For every node, sum the edges going into it
+        let degree_matrix_inv_sqrt = degree_matrix.powf_scalar(-0.5); // Inverse square root of the degree matrix
 
-        self.edges
-            .clone()
-            .mul(degree_matrix_sqrt.clone())
-            .mul(degree_matrix_sqrt.transpose())
+        self.edges.clone()  // We accepts some form of amnesia due to no forced self-loops because feature aggregation is still happening and we want to condense features at the end of the day
+          .mul(degree_matrix_inv_sqrt.clone())   // Normalize by deg(i) of the target node, https://towardsdatascience.com/graph-convolutional-networks-introduction-to-gnns-24b3f60d6c95/
+          .mul(degree_matrix_inv_sqrt.transpose())            // Normalize by deg(j) of all the source nodes j in N_i
     }
 
     /// Switches the source and target of the edges
