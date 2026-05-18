@@ -12,39 +12,18 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use burn::prelude::Backend;
+use burn::{prelude::Backend, tensor::Int};
 use data_loading::dataset_loader::FilePair;
+use decider_model::data::{Graph, parse_cpp_to_tree};
 use rand::{seq::SliceRandom, Rng, RngExt};
 
-use crate::model::{FlattenedAST, Graph, ParsedFile, PlagiarismTrainItem};
 
-pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(&tree_sitter_cpp::LANGUAGE.into())
-        .expect("Failed to set language to C++");
-    let tree = parser
-        .parse(
-            reader
-                .bytes()
-                .map(|b| b.expect("Failed to read bytes"))
-                .collect::<Vec<u8>>()
-                .as_slice(),
-            None,
-        )
-        .expect("Failed to parse C++ code");
-    tree
-}
-
-pub fn parse_cpp_file(path: impl AsRef<Path>) -> ParsedFile {
-    let path = path.as_ref();
-    let file_content = std::fs::read_to_string(path).expect("Failed to read file");
-    let ast = parse_cpp_to_tree(file_content.as_bytes());
-    ParsedFile {
-        file_path: path.to_path_buf(),
-        file_content,
-        ast: FlattenedAST::from_treesitter_ast(ast),
-    }
+#[derive(Debug, Clone)]
+pub struct PlagiarismTrainItem<B: Backend> {
+    pub graph_1: Graph<B, Int>,
+    pub graph_2: Graph<B, Int>,
+    /// True if plagiarization, false otherwise
+    pub label: bool,
 }
 
 pub struct PlagiarismTestSetLoader<B: Backend> {

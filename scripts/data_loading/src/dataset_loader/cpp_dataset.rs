@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use itertools::Itertools;
 
 use crate::dataset_loader::LanguageDataset;
@@ -20,7 +20,7 @@ fn read_ground_truth_static(
     })?;
 
     let mut assignment_to_groups: FxHashMap<String, Vec<Vec<String>>> =
-        FxHashMap::with_hasher(FxBuildHasher::new());
+        FxHashMap::with_hasher(FxBuildHasher::default());
     let mut current_assignment: Option<String> = None;
 
     for raw_line in content.lines() {

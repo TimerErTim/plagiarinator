@@ -8,8 +8,8 @@ use burn::{
 };
 
 use crate::{
-    model::Graph,
-    nn::{GraphConvolution, GraphConvolutionConfig, GraphDiffPool, GraphDiffPoolConfig},
+    data::Graph,
+    layers::{GraphConvolution, GraphConvolutionConfig, GraphDiffPool, GraphDiffPoolConfig},
 };
 
 #[derive(Config, Debug)]

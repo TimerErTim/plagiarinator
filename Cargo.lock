@@ -1397,12 +1397,26 @@ name = "data_loading"
 version = "0.1.0"
 dependencies = [
  "fastrand",
- "fxhash",
  "itertools 0.14.0",
  "rand 0.10.1",
+ "rustc-hash 2.1.2",
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "decider-model"
+version = "0.1.0"
+dependencies = [
+ "burn",
+ "burn-store",
+ "rustc-hash 2.1.2",
+ "serde",
+ "thiserror 2.0.18",
+ "tree-sitter",
+ "tree-sitter-cpp",
+ "tree-sitter-python",
 ]
 
 [[package]]
@@ -1842,15 +1856,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fxhash"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2004,14 +2009,12 @@ dependencies = [
  "burn-store",
  "chrono",
  "data_loading",
- "fxhash",
+ "decider-model",
  "rand 0.10.1",
+ "rustc-hash 2.1.2",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
- "tree-sitter",
- "tree-sitter-cpp",
- "tree-sitter-python",
 ]
 
 [[package]]

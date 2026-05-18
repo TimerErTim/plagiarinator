@@ -1,10 +1,12 @@
-use crate::nn::{PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig};
+pub mod data;
+pub mod layers;
+mod model;
 
-pub mod loading;
-pub mod model;
-pub mod nn;
+use burn_store::{ModuleSnapshot, ModuleStore};
+pub use model::*;
+use burn::tensor::backend::Backend;
 
-pub fn get_model_config() -> PlagiarismDeciderConfig {
+pub fn model_config() -> PlagiarismDeciderConfig {
     PlagiarismDeciderConfig::new(
         u16::MAX as usize + 1,
         16,
@@ -18,4 +20,14 @@ pub fn get_model_config() -> PlagiarismDeciderConfig {
             PlagiarismDeciderLayerConfig::new(1024, 1).with_pre_aggregations(0),
         ],
     )
+}
+
+pub fn load_model<B: Backend, P: ModuleStore>(device: &B::Device, store: &mut P) -> PlagiarismDecider<B> {
+    let mut model = init_model::<B>(device);
+    model.load_from(store).unwrap();
+    model
+}
+
+pub fn init_model<B: Backend>(device: &B::Device) -> PlagiarismDecider<B> {
+    model_config().init::<B>(device)
 }

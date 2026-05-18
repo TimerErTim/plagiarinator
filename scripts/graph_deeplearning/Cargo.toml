@@ -11,17 +11,15 @@ cubecl-cpu = ["burn/cpu"]
 torch = ["burn/tch"]
 
 [dependencies]
+burn = { workspace = true }
+burn-store = { workspace = true, features = ["burnpack"] }
 data_loading = { path = "../data_loading" }
-burn = { workspace = true, features = ["store"] }
-burn-store = { version = "0.20.1", features = ["burnpack"] }
-fxhash = { workspace = true }
+decider-model = { path = "../../crates/decider-model" }
+rustc-hash = { workspace = true }
 rand = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tree-sitter = "0.26.8"
-tree-sitter-python = "0.25.0"
-tree-sitter-cpp = "0.23.4"
 chrono = "0.4.30"
 
 

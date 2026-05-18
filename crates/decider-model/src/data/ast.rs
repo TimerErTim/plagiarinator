@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct FlattenedAST {
     pub nodes: Vec<ASTNode>,
-    /// Edges between nodes, [src, target]
+    /// Edges between nodes, [child, parent]
     pub edges: Vec<(usize, usize)>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ASTNode {
     pub kind_id: u16,
     pub kind_name: String,

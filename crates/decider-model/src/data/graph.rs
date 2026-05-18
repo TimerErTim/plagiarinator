@@ -8,7 +8,7 @@ use burn::{
 };
 use tree_sitter::Tree;
 
-use crate::model::FlattenedAST;
+use crate::data::FlattenedAST;
 
 #[derive(Debug, Clone)]
 pub struct Graph<B: Backend, D: TensorKind<B> = Float> {
@@ -121,21 +121,5 @@ impl<B: Backend> Graph<B, Int> {
         // Remove root node due increase numerical stability
         graph.remove_node(0).ok()?;
         Some(graph)
-    }
-}
-
-pub fn graph_convolution<B: Backend>(
-    graph: Graph<B, Float>,
-    swiglu: SwiGlu<B>,
-) -> Graph<B> {
-    let normalized_adjacency_matrix = graph.normalized_adjacency_matrix();
-    // Aggregate features of nodes pointing to us, transpose would result in features we point to
-    // (but transposing would be required for all downstream operations)
-    let neighbor_features = normalized_adjacency_matrix
-        .matmul(graph.nodes);
-    let neighbor_features = swiglu.forward(neighbor_features);
-    Graph {
-        nodes: neighbor_features,
-        edges: graph.edges,
     }
 }

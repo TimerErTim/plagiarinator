@@ -1,26 +1,39 @@
-mod ast;
-mod graph;
+use std::{io::Read, path::{Path, PathBuf}};
 
-use std::path::PathBuf;
-
-pub use ast::*;
-use burn::{
-    module::Module,
-    prelude::{Backend, ToElement},
-    tensor::{Int, activation::softmax, backend::AutodiffBackend},
-};
-pub use graph::*;
+use burn::{module::Module, tensor::{backend::AutodiffBackend, cast::ToElement}};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::nn::PlagiarismDecider;
+use crate::{PlagiarismDecider, data::{ASTNode, FileRange, FlattenedAST, Graph}};
 
-#[derive(Debug, Clone)]
-pub struct PlagiarismTrainItem<B: Backend> {
-    pub graph_1: Graph<B, Int>,
-    pub graph_2: Graph<B, Int>,
-    /// True if plagiarization, false otherwise
-    pub label: bool,
+pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
+    let mut parser = tree_sitter::Parser::new();
+    parser
+        .set_language(&tree_sitter_cpp::LANGUAGE.into())
+        .expect("Failed to set language to C++");
+    let tree = parser
+        .parse(
+            reader
+                .bytes()
+                .map(|b| b.expect("Failed to read bytes"))
+                .collect::<Vec<u8>>()
+                .as_slice(),
+            None,
+        )
+        .expect("Failed to parse C++ code");
+    tree
+}
+
+pub fn parse_cpp_file(path: impl AsRef<Path>) -> ParsedFile {
+    let path = path.as_ref();
+    let file_content = std::fs::read_to_string(path).expect("Failed to read file");
+    let ast = parse_cpp_to_tree(file_content.as_bytes());
+    ParsedFile {
+        file_path: path.to_path_buf(),
+        file_content,
+        ast: FlattenedAST::from_treesitter_ast(ast),
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,8 +53,8 @@ pub enum PlagiarismAnalysisError {
 pub struct AnalyzedFile {
     pub file_path: PathBuf,
     pub file_content: String,
-    /// Weight (contribution to the plagiarism) and ASTNode
-    pub ast_nodes: Vec<(f64, ASTNode)>,
+    /// Weight (contribution to the plagiarism) and FileRange
+    pub importance: Vec<(f64, FileRange)>,
 }
 
 
@@ -96,38 +109,37 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
     let node_2_importance = node_2_importance.div(highest_value);
 
     // Transform data into insights
+    fn leaf_nodes_hirarchical_mean_importance(ast: FlattenedAST, node_weights: impl Iterator<Item = f64>) -> Vec<(f64, FileRange)> {
+        // Skip the root node because it is not part of the graph representation
+        let ast_nodes_importance = ast.nodes.into_iter().enumerate().skip(1).zip(node_weights).map(|((node_idx, node), weight)| (weight, node_idx, node.range));
+        let mut parent_acc_imp = FxHashMap::default();
+        let mut leafs = Vec::new();
+        let parents_map = ast.edges.iter().map(|(child, parent)| (*child, *parent)).collect::<FxHashMap<_, _>>();
+        for (weight, node_idx, range) in ast_nodes_importance {
+            let parent_idx = parents_map.get(&node_idx).cloned();
+            let Some(parent_idx) = parent_idx else {
+                leafs.push((node_idx, range));
+                continue;
+            };
+            let (parent_weight, parent_counts) = parent_acc_imp.get(&parent_idx).cloned().unwrap_or((0.0, 0));
+            parent_acc_imp.insert(parent_idx, (parent_weight + weight, parent_counts + 1));
+        }
+        leafs.into_iter().map(|(node_idx, range)| {
+            let (parent_weight, parent_counts) = parent_acc_imp.get(&node_idx).cloned().unwrap_or((0.0, 1));
+            (parent_weight / parent_counts as f64, range)
+        }).collect()
+    }
+
     let insights = PlagiarismInsights {
         file_1: AnalyzedFile {
             file_path: file_1.file_path,
             file_content: file_1.file_content,
-            ast_nodes: file_1
-                .ast
-                .nodes
-                .into_iter()
-                .skip(1)
-                .zip(
-                    node_1_importance
-                        .iter_dim(0)
-                        .map(|weight_t| weight_t.into_scalar().to_f64()),
-                )
-                .map(|(node, weight)| (weight, node))
-                .collect(),
+            importance: leaf_nodes_hirarchical_mean_importance(file_1.ast, node_1_importance.iter_dim(0).map(|weight_t| weight_t.into_scalar().to_f64())),
         },
         file_2: AnalyzedFile {
             file_path: file_2.file_path,
             file_content: file_2.file_content,
-            ast_nodes: file_2
-                .ast
-                .nodes
-                .into_iter()
-                .skip(1) // Because we removed the root node in graph
-                .zip(
-                    node_2_importance
-                        .iter_dim(0)
-                        .map(|weight_t| weight_t.into_scalar().to_f64()),
-                )
-                .map(|(node, weight)| (weight, node))
-                .collect(),
+            importance: leaf_nodes_hirarchical_mean_importance(file_2.ast, node_2_importance.iter_dim(0).map(|weight_t| weight_t.into_scalar().to_f64())),
         },
         plagiarism_score: score_float,
     };

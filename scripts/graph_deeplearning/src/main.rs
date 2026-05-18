@@ -6,10 +6,11 @@ use burn::{
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
 
-use graph_deeplearning::{
-    get_model_config, loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader, parse_cpp_file}, model::{Graph, PlagiarismTrainItem, analyze_plagiarism}, nn::{PlagiarismDecider, PlagiarismDeciderConfig, PlagiarismDeciderLayerConfig}
-};
+mod loading;
+use decider_model::{PlagiarismDecider, data::{analyze_plagiarism, parse_cpp_file}, init_model};
 use rand::SeedableRng;
+
+use crate::loading::{PlagiarismTrainItem, PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader};
 
 pub fn main() {
     // Backend type selection
@@ -111,7 +112,7 @@ pub fn main() {
     let batched_loader = chunked_iter(train_loader, batch_size);
 
     // init model
-    let mut model = get_model_config().init::<AdBackend>(&device);
+    let mut model = init_model::<AdBackend>(&device);
     println!("model: {model}");
     println!("num_train_items: {num_train_items}");
 

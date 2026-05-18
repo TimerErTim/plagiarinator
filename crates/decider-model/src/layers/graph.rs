@@ -3,14 +3,27 @@ use burn::{
     module::Module,
     nn::{Initializer, Linear, LinearConfig, SwiGlu, SwiGluConfig},
     prelude::Backend,
-    tensor::activation::{leaky_relu, log_softmax, silu, softmax},
+    tensor::{Float, activation::{leaky_relu, log_softmax, silu, softmax}},
 };
 
-use crate::model::{graph_convolution, Graph};
+use crate::data::{Graph};
 
-mod decider;
 
-pub use decider::*;
+pub fn graph_convolution<B: Backend>(
+    graph: Graph<B, Float>,
+    swiglu: SwiGlu<B>,
+) -> Graph<B> {
+    let normalized_adjacency_matrix = graph.normalized_adjacency_matrix();
+    // Aggregate features of nodes pointing to us, transpose would result in features we point to
+    // (but transposing would be required for all downstream operations)
+    let neighbor_features = normalized_adjacency_matrix
+        .matmul(graph.nodes);
+    let neighbor_features = swiglu.forward(neighbor_features);
+    Graph {
+        nodes: neighbor_features,
+        edges: graph.edges,
+    }
+}
 
 #[derive(Config, Debug)]
 pub struct GraphConvolutionConfig {
@@ -48,13 +61,13 @@ impl<B: Backend> GraphConvolution<B> {
 
 #[derive(Config, Debug)]
 pub struct GraphDiffPoolConfig {
-    input_features: usize,
-    output_features: usize,
-    num_clusters: usize,
+    pub input_features: usize,
+    pub output_features: usize,
+    pub num_clusters: usize,
     #[config(default = true)]
-    with_bias: bool,
+    pub with_bias: bool,
     #[config(default = "Initializer::KaimingUniform{gain:1.0/f64::sqrt(3.0), fan_out_only:false}")]
-    initializer: Initializer,
+    pub initializer: Initializer,
 }
 
 #[derive(Module, Debug)]
