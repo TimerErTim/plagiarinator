@@ -1,7 +1,7 @@
 use std::{fs::File, path::PathBuf};
 
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::cast::ToElement
 };
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
@@ -139,8 +139,12 @@ pub fn main() {
         if idx % validation_interval == 0 {
             let validation_output = validate(model.valid(), cpp_test_items.iter());
             println!(
-                "step {idx}, training_loss: {:.02}, validation_output: {validation_output:?}",
-                (total_loss.clone() / (validation_interval as f64)).into_scalar()
+                "step {idx}, training_loss: {:.02}, validation_output: loss={:.02}, precision={:.02}, recall={:.02}, f1_score={:.02}",
+                (total_loss.clone() / (validation_interval as f64)).into_scalar(),
+                validation_output.average_loss,
+                validation_output.precision,
+                validation_output.recall,
+                validation_output.f1_score
             );
             total_loss = total_loss.slice_fill([0], 0.0);
             let item = cpp_test_dataset.plagiarized_pairs.iter().find(|i| i.left_path != i.right_path).cloned().unwrap();
@@ -184,14 +188,15 @@ pub struct ValidationOutput {
     pub true_negative: usize,
     pub false_positive: usize,
     pub false_negative: usize,
+    pub precision: f64,
+    pub recall: f64,
+    pub f1_score: f64,
 }
 
 pub fn validate<B: Backend>(
     model: PlagiarismDecider<B>,
     test_dataset: impl Iterator<Item = PlagiarismTrainItem<B>>,
 ) -> ValidationOutput
-where
-    B::FloatElem: Into<f64>,
 {
     let mut true_positive = 0;
     let mut true_negative = 0;
@@ -206,7 +211,7 @@ where
         let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
         predictions.push(prediction.clone());
         targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
-        match (prediction.into_scalar().into() > 0.5, item.label) {
+        match (prediction.into_scalar().to_f64() > 0.5, item.label) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
             (true, false) => false_positive += 1,
@@ -214,14 +219,33 @@ where
         }
     }
 
+    let precision = if true_positive + false_positive > 0 {
+        true_positive as f64 / (true_positive + false_positive) as f64
+    } else {
+        0.0
+    };
+    let recall = if true_positive + false_negative > 0 {
+        true_positive as f64 / (true_positive + false_negative) as f64
+    } else {
+        0.0
+    };
+    let f1_score = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
+
     ValidationOutput {
         average_loss: loss_fn
             .forward(Tensor::cat(predictions, 0), Tensor::cat(targets, 0))
             .into_scalar()
-            .into(),
+            .to_f64(),
         true_positive,
         true_negative,
         false_positive,
         false_negative,
+        precision,
+        recall,
+        f1_score,
     }
 }
