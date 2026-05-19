@@ -1,7 +1,6 @@
 use burn::{
     Tensor, config::Config, module::Module, nn::{
-        Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear,
-        LinearConfig, SwiGlu, SwiGluConfig,
+        Dropout, DropoutConfig, Embedding, EmbeddingConfig, Initializer, LayerNorm, LayerNormConfig, Linear, LinearConfig, SwiGlu, SwiGluConfig
     }, prelude::Backend, tensor::{
         Int, activation::{relu, sigmoid, silu}
     }
@@ -69,7 +68,10 @@ impl PlagiarismDeciderConfig {
                 .collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
             common_gate: LinearConfig::new(last_layer_features, last_layer_features).init(device),
-            distance_weights: LinearConfig::new(last_layer_features, 1).with_bias(false).init(device),
+            distance_weights: LinearConfig::new(last_layer_features, 1)
+                .with_bias(false)
+                .with_initializer(Initializer::Normal{mean: 1.0 / last_layer_features as f64, std: 1.0 / last_layer_features as f64})
+                .init(device),
         }
     }
 }
@@ -116,8 +118,11 @@ impl<B: Backend> PlagiarismDecider<B> {
         let compressed_graph_2 = self.compress_embedded_graph(embedded_graph_2);
         let commons = compressed_graph_1.clone() * compressed_graph_2.clone(); 
         let differences = (compressed_graph_1 - compressed_graph_2).abs();
-        let distance_gate =sigmoid(self.common_gate.forward(commons));
+        let distance_gate = sigmoid(self.common_gate.forward(commons));
+        //println!("difference: {}", differences);
         let gated_distance = distance_gate * differences;
+        //println!("distance_weights: {}", self.distance_weights.weight.val());
+        //println!("distance_weights mean: {}", self.distance_weights.weight.val().mean());
         let weighted_distance = self.distance_weights.forward(self.dropout.forward(gated_distance));
         let similarity = Tensor::exp(-relu(weighted_distance));
 
