@@ -1,6 +1,7 @@
 use burn::{
     Tensor, config::Config, module::Module, nn::{
-        Dropout, DropoutConfig, Embedding, EmbeddingConfig, Initializer, LayerNorm, LayerNormConfig, Linear, LinearConfig, SwiGlu, SwiGluConfig
+        Dropout, DropoutConfig, Embedding, EmbeddingConfig, Initializer, LayerNorm, LayerNormConfig, Linear,
+        LinearConfig, SwiGlu, SwiGluConfig,
     }, prelude::Backend, tensor::{
         Int, activation::{relu, sigmoid, silu}
     }
@@ -8,7 +9,7 @@ use burn::{
 
 use crate::{
     data::Graph,
-    layers::{GraphConvolution, GraphConvolutionConfig, GraphDiffPool, GraphDiffPoolConfig},
+    layers::{GraphCompress, GraphCompressConfig},
 };
 
 #[derive(Config, Debug)]
@@ -31,46 +32,45 @@ pub struct PlagiarismDeciderLayerConfig {
 
 impl PlagiarismDeciderConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> PlagiarismDecider<B> {
-        let mut compression_layers: Vec<(Vec<GraphConvolutionConfig>, GraphDiffPoolConfig, LayerNormConfig)> =
-            Vec::with_capacity(self.layers.len());
+        let mut compression_layers: Vec<GraphCompressConfig> = Vec::with_capacity(self.layers.len());
         for layer_config in &self.layers {
+            // The previous layer's output_feature size (or the embedding size for the first layer)
             let prev_layer_features = if let Some(prev_layer) = compression_layers.last() {
-                prev_layer.1.output_features
+                prev_layer.output_features
             } else {
                 self.embedding_size
             };
-            compression_layers.push((
-                (0..layer_config.pre_aggregations).map(|_| GraphConvolutionConfig::new(prev_layer_features, prev_layer_features)).collect(),
-                GraphDiffPoolConfig::new(
+            compression_layers.push(
+                GraphCompressConfig::new(
                     prev_layer_features,
                     layer_config.output_features,
                     layer_config.num_clusters,
-                ),
-                LayerNormConfig::new(layer_config.output_features),
-            ));
+                )
+                .with_normalization(true)
+                .with_pre_aggregations(layer_config.pre_aggregations)
+            );
         }
+
+        // Determine the feature size of the last compression layer for constructing the final classifier layers
         let last_layer_features = compression_layers
             .last()
-            .map(|(aggregate, pool, _norm)| pool.output_features)
+            .map(|config| config.output_features)
             .unwrap_or(self.embedding_size);
 
         PlagiarismDecider {
             embedding: EmbeddingConfig::new(self.num_classes, self.embedding_size).init(device),
             compression_layers: compression_layers
                 .into_iter()
-                .map(|(aggregate_configs, pool_config, norm_config)| {
-                    (
-                        aggregate_configs.into_iter().map(|config| config.init(device)).collect(),
-                        pool_config.init(device),
-                        norm_config.init(device)
-                    )
-                })
+                .map(|config| config.init(device))
                 .collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
             common_gate: LinearConfig::new(last_layer_features, last_layer_features).init(device),
             distance_weights: LinearConfig::new(last_layer_features, 1)
                 .with_bias(false)
-                .with_initializer(Initializer::Normal{mean: 1.0 / last_layer_features as f64, std: 1.0 / last_layer_features as f64})
+                .with_initializer(Initializer::Normal {
+                    mean: 1.0 / last_layer_features as f64,
+                    std: 1.0 / last_layer_features as f64,
+                })
                 .init(device),
         }
     }
@@ -79,7 +79,7 @@ impl PlagiarismDeciderConfig {
 #[derive(Module, Debug)]
 pub struct PlagiarismDecider<B: Backend> {
     pub embedding: Embedding<B>,
-    compression_layers: Vec<(Vec<GraphConvolution<B>>, GraphDiffPool<B>, LayerNorm<B>)>,
+    compression_layers: Vec<GraphCompress<B>>,
     dropout: Dropout,
     common_gate: Linear<B>,
     distance_weights: Linear<B>,
@@ -99,12 +99,8 @@ impl<B: Backend> PlagiarismDecider<B> {
 
     pub fn compress_embedded_graph(&self, embedded_graph: Graph<B>) -> Tensor<B, 1> {
         let mut extracted_graph = embedded_graph;
-        for (aggregate_layers, pooling_layer, norm_layer) in &self.compression_layers {
-            for aggregate_layer in aggregate_layers {
-                extracted_graph = aggregate_layer.forward(extracted_graph);
-            }
-            extracted_graph = pooling_layer.forward(extracted_graph);
-            extracted_graph.nodes = norm_layer.forward(extracted_graph.nodes);
+        for compression_layer in &self.compression_layers {
+            extracted_graph = compression_layer.forward(extracted_graph);
         }
         extracted_graph.nodes.max_dim(0).squeeze_dim(0)
     }
@@ -116,16 +112,12 @@ impl<B: Backend> PlagiarismDecider<B> {
     ) -> Tensor<B, 1> {
         let compressed_graph_1 = self.compress_embedded_graph(embedded_graph_1);
         let compressed_graph_2 = self.compress_embedded_graph(embedded_graph_2);
-        let commons = compressed_graph_1.clone() * compressed_graph_2.clone(); 
+        let commons = compressed_graph_1.clone() * compressed_graph_2.clone();
         let differences = (compressed_graph_1 - compressed_graph_2).abs();
         let distance_gate = sigmoid(self.common_gate.forward(commons));
-        //println!("difference: {}", differences);
         let gated_distance = distance_gate * differences;
-        //println!("distance_weights: {}", self.distance_weights.weight.val());
-        //println!("distance_weights mean: {}", self.distance_weights.weight.val().mean());
         let weighted_distance = self.distance_weights.forward(self.dropout.forward(gated_distance));
         let similarity = Tensor::exp(-relu(weighted_distance));
-
         similarity
     }
 
