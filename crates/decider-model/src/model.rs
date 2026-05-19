@@ -64,12 +64,19 @@ impl PlagiarismDeciderConfig {
                 .map(|config| config.init(device))
                 .collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
-            common_gate: LinearConfig::new(last_layer_features, last_layer_features).init(device),
-            distance_weights: LinearConfig::new(last_layer_features, 1)
+            common_gate: LinearConfig::new(last_layer_features, self.comparator_size).init(device),
+            distance: LinearConfig::new(last_layer_features, self.comparator_size)
                 .with_bias(false)
-                .with_initializer(Initializer::Normal {
-                    mean: 1.0 / last_layer_features as f64,
-                    std: 1.0 / last_layer_features as f64,
+                .with_initializer(Initializer::Uniform { 
+                    min: 0.0,
+                    max: 1.0 / last_layer_features as f64 
+                })
+                .init(device),
+            comparator: LinearConfig::new(self.comparator_size, 1)
+                .with_bias(false)
+                .with_initializer(Initializer::Uniform { 
+                    min: 0.0,
+                    max: 1.0 / self.comparator_size as f64 
                 })
                 .init(device),
         }
@@ -82,7 +89,8 @@ pub struct PlagiarismDecider<B: Backend> {
     compression_layers: Vec<GraphCompress<B>>,
     dropout: Dropout,
     common_gate: Linear<B>,
-    distance_weights: Linear<B>,
+    distance: Linear<B>,
+    comparator: Linear<B>,
 }
 
 impl<B: Backend> PlagiarismDecider<B> {
@@ -115,9 +123,10 @@ impl<B: Backend> PlagiarismDecider<B> {
         let commons = compressed_graph_1.clone() * compressed_graph_2.clone();
         let differences = (compressed_graph_1 - compressed_graph_2).abs();
         let distance_gate = sigmoid(self.common_gate.forward(commons));
-        let gated_distance = distance_gate * differences;
-        let weighted_distance = self.distance_weights.forward(self.dropout.forward(gated_distance));
-        let similarity = Tensor::exp(-relu(weighted_distance));
+        let weighted_differences = self.distance.forward(differences);
+        let gated_difference = distance_gate * weighted_differences;
+        let difference_comparator = self.comparator.forward(self.dropout.forward(gated_difference));
+        let similarity = Tensor::exp(-relu(difference_comparator));
         similarity
     }
 

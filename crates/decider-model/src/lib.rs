@@ -13,9 +13,9 @@ pub fn model_config() -> PlagiarismDeciderConfig {
         128,
         0.1,
         vec![
-            PlagiarismDeciderLayerConfig::new(32, 1024).with_pre_aggregations(2),
+            PlagiarismDeciderLayerConfig::new(32, 1024).with_pre_aggregations(1),
             PlagiarismDeciderLayerConfig::new(64, 256).with_pre_aggregations(1),
-            PlagiarismDeciderLayerConfig::new(128, 64).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(128, 64).with_pre_aggregations(1),
             PlagiarismDeciderLayerConfig::new(256, 16).with_pre_aggregations(0),
             PlagiarismDeciderLayerConfig::new(1024, 1).with_pre_aggregations(0),
         ],
