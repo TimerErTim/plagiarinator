@@ -16,6 +16,7 @@ _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specif
 MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260519_105148/checkpoints/model_20260519_105148_1300.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
+TENSORBOARD_LOG_DIR="{{ config_root }}/out/tensorboard-logs"
 
 [tasks."install:pip-dependencies"]
 run = "pip install -e ."
@@ -45,3 +46,11 @@ run = "cargo run --release --package graph_deeplearning"
 [tasks."build:graph_inference"]
 dir = "{{ config_root }}"
 run = "cargo build --release --package graph_deeplearning --bin run_inference"
+
+[tasks."run:tensorboard"]
+description = "Run TensorBoard to visualize the training progress"
+tools."pipx:tensorboard" = "latest"
+dir = "{{ config_root }}"
+raw = true
+raw_args = true
+run = "tensorboard --bind_all --logdir {{ env.TENSORBOARD_LOG_DIR }}"

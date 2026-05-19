@@ -15,6 +15,7 @@ burn = { workspace = true }
 burn-store = { workspace = true, features = ["burnpack"] }
 data_loading = { path = "../data_loading" }
 decider-model = { path = "../../crates/decider-model" }
+tensorboard-logger = { path = "../../crates/tensorboard-logger" }
 rustc-hash = { workspace = true }
 rand = { workspace = true }
 thiserror = { workspace = true }

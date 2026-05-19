@@ -1,12 +1,14 @@
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::cast::ToElement
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::{BasicOps, cast::ToElement}
 };
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
 
 mod loading;
+mod logging;
+use logging::create_tensorboard_logger;
 use decider_model::{PlagiarismDecider, data::{analyze_plagiarism, parse_cpp_file}, init_model};
 use rand::SeedableRng;
 
@@ -52,7 +54,7 @@ pub fn main() {
     std::fs::create_dir_all(&checkpoint_dir).unwrap();
     let analysis_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/analysis"));
     std::fs::create_dir_all(&analysis_dir).unwrap();
-    
+    let mut tensorboard_logger = create_tensorboard_logger("unknown", &run_timestamp);
 
     let mut dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
     // Make equal split of plagiarized and authentic pairs
@@ -122,37 +124,37 @@ pub fn main() {
         .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
-    let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
 
-    let mut total_loss = Tensor::zeros([1], &device);
-    for (idx, batch) in batched_loader.enumerate() {
-        if idx % checkpoint_interval == 0 {
+    for (step, batch) in batched_loader.enumerate() {
+        if step % checkpoint_interval == 0 {
             // Save model
-            let mut store = burn::store::BurnpackStore::from_file(checkpoint_dir.join(format!("model_{}_{idx}.bpk", &run_timestamp)))
+            let mut store = burn::store::BurnpackStore::from_file(checkpoint_dir.join(format!("model_{}_{step}.bpk", &run_timestamp)))
                 .metadata("run_timestamp", run_timestamp.clone())
-                .metadata("step", idx.to_string());
+                .metadata("step", step.to_string());
             store.collect_from(&model).unwrap();
 
             let recorder = NamedMpkGzFileRecorder::<FullPrecisionSettings>::new();
-            model.clone().save_file(checkpoint_dir.join(format!("model_{}_{idx}", &run_timestamp)), &recorder).unwrap();
+            model.clone().save_file(checkpoint_dir.join(format!("model_{}_{step}", &run_timestamp)), &recorder).unwrap();
         }
 
-        if idx % validation_interval == 0 {
+        if step % validation_interval == 0 {
+            println!("\nValidating...");
             let validation_output = validate(model.valid(), cpp_test_items.iter());
-            println!(
-                "step {idx}, training_loss: {:.02}, validation_output: loss={:.02}, precision={:.02}, recall={:.02}, f1_score={:.02}",
-                (total_loss.clone() / (validation_interval as f64)).into_scalar(),
-                validation_output.average_loss,
-                validation_output.precision,
-                validation_output.recall,
-                validation_output.f1_score
-            );
-            total_loss = total_loss.slice_fill([0], 0.0);
+            tensorboard_logger.log_scalar("validation/loss", validation_output.average_loss, step as u64);
+            tensorboard_logger.log_scalar("validation/precision", validation_output.precision, step as u64);
+            tensorboard_logger.log_scalar("validation/recall", validation_output.recall, step as u64);
+            tensorboard_logger.log_scalar("validation/f1_score", validation_output.f1_score, step as u64);
+
+            // Sample an item for analysis
             let item = cpp_test_dataset.plagiarized_pairs.iter().find(|i| i.left_path != i.right_path).cloned().unwrap();
             let analyzed_output = analyze_plagiarism(parse_cpp_file(item.left_path), parse_cpp_file(item.right_path), model.clone()).unwrap();
-            serde_json::to_writer_pretty(File::create(analysis_dir.join(format!("analyzed_output_{idx}.json"))).unwrap(), &analyzed_output).unwrap();
+            serde_json::to_writer_pretty(File::create(analysis_dir.join(format!("analyzed_output_{step}.json"))).unwrap(), &analyzed_output).unwrap();
+            tensorboard_logger.log_text("validation/analyzed_output", &serde_json::to_string_pretty(&analyzed_output).unwrap(), step as u64);
         }
 
+        let targets_bool = batch.iter().map(|item| item.label).collect::<Vec<_>>();
+
+        // Loss calculation
         let targets = Tensor::from_data(
             batch
                 .iter()
@@ -168,14 +170,20 @@ pub fn main() {
                 .collect(),
             0,
         );
-
-        println!(
-            "predictions: {}\ntargets: {}",
-            predictions.to_data(),
-            targets.to_data()
-        );
+        let predictions_inner = predictions.clone().inner();
         let loss = loss_fn.forward(predictions, targets);
-        total_loss = total_loss.add(loss.clone().inner());
+        
+        // Logging
+        let stats = statistics_from_training(loss.clone().into_scalar().to_f64(), predictions_inner, targets_bool);
+        print!(".");
+        tensorboard_logger.log_scalar("training/loss", stats.average_loss, step as u64);
+        tensorboard_logger.log_scalar("training/precision", stats.precision, step as u64);
+        tensorboard_logger.log_scalar("training/recall", stats.recall, step as u64);
+        tensorboard_logger.log_scalar("training/f1_score", stats.f1_score, step as u64);
+        std::io::stdout().flush().unwrap();
+        tensorboard_logger.flush();
+
+        // Optimization step
         let mut grads = loss.backward();
         let param_grads = GradientsParams::from_module(&mut grads, &model);
         model = optimizer.step(learning_rate, model, param_grads);
@@ -183,7 +191,7 @@ pub fn main() {
 }
 
 #[derive(Debug)]
-pub struct ValidationOutput {
+pub struct StatisticsOutput {
     pub average_loss: f64,
     pub true_positive: usize,
     pub true_negative: usize,
@@ -194,25 +202,17 @@ pub struct ValidationOutput {
     pub f1_score: f64,
 }
 
-pub fn validate<B: Backend>(
-    model: PlagiarismDecider<B>,
-    test_dataset: impl Iterator<Item = PlagiarismTrainItem<B>>,
-) -> ValidationOutput
-{
+pub fn statistics_from_training<B: Backend>(
+    loss: f64,
+    predictions: Tensor<B, 1>,
+    targets: Vec<bool>,
+) -> StatisticsOutput {
     let mut true_positive = 0;
     let mut true_negative = 0;
     let mut false_positive = 0;
     let mut false_negative = 0;
-    let device = model.devices().first().unwrap().clone();
-    let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
-    let mut predictions = Vec::with_capacity(test_dataset.size_hint().0);
-    let mut targets = Vec::with_capacity(test_dataset.size_hint().0);
-
-    for item in test_dataset {
-        let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
-        predictions.push(prediction.clone());
-        targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
-        match (prediction.into_scalar().to_f64() > 0.5, item.label) {
+    for (prediction, target) in predictions.iter_dim(0).zip(targets.iter()) {
+        match (prediction.into_scalar().to_f64() > 0.5, *target) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
             (true, false) => false_positive += 1,
@@ -236,11 +236,8 @@ pub fn validate<B: Backend>(
         0.0
     };
 
-    ValidationOutput {
-        average_loss: loss_fn
-            .forward(Tensor::cat(predictions, 0), Tensor::cat(targets, 0))
-            .into_scalar()
-            .to_f64(),
+    StatisticsOutput {
+        average_loss: loss,
         true_positive,
         true_negative,
         false_positive,
@@ -249,4 +246,27 @@ pub fn validate<B: Backend>(
         recall,
         f1_score,
     }
+}
+
+pub fn validate<B: Backend>(
+    model: PlagiarismDecider<B>,
+    test_dataset: impl Iterator<Item = PlagiarismTrainItem<B>>,
+) -> StatisticsOutput
+{
+    let device = model.devices().first().unwrap().clone();
+    let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
+    let mut predictions = Vec::with_capacity(test_dataset.size_hint().0);
+    let mut targets = Vec::with_capacity(test_dataset.size_hint().0);
+    let mut targets_bool = Vec::with_capacity(test_dataset.size_hint().0);
+
+    for item in test_dataset {
+        let prediction = model.forward(item.graph_1.clone(), item.graph_2.clone());
+        predictions.push(prediction.clone());
+        targets.push(Tensor::from_ints([if item.label { 1 } else { 0 }], &device));
+        targets_bool.push(item.label);
+    }
+    let predictions = Tensor::cat(predictions, 0);
+    let loss = loss_fn.forward(predictions.clone(), Tensor::cat(targets, 0)).into_scalar().to_f64();
+
+    return statistics_from_training(loss, predictions, targets_bool);
 }
