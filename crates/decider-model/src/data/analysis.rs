@@ -1,7 +1,7 @@
 use std::{io::Read, path::{Path, PathBuf}};
 
 use burn::{module::Module, tensor::{backend::AutodiffBackend, cast::ToElement}};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -113,16 +113,15 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
         // Skip the root node because it is not part of the graph representation
         let ast_nodes_importance = ast.nodes.into_iter().enumerate().skip(1).zip(node_weights).map(|((node_idx, node), weight)| (weight, node_idx, node.range));
         let mut parent_acc_imp = FxHashMap::default();
-        let mut leafs = Vec::new();
         let parents_map = ast.edges.iter().map(|(child, parent)| (*child, *parent)).collect::<FxHashMap<_, _>>();
+        let node_idx_with_children = parents_map.values().cloned().collect::<FxHashSet<_>>();
+        let mut leafs = FxHashSet::default();
         for (weight, node_idx, range) in ast_nodes_importance {
-            let parent_idx = parents_map.get(&node_idx).cloned();
-            let Some(parent_idx) = parent_idx else {
-                leafs.push((node_idx, range));
-                continue;
-            };
-            let (parent_weight, parent_counts) = parent_acc_imp.get(&parent_idx).cloned().unwrap_or((0.0, 0));
-            parent_acc_imp.insert(parent_idx, (parent_weight + weight, parent_counts + 1));
+            let (parent_weight, parent_counts) = parents_map.get(&node_idx).cloned().map(|parent_idx| parent_acc_imp.get(&parent_idx).cloned()).flatten().unwrap_or((0.0, 0));
+            parent_acc_imp.insert(node_idx, (parent_weight + weight, parent_counts + 1));
+            if !node_idx_with_children.contains(&node_idx) {
+                leafs.insert((node_idx, range));
+            }
         }
         leafs.into_iter().map(|(node_idx, range)| {
             let (parent_weight, parent_counts) = parent_acc_imp.get(&node_idx).cloned().unwrap_or((0.0, 1));

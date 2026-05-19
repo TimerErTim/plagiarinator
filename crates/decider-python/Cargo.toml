@@ -1,0 +1,14 @@
+[package]
+name = "decider-python"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "decider_python"
+crate-type = ["cdylib"]
+
+[dependencies]
+burn = { workspace = true }
+burn-store = { workspace = true, features = ["burnpack"] }
+decider-model = { path = "../decider-model" }
+pyo3 = { version = "0.26.0", features = ["extension-module"] }

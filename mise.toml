@@ -13,16 +13,26 @@ typst = "0.14.2"
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
-MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260511_160716/checkpoints/model_20260511_160716_2300.bpk"
+MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260519_105148/checkpoints/model_20260519_105148_1300.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 
-[tasks.install_dependencies]
-run = "pip install -r requirements.txt -e ."
+[tasks."install:pip-dependencies"]
+run = "pip install -e ."
 
-[tasks.compile_dependencies]
+[tasks."compile:pip-dependencies"]
 run = "pip-compile -o requirements.txt"
-depends_post = ["install_dependencies"]
+depends_post = ["install:pip-dependencies"]
+
+[tasks."run:gui"]
+dir = "{{ config_root }}"
+run = "python -m plagiarinator.gui"
+
+[tasks."run:cli"]
+dir = "{{ config_root }}"
+raw = true
+raw_args = true
+run = "python -m plagiarinator.cli"
 
 [tasks."run:genetic_evolution"]
 dir = "{{ config_root }}"

@@ -4,7 +4,7 @@
 #let accent-colors = latte.colors.pairs().filter(((_, color)) => color.accent == true).map(((name, color)) => (name, color.rgb)).to-dict()
 #set page(fill: base-colors.base, width: auto, height: auto, margin: 1em);
 
-#let analysis = json("../out/auth2.json")
+#let analysis = json("../out/auth1-auth2.json")
 
 #let highlight_file(
   file,
@@ -14,16 +14,16 @@
       white.transparentize(100%),
       accent-colors.red.transparentize(60%),
     )
-    .sample(50% + calc.abs(weight) * 25%),
+    .sample(50% + calc.abs(weight) * 200%),
 ) = {
   let file_lines = file.file_content.split("\n")
   let file_symbols = file_lines.map(line => line.split("").slice(1).map(symbol => (0, symbol)))
 
-  for (weight, node) in file.ast_nodes {
-    let cur_line = node.range.start_line
-    let end_line = node.range.end_line
-    let cur_column = node.range.start_column
-    let end_column = node.range.end_column
+  for (weight, ..range) in file.importance {
+    let cur_line = range.start_line
+    let end_line = range.end_line
+    let cur_column = range.start_column
+    let end_column = range.end_column
 
     while cur_line < end_line or (cur_line == end_line and cur_column < end_column) {
       let (old_weight, old_symbol) = file_symbols.at(cur_line).at(cur_column)

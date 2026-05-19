@@ -1,26 +1,21 @@
 [project]
 name = "plagiarinator"
-version = "0.1.0"
-description = "A tool for plagiarism detection with both GUI and CLI."
+version = "0.2.0"
+description = "C++ plagiarism detection with a deep learning model (GUI and CLI)."
 authors = [
     { name = "Tim Peko", email = "timerertim@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
-    "tree-sitter",
-    "tree-sitter-language-pack",
-    "apted",
-    "argparse",
-    "numpy",
+    "decider-python @ file:./crates/decider-python",
+    "PySimpleGUI>=5.0.0",
 ]
 
 [project.scripts]
 plagiarinator = "plagiarinator.cli:main"
-
-[project.gui-scripts]
 plagiarinator-gui = "plagiarinator.gui:main"
 
 [tool.setuptools]
-package-dir = {"" = "plagiarinator"}
+packages = ["plagiarinator"]

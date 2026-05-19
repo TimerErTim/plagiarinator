@@ -9,15 +9,15 @@ use burn::tensor::backend::Backend;
 pub fn model_config() -> PlagiarismDeciderConfig {
     PlagiarismDeciderConfig::new(
         u16::MAX as usize + 1,
-        16,
+        32,
         128,
         0.1,
         vec![
-            PlagiarismDeciderLayerConfig::new(32, 1024).with_pre_aggregations(0),
-            PlagiarismDeciderLayerConfig::new(64, 256).with_pre_aggregations(0),
-            PlagiarismDeciderLayerConfig::new(128, 64).with_pre_aggregations(0),
-            PlagiarismDeciderLayerConfig::new(256, 16).with_pre_aggregations(0),
-            PlagiarismDeciderLayerConfig::new(1024, 1).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(64, 1024).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(128, 256).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(256, 64).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(512, 16).with_pre_aggregations(0),
+            PlagiarismDeciderLayerConfig::new(2048, 1).with_pre_aggregations(0),
         ],
     )
 }

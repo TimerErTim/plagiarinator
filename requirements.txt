@@ -4,21 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt
 #
-apted==1.0.3
+file:./crates/decider-python
     # via plagiarinator (pyproject.toml)
-argparse==1.4.0
+pysimplegui==6.0
     # via plagiarinator (pyproject.toml)
-numpy==2.3.3
-    # via plagiarinator (pyproject.toml)
-tree-sitter==0.25.2
-    # via
-    #   plagiarinator (pyproject.toml)
-    #   tree-sitter-language-pack
-tree-sitter-c-sharp==0.23.1
-    # via tree-sitter-language-pack
-tree-sitter-embedded-template==0.25.0
-    # via tree-sitter-language-pack
-tree-sitter-language-pack==0.9.0
-    # via plagiarinator (pyproject.toml)
-tree-sitter-yaml==0.7.1
-    # via tree-sitter-language-pack

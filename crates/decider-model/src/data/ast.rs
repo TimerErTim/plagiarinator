@@ -15,7 +15,7 @@ pub struct ASTNode {
     pub range: FileRange,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct FileRange {
     pub start_line: usize,
     pub start_column: usize,
