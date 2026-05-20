@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::{BasicOps, cast::ToElement}
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, AdamWConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::{BasicOps, cast::ToElement}
 };
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
@@ -45,7 +45,7 @@ pub fn main() {
     let batch_size = 8;
     let validation_interval = 50;
     let checkpoint_interval = 100;
-    let learning_rate = 0.002;
+    let learning_rate = 0.005;
     let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
     AdBackend::seed(&device, seed);
     let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
@@ -119,8 +119,8 @@ pub fn main() {
     println!("num_train_items: {num_train_items}");
 
     // init optimizer and loss function
-    let mut optimizer = AdamConfig::new()
-        .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
+    let mut optimizer = AdamWConfig::new()
+        .with_weight_decay(0.01)
         .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
