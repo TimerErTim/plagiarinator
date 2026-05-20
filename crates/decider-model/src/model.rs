@@ -1,10 +1,10 @@
 use burn::{
-    Tensor, config::Config, module::Module, nn::{
-        Dropout, DropoutConfig, Embedding, EmbeddingConfig, Initializer, LayerNorm, LayerNormConfig, Linear,
-        LinearConfig, SwiGlu, SwiGluConfig,
-    }, prelude::Backend, tensor::{
-        Int, activation::{relu, sigmoid, silu}
-    }
+    Tensor,
+    config::Config,
+    module::Module,
+    nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig, Linear, LinearConfig},
+    prelude::Backend,
+    tensor::{Int, activation::sigmoid},
 };
 
 use crate::{
@@ -32,7 +32,8 @@ pub struct PlagiarismDeciderLayerConfig {
 
 impl PlagiarismDeciderConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> PlagiarismDecider<B> {
-        let mut compression_layers: Vec<GraphCompressConfig> = Vec::with_capacity(self.layers.len());
+        let mut compression_layers: Vec<GraphCompressConfig> =
+            Vec::with_capacity(self.layers.len());
         for layer_config in &self.layers {
             // The previous layer's output_feature size (or the embedding size for the first layer)
             let prev_layer_features = if let Some(prev_layer) = compression_layers.last() {
@@ -47,7 +48,7 @@ impl PlagiarismDeciderConfig {
                     layer_config.num_clusters,
                 )
                 .with_normalization(true)
-                .with_pre_aggregations(layer_config.pre_aggregations)
+                .with_pre_aggregations(layer_config.pre_aggregations),
             );
         }
 
@@ -65,8 +66,7 @@ impl PlagiarismDeciderConfig {
                 .collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
             common_gate: LinearConfig::new(last_layer_features, self.comparator_size).init(device),
-            comparator: LinearConfig::new(last_layer_features, self.comparator_size)
-                .init(device),
+            comparator: LinearConfig::new(last_layer_features, self.comparator_size).init(device),
             decider: LinearConfig::new(self.comparator_size, 1).init(device),
         }
     }

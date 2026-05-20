@@ -1,18 +1,31 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, AdamWConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{BinGzFileRecorder, FullPrecisionSettings, NamedMpkGzFileRecorder, Recorder}, tensor::{BasicOps, cast::ToElement}
+    backend::Autodiff,
+    grad_clipping::GradientClippingConfig,
+    module::{AutodiffModule, Module},
+    nn::loss::BinaryCrossEntropyLossConfig,
+    optim::{AdamWConfig, GradientsParams, Optimizer},
+    prelude::Backend,
+    record::{FullPrecisionSettings, NamedMpkGzFileRecorder},
+    tensor::{cast::ToElement, BasicOps},
+    Tensor,
 };
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
 
 mod loading;
 mod logging;
+use decider_model::{
+    data::{analyze_plagiarism, parse_cpp_file},
+    init_model, PlagiarismDecider,
+};
 use logging::create_tensorboard_logger;
-use decider_model::{PlagiarismDecider, data::{analyze_plagiarism, parse_cpp_file}, init_model};
 use rand::SeedableRng;
 
-use crate::loading::{PlagiarismTrainItem, PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader};
+use crate::loading::{
+    chunked_iter, make_testset_loader, make_trainset_loader, PlagiarismTrainItem, PrefetchIterator,
+};
 
 pub fn main() {
     // Backend type selection
@@ -50,7 +63,8 @@ pub fn main() {
     AdBackend::seed(&device, seed);
     let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
 
-    let checkpoint_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/checkpoints"));
+    let checkpoint_dir =
+        PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/checkpoints"));
     std::fs::create_dir_all(&checkpoint_dir).unwrap();
     let analysis_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/analysis"));
     std::fs::create_dir_all(&analysis_dir).unwrap();
@@ -128,28 +142,70 @@ pub fn main() {
     for (step, batch) in batched_loader.enumerate() {
         if step % checkpoint_interval == 0 {
             // Save model
-            let mut store = burn::store::BurnpackStore::from_file(checkpoint_dir.join(format!("model_{}_{step}.bpk", &run_timestamp)))
-                .metadata("run_timestamp", run_timestamp.clone())
-                .metadata("step", step.to_string());
+            let mut store = burn::store::BurnpackStore::from_file(
+                checkpoint_dir.join(format!("model_{}_{step}.bpk", run_timestamp)),
+            )
+            .metadata("run_timestamp", run_timestamp.clone())
+            .metadata("step", step.to_string());
             store.collect_from(&model).unwrap();
 
             let recorder = NamedMpkGzFileRecorder::<FullPrecisionSettings>::new();
-            model.clone().save_file(checkpoint_dir.join(format!("model_{}_{step}", &run_timestamp)), &recorder).unwrap();
+            model
+                .clone()
+                .save_file(
+                    checkpoint_dir.join(format!("model_{}_{step}", run_timestamp)),
+                    &recorder,
+                )
+                .unwrap();
         }
 
         if step % validation_interval == 0 {
             println!("\nValidating...");
             let validation_output = validate(model.valid(), cpp_test_items.iter());
-            tensorboard_logger.log_scalar("validation/loss", validation_output.average_loss, step as u64);
-            tensorboard_logger.log_scalar("validation/precision", validation_output.precision, step as u64);
-            tensorboard_logger.log_scalar("validation/recall", validation_output.recall, step as u64);
-            tensorboard_logger.log_scalar("validation/f1_score", validation_output.f1_score, step as u64);
+            tensorboard_logger.log_scalar(
+                "validation/loss",
+                validation_output.average_loss,
+                step as u64,
+            );
+            tensorboard_logger.log_scalar(
+                "validation/precision",
+                validation_output.precision,
+                step as u64,
+            );
+            tensorboard_logger.log_scalar(
+                "validation/recall",
+                validation_output.recall,
+                step as u64,
+            );
+            tensorboard_logger.log_scalar(
+                "validation/f1_score",
+                validation_output.f1_score,
+                step as u64,
+            );
 
             // Sample an item for analysis
-            let item = cpp_test_dataset.plagiarized_pairs.iter().find(|i| i.left_path != i.right_path).cloned().unwrap();
-            let analyzed_output = analyze_plagiarism(parse_cpp_file(item.left_path), parse_cpp_file(item.right_path), model.clone()).unwrap();
-            serde_json::to_writer_pretty(File::create(analysis_dir.join(format!("analyzed_output_{step}.json"))).unwrap(), &analyzed_output).unwrap();
-            tensorboard_logger.log_text("validation/analyzed_output", &serde_json::to_string_pretty(&analyzed_output).unwrap(), step as u64);
+            let item = cpp_test_dataset
+                .plagiarized_pairs
+                .iter()
+                .find(|i| i.left_path != i.right_path)
+                .cloned()
+                .unwrap();
+            let analyzed_output = analyze_plagiarism(
+                parse_cpp_file(item.left_path),
+                parse_cpp_file(item.right_path),
+                model.clone(),
+            )
+            .unwrap();
+            serde_json::to_writer_pretty(
+                File::create(analysis_dir.join(format!("analyzed_output_{step}.json"))).unwrap(),
+                &analyzed_output,
+            )
+            .unwrap();
+            tensorboard_logger.log_text(
+                "validation/analyzed_output",
+                &serde_json::to_string_pretty(&analyzed_output).unwrap(),
+                step as u64,
+            );
         }
 
         let targets_bool = batch.iter().map(|item| item.label).collect::<Vec<_>>();
@@ -172,9 +228,13 @@ pub fn main() {
         );
         let predictions_inner = predictions.clone().inner();
         let loss = loss_fn.forward(predictions, targets);
-        
+
         // Logging
-        let stats = statistics_from_training(loss.clone().into_scalar().to_f64(), predictions_inner, targets_bool);
+        let stats = statistics_from_training(
+            loss.clone().into_scalar().to_f64(),
+            predictions_inner,
+            targets_bool,
+        );
         print!(".");
         tensorboard_logger.log_scalar("training/loss", stats.average_loss, step as u64);
         tensorboard_logger.log_scalar("training/precision", stats.precision, step as u64);
@@ -251,8 +311,7 @@ pub fn statistics_from_training<B: Backend>(
 pub fn validate<B: Backend>(
     model: PlagiarismDecider<B>,
     test_dataset: impl Iterator<Item = PlagiarismTrainItem<B>>,
-) -> StatisticsOutput
-{
+) -> StatisticsOutput {
     let device = model.devices().first().unwrap().clone();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
     let mut predictions = Vec::with_capacity(test_dataset.size_hint().0);
@@ -266,7 +325,10 @@ pub fn validate<B: Backend>(
         targets_bool.push(item.label);
     }
     let predictions = Tensor::cat(predictions, 0);
-    let loss = loss_fn.forward(predictions.clone(), Tensor::cat(targets, 0)).into_scalar().to_f64();
+    let loss = loss_fn
+        .forward(predictions.clone(), Tensor::cat(targets, 0))
+        .into_scalar()
+        .to_f64();
 
-    return statistics_from_training(loss, predictions, targets_bool);
+    statistics_from_training(loss, predictions, targets_bool)
 }

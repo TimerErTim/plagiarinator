@@ -1,22 +1,18 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Initializer, LayerNorm, LayerNormConfig, Linear, LinearConfig, SwiGlu, SwiGluConfig},
+    nn::{Initializer, LayerNorm, LayerNormConfig, SwiGlu, SwiGluConfig},
     prelude::Backend,
-    tensor::{Float, activation::{leaky_relu, log_softmax, silu, softmax}},
+    tensor::{Float, activation::log_softmax},
 };
 
-use crate::data::{Graph};
+use crate::data::Graph;
 
-pub fn graph_convolution<B: Backend>(
-    graph: Graph<B, Float>,
-    swiglu: SwiGlu<B>,
-) -> Graph<B> {
+pub fn graph_convolution<B: Backend>(graph: Graph<B, Float>, swiglu: SwiGlu<B>) -> Graph<B> {
     let normalized_adjacency_matrix = graph.normalized_adjacency_matrix();
     // Aggregate features of nodes pointing to us, transpose would result in features we point to
     // (but transposing would be required for all downstream operations)
-    let neighbor_features = normalized_adjacency_matrix
-        .matmul(graph.nodes);
+    let neighbor_features = normalized_adjacency_matrix.matmul(graph.nodes);
     let neighbor_features = swiglu.forward(neighbor_features);
     Graph {
         nodes: neighbor_features,
@@ -50,7 +46,11 @@ impl GraphConvConfig {
                 .with_bias(self.bias)
                 .with_initializer(self.initializer.clone())
                 .init(device),
-            normalization: if self.normalization { Some(LayerNormConfig::new(self.output_features).init(device)) } else { None },
+            normalization: if self.normalization {
+                Some(LayerNormConfig::new(self.output_features).init(device))
+            } else {
+                None
+            },
         }
     }
 }
@@ -109,7 +109,11 @@ impl GraphDiffPoolConfig {
                 .with_initializer(self.initializer.clone())
                 .with_normalization(false)
                 .init(device),
-            normalization: if self.normalization { Some(LayerNormConfig::new(self.output_features).init(device)) } else { None },
+            normalization: if self.normalization {
+                Some(LayerNormConfig::new(self.output_features).init(device))
+            } else {
+                None
+            },
         }
     }
 }
@@ -130,7 +134,6 @@ impl<B: Backend> GraphDiffPool<B> {
         Graph::new(super_nodes, super_edges)
     }
 }
-
 
 #[derive(Config, Debug)]
 pub struct GraphCompressConfig {
@@ -155,12 +158,18 @@ impl GraphCompressConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> GraphCompress<B> {
         GraphCompress {
             pre_aggregations: (0..self.pre_aggregations)
-            .map(|_| GraphConvConfig::new(self.input_features, self.input_features)
-            .with_normalization(true)
-            .with_bias(true)
-            .init(device)
-        ).collect(),
-            pooling_layer: GraphDiffPoolConfig::new(self.input_features, self.output_features, self.super_nodes)
+                .map(|_| {
+                    GraphConvConfig::new(self.input_features, self.input_features)
+                        .with_normalization(true)
+                        .with_bias(true)
+                        .init(device)
+                })
+                .collect(),
+            pooling_layer: GraphDiffPoolConfig::new(
+                self.input_features,
+                self.output_features,
+                self.super_nodes,
+            )
             .with_normalization(self.normalization)
             .init(device),
         }
@@ -179,4 +188,3 @@ impl<B: Backend> GraphCompress<B> {
         output
     }
 }
-

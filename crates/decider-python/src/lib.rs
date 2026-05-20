@@ -51,9 +51,8 @@ impl PlagiarismModel {
     ) -> PyResult<Bound<'py, PyAny>> {
         let file1 = parse_cpp_file(path1);
         let file2 = parse_cpp_file(path2);
-        let insights = analyze_plagiarism(file1, file2, self.model.clone()).map_err(|e| {
-            PyValueError::new_err(e.to_string())
-        })?;
+        let insights = analyze_plagiarism(file1, file2, self.model.clone())
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
         insights_to_python(py, insights)
     }
 }
@@ -73,10 +72,7 @@ fn analyzed_file_to_dict(
     file: decider_model::data::AnalyzedFile,
 ) -> PyResult<Bound<'_, PyDict>> {
     let dict = PyDict::new(py);
-    dict.set_item(
-        "file_path",
-        file.file_path.to_string_lossy().into_owned(),
-    )?;
+    dict.set_item("file_path", file.file_path.to_string_lossy().into_owned())?;
     dict.set_item("file_content", file.file_content)?;
 
     let importance = PyList::empty(py);

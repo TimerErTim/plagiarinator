@@ -2,9 +2,9 @@ pub mod data;
 pub mod layers;
 mod model;
 
+use burn::tensor::backend::Backend;
 use burn_store::{ModuleSnapshot, ModuleStore};
 pub use model::*;
-use burn::tensor::backend::Backend;
 
 pub fn model_config() -> PlagiarismDeciderConfig {
     PlagiarismDeciderConfig::new(
@@ -22,7 +22,10 @@ pub fn model_config() -> PlagiarismDeciderConfig {
     )
 }
 
-pub fn load_model<B: Backend, P: ModuleStore>(device: &B::Device, store: &mut P) -> PlagiarismDecider<B> {
+pub fn load_model<B: Backend, P: ModuleStore>(
+    device: &B::Device,
+    store: &mut P,
+) -> PlagiarismDecider<B> {
     let mut model = init_model::<B>(device);
     model.load_from(store).unwrap();
     model

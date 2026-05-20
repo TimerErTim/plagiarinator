@@ -1,6 +1,8 @@
 use burn::{backend::Autodiff, prelude::Backend};
 use burn_store::ModuleSnapshot;
-use graph_deeplearning::{get_model_config, loading::parse_cpp_file, model::analyze_plagiarism, nn::PlagiarismDecider};
+use graph_deeplearning::{
+    get_model_config, loading::parse_cpp_file, model::analyze_plagiarism, nn::PlagiarismDecider,
+};
 
 pub fn main() {
     use std::env;
@@ -32,7 +34,9 @@ pub fn main() {
 
 static MODEL_WEIGHTS: &[u8] = include_bytes!(env!("MODEL_WEIGHTS_PATH"));
 
-fn load_model<B: Backend>(device: &<Autodiff<B> as Backend>::Device) -> PlagiarismDecider<Autodiff<B>> {
+fn load_model<B: Backend>(
+    device: &<Autodiff<B> as Backend>::Device,
+) -> PlagiarismDecider<Autodiff<B>> {
     let mut store = burn::store::BurnpackStore::from_static(MODEL_WEIGHTS);
     let mut model = get_model_config().init::<Autodiff<B>>(device);
     model.load_from(&mut store).unwrap();

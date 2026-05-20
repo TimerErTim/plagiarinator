@@ -1,10 +1,9 @@
 use std::fmt::{Display, Write};
 
 use burn::{
-    nn::SwiGlu,
+    Tensor,
     prelude::Backend,
     tensor::{BasicOps, Float, Int, TensorKind},
-    Tensor,
 };
 use tree_sitter::Tree;
 
@@ -20,9 +19,20 @@ pub struct Graph<B: Backend, D: TensorKind<B> = Float> {
 }
 
 impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
-    pub fn new(nodes: Tensor<B, 2, D>, edges: Tensor<B, 2, Float>) -> Self where D: BasicOps<B> {
-        assert_eq!(nodes.shape()[0], edges.shape()[0], "Number of nodes and edges must match");
-        assert_eq!(edges.shape()[0], edges.shape()[1], "Adjacency matrix must be square");
+    pub fn new(nodes: Tensor<B, 2, D>, edges: Tensor<B, 2, Float>) -> Self
+    where
+        D: BasicOps<B>,
+    {
+        assert_eq!(
+            nodes.shape()[0],
+            edges.shape()[0],
+            "Number of nodes and edges must match"
+        );
+        assert_eq!(
+            edges.shape()[0],
+            edges.shape()[1],
+            "Adjacency matrix must be square"
+        );
         Graph { nodes, edges }
     }
 
@@ -31,9 +41,10 @@ impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
         let degree_matrix = self.edges.clone().sum_dim(1) + 1; // For every node, sum the edges going into it
         let degree_matrix_inv_sqrt = degree_matrix.powf_scalar(-0.5); // Inverse square root of the degree matrix
 
-        self.edges.clone()  // We accepts some form of amnesia due to no forced self-loops because feature aggregation is still happening and we want to condense features at the end of the day
-          .mul(degree_matrix_inv_sqrt.clone())   // Normalize by deg(i) of the target node, https://towardsdatascience.com/graph-convolutional-networks-introduction-to-gnns-24b3f60d6c95/
-          .mul(degree_matrix_inv_sqrt.transpose())            // Normalize by deg(j) of all the source nodes j in N_i
+        self.edges
+            .clone() // We accepts some form of amnesia due to no forced self-loops because feature aggregation is still happening and we want to condense features at the end of the day
+            .mul(degree_matrix_inv_sqrt.clone()) // Normalize by deg(i) of the target node, https://towardsdatascience.com/graph-convolutional-networks-introduction-to-gnns-24b3f60d6c95/
+            .mul(degree_matrix_inv_sqrt.transpose()) // Normalize by deg(j) of all the source nodes j in N_i
     }
 
     /// Switches the source and target of the edges
@@ -54,7 +65,9 @@ impl<B: Backend, D: TensorKind<B>> Graph<B, D> {
         D: BasicOps<B>,
     {
         if self.nodes.shape()[0] <= 1 {
-            return Err(format!("Cannot remove node {node_index} from graph with only one node"));
+            return Err(format!(
+                "Cannot remove node {node_index} from graph with only one node"
+            ));
         }
 
         self.nodes.inplace(|nodes| {

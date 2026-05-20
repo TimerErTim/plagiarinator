@@ -27,7 +27,14 @@ pub struct FileRange {
 
 impl FileRange {
     pub fn from_treesitter_range(range: tree_sitter::Range) -> Self {
-        Self { start_line: range.start_point.row, start_column: range.start_point.column, end_line: range.end_point.row, end_column: range.end_point.column, start_byte: range.start_byte, end_byte: range.end_byte }
+        Self {
+            start_line: range.start_point.row,
+            start_column: range.start_point.column,
+            end_line: range.end_point.row,
+            end_column: range.end_point.column,
+            start_byte: range.start_byte,
+            end_byte: range.end_byte,
+        }
     }
 }
 

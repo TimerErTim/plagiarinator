@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use itertools::Itertools;
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::dataset_loader::LanguageDataset;
 
@@ -20,7 +20,7 @@ fn read_ground_truth_static(
     })?;
 
     let mut assignment_to_groups: FxHashMap<String, Vec<Vec<String>>> =
-        FxHashMap::with_hasher(FxBuildHasher::default());
+        FxHashMap::with_hasher(FxBuildHasher);
     let mut current_assignment: Option<String> = None;
 
     for raw_line in content.lines() {
@@ -112,8 +112,7 @@ pub fn load_cpp_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDatase
             .map(|plagiarized_group| {
                 plagiarized_group
                     .into_iter()
-                    .map(|student_id| student_id_to_path.get(&student_id).cloned())
-                    .flatten()
+                    .filter_map(|student_id| student_id_to_path.get(&student_id).cloned())
                     .collect_vec()
             })
             .collect_vec();

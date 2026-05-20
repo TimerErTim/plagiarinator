@@ -1,7 +1,7 @@
-mod graph;
-mod ast;
 mod analysis;
+mod ast;
+mod graph;
 
-pub use graph::*;
-pub use ast::*;
 pub use analysis::*;
+pub use ast::*;
+pub use graph::*;

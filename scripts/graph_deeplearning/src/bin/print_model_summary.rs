@@ -1,5 +1,5 @@
 use burn::backend::NdArray;
-use burn::tensor::{Device, backend::Backend as _};
+use burn::tensor::{backend::Backend as _, Device};
 use graph_deeplearning::get_model_config;
 
 fn main() {

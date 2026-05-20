@@ -4,7 +4,6 @@ use std::{
     io::{BufReader, Read},
     marker::PhantomData,
     panic::{catch_unwind, UnwindSafe},
-    path::Path,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Receiver,
@@ -14,9 +13,8 @@ use std::{
 
 use burn::{prelude::Backend, tensor::Int};
 use data_loading::dataset_loader::FilePair;
-use decider_model::data::{Graph, parse_cpp_to_tree};
+use decider_model::data::{parse_cpp_to_tree, Graph};
 use rand::{seq::SliceRandom, Rng, RngExt};
-
 
 #[derive(Debug, Clone)]
 pub struct PlagiarismTrainItem<B: Backend> {
@@ -94,10 +92,10 @@ where
             pair.clone()
         }
     }
-    
+
     // Skip self-plagiarism pairs, because model architecture forces similarity to be 1.0 anyways
     plagiarized_pairs.retain(|pair| pair.left_path != pair.right_path);
-    
+
     let device = device.clone();
     let items = std::iter::repeat_with(move || {
         // Pad both lists to be equal in length by repeating elements as necessary
