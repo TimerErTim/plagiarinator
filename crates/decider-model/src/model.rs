@@ -65,20 +65,9 @@ impl PlagiarismDeciderConfig {
                 .collect(),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
             common_gate: LinearConfig::new(last_layer_features, self.comparator_size).init(device),
-            distance: LinearConfig::new(last_layer_features, self.comparator_size)
-                .with_bias(false)
-                .with_initializer(Initializer::Uniform { 
-                    min: 0.0,
-                    max: 1.0 / last_layer_features as f64 
-                })
+            comparator: LinearConfig::new(last_layer_features, self.comparator_size)
                 .init(device),
-            comparator: LinearConfig::new(self.comparator_size, 1)
-                .with_bias(false)
-                .with_initializer(Initializer::Uniform { 
-                    min: 0.0,
-                    max: 1.0 / self.comparator_size as f64 
-                })
-                .init(device),
+            decider: LinearConfig::new(self.comparator_size, 1).init(device),
         }
     }
 }
@@ -89,8 +78,8 @@ pub struct PlagiarismDecider<B: Backend> {
     compression_layers: Vec<GraphCompress<B>>,
     dropout: Dropout,
     common_gate: Linear<B>,
-    distance: Linear<B>,
     comparator: Linear<B>,
+    decider: Linear<B>,
 }
 
 impl<B: Backend> PlagiarismDecider<B> {
@@ -123,11 +112,10 @@ impl<B: Backend> PlagiarismDecider<B> {
         let commons = compressed_graph_1.clone() * compressed_graph_2.clone();
         let differences = (compressed_graph_1 - compressed_graph_2).abs();
         let distance_gate = sigmoid(self.common_gate.forward(commons));
-        let weighted_differences = self.distance.forward(differences);
-        let gated_difference = distance_gate * weighted_differences;
-        let difference_comparator = self.comparator.forward(self.dropout.forward(gated_difference));
-        let similarity = Tensor::exp(-relu(difference_comparator));
-        similarity
+        let compared = self.comparator.forward(differences);
+        let gated_compared = self.dropout.forward(distance_gate * compared);
+        let decision = self.decider.forward(gated_compared);
+        sigmoid(decision)
     }
 
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
