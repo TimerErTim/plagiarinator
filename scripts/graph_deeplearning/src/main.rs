@@ -1,15 +1,7 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    backend::Autodiff,
-    grad_clipping::GradientClippingConfig,
-    module::{AutodiffModule, Module},
-    nn::loss::BinaryCrossEntropyLossConfig,
-    optim::{AdamWConfig, GradientsParams, Optimizer},
-    prelude::Backend,
-    record::{FullPrecisionSettings, NamedMpkGzFileRecorder},
-    tensor::{cast::ToElement, BasicOps},
-    Tensor,
+    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, AdamWConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{FullPrecisionSettings, NamedMpkGzFileRecorder}, tensor::{BasicOps, cast::ToElement}
 };
 use burn_store::ModuleStore;
 use data_loading::dataset_loader::load_dataset;
@@ -133,8 +125,8 @@ pub fn main() {
     println!("num_train_items: {num_train_items}");
 
     // init optimizer and loss function
-    let mut optimizer = AdamWConfig::new()
-        .with_weight_decay(0.01)
+    let mut optimizer = AdamConfig::new()
+        .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
         .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
         .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
