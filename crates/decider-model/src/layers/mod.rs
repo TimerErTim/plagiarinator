@@ -1,3 +1,5 @@
-mod graph;
+mod gcn;
+mod gin;
 
-pub use graph::*;
+pub use gcn::*;
+pub use gin::*;

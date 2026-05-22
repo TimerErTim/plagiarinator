@@ -97,7 +97,6 @@ impl<B: Backend, D: TensorKind<B> + BasicOps<B>> Display for Graph<B, D> {
                 .sum()
                 .into_scalar()
         )?;
-        writeln!(f, "Nodes: {}", self.nodes)?;
         Ok(())
     }
 }
