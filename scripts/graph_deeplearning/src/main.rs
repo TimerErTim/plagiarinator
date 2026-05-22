@@ -62,7 +62,7 @@ pub fn main() {
     std::fs::create_dir_all(&analysis_dir).unwrap();
     let mut tensorboard_logger = create_tensorboard_logger("unknown", &run_timestamp);
 
-    let mut dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
+    let mut dataset = load_dataset("datasets/programming-homework-dataset-plagiarism-detection").unwrap();
     // Make equal split of plagiarized and authentic pairs
     let len = dataset
         .cpp_dataset
