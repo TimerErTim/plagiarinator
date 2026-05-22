@@ -8,6 +8,7 @@ use data_loading::dataset_loader::load_dataset;
 
 mod loading;
 mod logging;
+mod learning_run;
 use decider_model::{
     data::{analyze_plagiarism, parse_cpp_file},
     init_model, PlagiarismDecider,
