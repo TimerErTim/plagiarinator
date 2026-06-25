@@ -18,6 +18,12 @@ TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 TENSORBOARD_LOG_DIR="{{ config_root }}/out/tensorboard-logs"
 
+[tasks."fix:rust"]
+run = "cargo clippy --fix"
+
+[tasks."fmt:rust"]
+run = "cargo fmt --all"
+
 [tasks."install:pip-dependencies"]
 run = "pip install -e ."
 
@@ -41,11 +47,15 @@ run = "cargo run --release --manifest-path scripts/radiate_config_optimizer/Carg
 
 [tasks."run:graph_deeplearning"]
 dir = "{{ config_root }}"
-run = "cargo run --release --package graph_deeplearning"
+run = "cargo run --release --package graph_deeplearning --bin graph_deeplearning"
 
 [tasks."build:graph_inference"]
 dir = "{{ config_root }}"
 run = "cargo build --release --package graph_deeplearning --bin run_inference"
+
+[tasks."run:graph_validation"]
+dir = "{{ config_root }}"
+run = "cargo run --release --package graph_deeplearning --bin run_validation"
 
 [tasks."run:tensorboard"]
 description = "Run TensorBoard to visualize the training progress"

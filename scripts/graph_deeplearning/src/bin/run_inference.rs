@@ -1,8 +1,7 @@
 use burn::{backend::Autodiff, prelude::Backend};
 use burn_store::ModuleSnapshot;
-use graph_deeplearning::{
-    get_model_config, loading::parse_cpp_file, model::analyze_plagiarism, nn::PlagiarismDecider,
-};
+use graph_deeplearning::load_trained_model;
+use decider_model::data::{analyze_plagiarism, parse_cpp_file};
 
 pub fn main() {
     use std::env;
@@ -23,7 +22,7 @@ pub fn main() {
     let item1 = &args[1];
     let item2 = &args[2];
 
-    let model = load_model::<InferenceBackend>(&device);
+    let model = load_trained_model::<Autodiff<InferenceBackend>>(&device);
 
     let file1 = parse_cpp_file(item1);
     let file2 = parse_cpp_file(item2);
@@ -32,13 +31,3 @@ pub fn main() {
     println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
 }
 
-static MODEL_WEIGHTS: &[u8] = include_bytes!(env!("MODEL_WEIGHTS_PATH"));
-
-fn load_model<B: Backend>(
-    device: &<Autodiff<B> as Backend>::Device,
-) -> PlagiarismDecider<Autodiff<B>> {
-    let mut store = burn::store::BurnpackStore::from_static(MODEL_WEIGHTS);
-    let mut model = get_model_config().init::<Autodiff<B>>(device);
-    model.load_from(&mut store).unwrap();
-    model
-}
