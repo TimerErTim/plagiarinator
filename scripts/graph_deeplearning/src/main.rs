@@ -60,6 +60,8 @@ pub fn main() {
     let checkpoint_dir =
         PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/checkpoints"));
     std::fs::create_dir_all(&checkpoint_dir).unwrap();
+    let validation_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/validation"));
+    std::fs::create_dir_all(&validation_dir).unwrap();
     let analysis_dir = PathBuf::from(format!("out/deep_learning/run_{run_timestamp}/analysis"));
     std::fs::create_dir_all(&analysis_dir).unwrap();
     let mut tensorboard_logger = create_tensorboard_logger("unknown", &run_timestamp);
@@ -124,24 +126,24 @@ pub fn main() {
             );
             tensorboard_logger.log_scalar(
                 "validation/precision",
-                validation_output.best_classification_statistic.precision,
+                validation_output.unbiased_classification_statistic.precision,
                 step as u64,
             );
             tensorboard_logger.log_scalar(
                 "validation/recall",
-                validation_output.best_classification_statistic.recall,
+                validation_output.unbiased_classification_statistic.recall,
                 step as u64,
             );
             tensorboard_logger.log_scalar(
                 "validation/f1_score",
-                validation_output.best_classification_statistic.f1_score,
+                validation_output.unbiased_classification_statistic.f1_score,
                 step as u64,
             );
-            tensorboard_logger.log_scalar(
-                "validation/classification_threshold",
-                validation_output.best_classification_statistic.threshold,
-                step as u64,
-            );
+            serde_json::to_writer_pretty(
+                File::create(validation_dir.join(format!("validation_{step}.json"))).unwrap(),
+                &validation_output,
+            )
+            .unwrap();
 
             // Sample an item for analysis
             let item = cpp_test_dataset
@@ -194,10 +196,9 @@ pub fn main() {
         );
         print!(".");
         tensorboard_logger.log_scalar("training/loss", stats.average_loss, step as u64);
-        tensorboard_logger.log_scalar("training/precision", stats.best_classification_statistic.precision, step as u64);
-        tensorboard_logger.log_scalar("training/recall", stats.best_classification_statistic.recall, step as u64);
-        tensorboard_logger.log_scalar("training/f1_score", stats.best_classification_statistic.f1_score, step as u64);
-        tensorboard_logger.log_scalar("training/classification_threshold", stats.best_classification_statistic.threshold, step as u64);
+        tensorboard_logger.log_scalar("training/precision", stats.unbiased_classification_statistic.precision, step as u64);
+        tensorboard_logger.log_scalar("training/recall", stats.unbiased_classification_statistic.recall, step as u64);
+        tensorboard_logger.log_scalar("training/f1_score", stats.unbiased_classification_statistic.f1_score, step as u64);
         std::io::stdout().flush().unwrap();
         tensorboard_logger.flush();
 

@@ -28,6 +28,8 @@ pub struct ValidationResult {
     pub raw_predictions: Vec<ValidationPrediction>,
     pub classification_statistics: Vec<ClassificationStatistics>,
     pub best_classification_statistic: ClassificationStatistics,
+    /// Default threshold of 0.5 is unbiased
+    pub unbiased_classification_statistic: ClassificationStatistics,
 }
 
 pub fn validate<B: Backend>(
@@ -62,14 +64,18 @@ pub fn validation_from_tensor_predictions<B: Backend>(
 ) -> ValidationResult {
     let loss = loss.into_scalar().to_f64();
     let predictions = predictions_from_tensors(predictions, targets);
-    let classification_statistics = all_classification_statistics_from_predictions(&predictions);
+    let mut classification_statistics = all_classification_statistics_from_predictions(&predictions);
     let best_classification_statistic = classification_statistics.iter().max_by(|s1, s2| s1.f1_score.partial_cmp(&s2.f1_score).unwrap()).unwrap().clone();
+    classification_statistics.sort_by(|s1, s2| s1.threshold.partial_cmp(&s2.threshold).unwrap());
+    let unbiased_classification_statistic = classification_statistics[classification_statistics.len() / 2].clone();
+
     ValidationResult {
         average_loss: loss,
         item_count: predictions.len(),
         raw_predictions: predictions,
         classification_statistics,
         best_classification_statistic,
+        unbiased_classification_statistic,
     }
 }
 
@@ -134,7 +140,7 @@ pub fn classification_statistics_from_predictions(
 pub fn all_classification_statistics_from_predictions(
     predictions: &[ValidationPrediction],
 ) -> Vec<ClassificationStatistics> {
-    let steps = 100;
+    let steps = 250;
     (0..=steps).map(|i| {
         let threshold = i as f64 / steps as f64;
         classification_statistics_from_predictions(&predictions, threshold)
