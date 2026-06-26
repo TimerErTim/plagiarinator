@@ -13,7 +13,7 @@ typst = "0.14.2"
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
-MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260519_105148/checkpoints/model_20260519_105148_1300.bpk"
+MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260625_214546/checkpoints/model_20260625_214546_300.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 TENSORBOARD_LOG_DIR="{{ config_root }}/out/tensorboard-logs"
@@ -45,7 +45,7 @@ run = "python -m plagiarinator.cli"
 dir = "{{ config_root }}"
 run = "cargo run --release --manifest-path scripts/radiate_config_optimizer/Cargo.toml"
 
-[tasks."run:graph_deeplearning"]
+[tasks."dl:train"]
 dir = "{{ config_root }}"
 run = "cargo run --release --package graph_deeplearning --bin graph_deeplearning"
 
@@ -53,9 +53,13 @@ run = "cargo run --release --package graph_deeplearning --bin graph_deeplearning
 dir = "{{ config_root }}"
 run = "cargo build --release --package graph_deeplearning --bin run_inference"
 
-[tasks."run:graph_validation"]
+[tasks."dl:validate"]
 dir = "{{ config_root }}"
 run = "cargo run --release --package graph_deeplearning --bin run_validation"
+
+[tasks."dl:print_model"]
+dir = "{{ config_root }}"
+run = "cargo run --release --package decider-model --bin print_model"
 
 [tasks."run:tensorboard"]
 description = "Run TensorBoard to visualize the training progress"
