@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    Tensor, backend::Autodiff, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{AdamConfig, AdamWConfig, GradientsParams, Optimizer, decay::WeightDecayConfig}, prelude::Backend, record::{FullPrecisionSettings, NamedMpkGzFileRecorder}, tensor::{BasicOps, cast::ToElement}
+    Tensor, backend::{Autodiff, autodiff::grads::Gradients}, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{Adam, AdamConfig, AdamW, AdamWConfig, GradientsParams, Optimizer, adaptor::OptimizerAdaptor, decay::WeightDecayConfig}, prelude::Backend, record::{FullPrecisionSettings, NamedMpkGzFileRecorder}, tensor::{BasicOps, backend::AutodiffBackend, cast::ToElement}
 };
 use burn_store::ModuleStore;
 use data_loading::{dataset_loader::load_dataset, full_cpp_dataset};
@@ -52,7 +52,6 @@ pub fn main() {
     let batch_size = 8;
     let validation_interval = 50;
     let checkpoint_interval = 100;
-    let learning_rate = 0.005;
     let rng = rand::rngs::SmallRng::seed_from_u64(seed);
     AdBackend::seed(&device, seed);
     let run_timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
@@ -90,11 +89,11 @@ pub fn main() {
     println!("num_train_items: {num_train_items}");
 
     // init optimizer and loss function
-    let mut optimizer = AdamConfig::new()
-        .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
-        .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
-        .init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
+    let mut optimizer = PlagiarismOptimizer::new(
+        0.005,
+        0.001,
+    );
 
     for (step, batch) in batched_loader.enumerate() {
         if step % checkpoint_interval == 0 {
@@ -204,8 +203,34 @@ pub fn main() {
 
         // Optimization step
         let mut grads = loss.backward();
-        let param_grads = GradientsParams::from_module(&mut grads, &model);
-        model = optimizer.step(learning_rate, model, param_grads);
+        model = optimizer.step(model, grads);
     }
 }
 
+pub struct PlagiarismOptimizer<B: AutodiffBackend> {
+    embedding_lr: f64,
+    main_lr: f64,
+    optimizer: OptimizerAdaptor<Adam, PlagiarismDecider<B>, B>,
+}
+
+impl<B: AutodiffBackend> PlagiarismOptimizer<B> {
+    pub fn new(
+        main_lr: f64,
+        embedding_lr: f64,
+    ) -> Self {
+        let optimizer = AdamConfig::new()
+            .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
+            .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
+            .init();
+        Self { embedding_lr, main_lr, optimizer }
+    }
+
+    pub fn step(&mut self, mut model: PlagiarismDecider<B>, mut grads: B::Gradients) -> PlagiarismDecider<B> {
+        let embedding_grads = GradientsParams::from_module(&mut grads, &model.embedding);
+        // Collects all other gradients remaining in the gradients object
+        let main_grads = GradientsParams::from_module(&mut grads, &model);
+        model = self.optimizer.step(self.main_lr, model, main_grads);
+        model = self.optimizer.step(self.embedding_lr, model, embedding_grads);
+        model
+    }
+}
