@@ -1,10 +1,5 @@
 use burn::{
-    Tensor,
-    config::Config,
-    module::Module,
-    nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear, LinearConfig},
-    prelude::Backend,
-    tensor::{Int, activation::{sigmoid, silu}},
+    Tensor, config::Config, module::Module, nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear, LinearConfig, SwiGlu, SwiGluConfig}, prelude::Backend, tensor::{Int, activation::{relu, sigmoid, silu}, linalg::cosine_similarity},
 };
 
 use crate::{
@@ -16,7 +11,7 @@ use crate::{
 pub struct PlagiarismDeciderConfig {
     num_classes: usize,
     embedding_size: usize,
-    comparator_size: usize,
+    representation_size: usize,
     dropout_rate: f64,
     // The number of output features for each layer
     layers: usize,
@@ -28,10 +23,8 @@ impl PlagiarismDeciderConfig {
         PlagiarismDecider {
             embedding: EmbeddingConfig::new(self.num_classes, self.embedding_size).init(device),
             graph_compression: GINConvConfig::new(self.embedding_size, self.layers).init(device),
-            diff_norm: LayerNormConfig::new(self.embedding_size * (self.layers + 1)).init(device),
+            graph_representation: SwiGluConfig::new(self.embedding_size * (self.layers + 1), self.representation_size).init(device),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
-            comparator: LinearConfig::new(self.embedding_size * (self.layers + 1), self.comparator_size).init(device),
-            decider: LinearConfig::new(self.comparator_size, 1).init(device),
         }
     }
 }
@@ -40,10 +33,8 @@ impl PlagiarismDeciderConfig {
 pub struct PlagiarismDecider<B: Backend> {
     pub embedding: Embedding<B>,
     graph_compression: GINConv<B>,
-    diff_norm: LayerNorm<B>,
+    graph_representation: SwiGlu<B>,
     dropout: Dropout,
-    comparator: Linear<B>,
-    decider: Linear<B>,
 }
 
 impl<B: Backend> PlagiarismDecider<B> {
@@ -60,7 +51,9 @@ impl<B: Backend> PlagiarismDecider<B> {
 
     pub fn compress_embedded_graph(&self, embedded_graph: Graph<B>) -> Tensor<B, 1> {
         let compressed_graph = self.graph_compression.forward(embedded_graph);
-        compressed_graph.flatten(0, 1)
+        let compressed_graph = compressed_graph.flatten(0, 1);
+        let compressed_graph = self.dropout.forward(compressed_graph);
+        self.graph_representation.forward(compressed_graph)
     }
 
     pub fn predict_embedded_graphs(
@@ -70,11 +63,8 @@ impl<B: Backend> PlagiarismDecider<B> {
     ) -> Tensor<B, 1> {
         let compressed_graph_1 = self.compress_embedded_graph(embedded_graph_1);
         let compressed_graph_2 = self.compress_embedded_graph(embedded_graph_2);
-        let differences = Tensor::abs(compressed_graph_1 - compressed_graph_2);
-        let normalized_differences = self.dropout.forward(self.diff_norm.forward(differences));
-        let compared = silu(self.comparator.forward(normalized_differences));
-        let decision = self.decider.forward(compared);
-        sigmoid(decision).mean()
+        let similarity = cosine_similarity(compressed_graph_1, compressed_graph_2, 0, None);
+        relu(similarity)
     }
 
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {

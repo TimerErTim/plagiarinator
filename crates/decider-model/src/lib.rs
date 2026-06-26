@@ -9,10 +9,10 @@ pub use model::*;
 pub fn model_config() -> PlagiarismDeciderConfig {
     PlagiarismDeciderConfig::new(
         u16::MAX as usize + 1,
-        32,
+        16,
         128,
         0.1,
-        16,
+        32,
     )
 }
 
