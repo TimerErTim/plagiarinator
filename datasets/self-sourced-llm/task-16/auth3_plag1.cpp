@@ -1,0 +1,72 @@
+#include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+// cleaned up version
+
+struct Image {
+    std::string name;
+    int pixel_count;
+};
+
+class ImageCache {
+    mutable std::unordered_map<std::string, std::weak_ptr<Image>> content_;
+
+public:
+    std::shared_ptr<Image> load(const std::string& key, int pixels) {
+        auto it = content_.find(key);
+        if (it != content_.end()) {
+            if (auto sp = it->second.lock()) return sp;
+            if (it->second.expired()) content_.erase(it);
+        }
+        if (auto sp = content_[key].lock()) return sp;
+        auto created = std::shared_ptr<Image>(new Image{key, pixels});
+        content_[key] = created;
+        return created;
+    }
+
+    std::size_t size() const {
+        std::size_t c = 0;
+        for (auto& e : content_)
+            if (!e.second.expired()) ++c;
+        return c;
+    }
+
+    void drop_all() { content_.clear(); }
+
+    bool alive(const std::string& key, int& pixels_out) const {
+        auto it = content_.find(key);
+        if (it == content_.end()) return false;
+        if (auto sp = it->second.lock()) {
+            pixels_out = sp->pixel_count;
+            return true;
+        }
+        return false;
+    }
+};
+
+int main() {
+    ImageCache ic;
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "LOAD") {
+            std::string id;
+            int n;
+            std::cin >> id >> n;
+            {
+                std::shared_ptr<Image> handle = ic.load(id, n);
+                std::cout << "loaded " << handle->name << " pixels=" << handle->pixel_count << std::endl;
+            }
+        } else if (token == "QUERY") {
+            std::string id;
+            std::cin >> id;
+            int n;
+            if (ic.alive(id, n)) std::cout << "pixels=" << n << std::endl;
+            else std::cout << "EXPIRED\n";
+        } else if (token == "DROP_ALL") {
+            ic.drop_all();
+        }
+    }
+    return 0;
+}

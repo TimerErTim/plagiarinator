@@ -1,0 +1,67 @@
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <variant>
+// TODO: refactor later
+
+struct Number { int value; };
+struct Add { std::size_t x, y; };
+struct Sub { std::size_t x, y; };
+struct Mul { std::size_t x, y; };
+struct Div { std::size_t x, y; };
+
+using Expr = std::variant<Number, Add, Sub, Mul, Div>;
+
+template <typename Visitor, typename Variant>
+auto apply_visit(Visitor&& vis, Variant&& v) {
+    return std::visit(std::forward<Visitor>(vis), std::forward<Variant>(v));
+}
+
+int go_tree(const std::vector<Expr>& store, std::size_t id) {
+    return apply_visit(
+        [&](auto&& node) -> int {
+            using U = std::decay_t<decltype(node)>;
+            if constexpr (std::is_same_v<U, Number>) return node.value;
+            else if constexpr (std::is_same_v<U, Add>) return go_tree(store, node.x) + go_tree(store, node.y);
+            else if constexpr (std::is_same_v<U, Sub>) return go_tree(store, node.x) - go_tree(store, node.y);
+            else if constexpr (std::is_same_v<U, Mul>) return go_tree(store, node.x) * go_tree(store, node.y);
+            else {
+                int d = go_tree(store, node.y);
+                if (d == 0) throw 1;
+                return go_tree(store, node.x) / d;
+            }
+        },
+        store[id]);
+}
+
+int main() {
+    std::string buf;
+    while (std::getline(std::cin, buf)) {
+        if (buf.empty()) break;
+        std::vector<Expr> arena;
+        std::vector<std::size_t> tops;
+        std::istringstream lex(buf);
+        std::string chunk;
+        while (lex >> chunk) {
+            if (chunk == "+" || chunk == "-" || chunk == "*" || chunk == "/") {
+                std::size_t r = tops.back(); tops.pop_back();
+                std::size_t l = tops.back(); tops.pop_back();
+                if (chunk == "+") arena.emplace_back(Add{l, r});
+                else if (chunk == "-") arena.emplace_back(Sub{l, r});
+                else if (chunk == "*") arena.emplace_back(Mul{l, r});
+                else arena.emplace_back(Div{l, r});
+                tops.push_back(arena.size() - 1);
+            } else {
+                arena.emplace_back(Number{std::stoi(chunk)});
+                tops.push_back(arena.size() - 1);
+            }
+        }
+        try {
+            std::cout << go_tree(arena, tops.back()) << '\n';
+        } catch (...) {
+            std::cout << "ERROR\n";
+        }
+    }
+    return 0;
+}

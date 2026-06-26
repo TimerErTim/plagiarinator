@@ -1,0 +1,74 @@
+#include <iostream>
+#include <string>
+#include <utility>
+
+class StringBuilder {
+public:
+    StringBuilder() = default;
+    StringBuilder(StringBuilder&& other) noexcept;
+    StringBuilder& operator=(StringBuilder&& other) noexcept;
+    StringBuilder(const StringBuilder&) = delete;
+    StringBuilder& operator=(const StringBuilder&) = delete;
+
+    StringBuilder& append(const std::string& s);
+    StringBuilder& append(std::string&& s);
+    StringBuilder& append_line(const std::string& s);
+    const std::string& str() const { return data_; }
+    void clear() { data_.clear(); }
+
+private:
+    std::string data_;
+};
+
+StringBuilder::StringBuilder(StringBuilder&& other) noexcept : data_(std::move(other.data_)) {
+    other.data_.clear();
+}
+
+StringBuilder& StringBuilder::operator=(StringBuilder&& other) noexcept {
+    data_ = std::move(other.data_);
+    other.data_.clear();
+    return *this;
+}
+
+StringBuilder& StringBuilder::append(const std::string& s) {
+    data_ += s;
+    return *this;
+}
+
+StringBuilder& StringBuilder::append(std::string&& s) {
+    data_ += std::move(s);
+    return *this;
+}
+
+StringBuilder& StringBuilder::append_line(const std::string& s) {
+    data_ += s;
+    data_ += '\n';
+    return *this;
+}
+
+int main() {
+    StringBuilder output;
+    std::string op;
+
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op != "SECTION") continue;
+
+        std::string name;
+        std::getline(std::cin, name);
+        while (!name.empty() && name[0] == ' ') name.erase(0, 1);
+
+        StringBuilder chunk;
+        chunk.append("# ").append(name).append("\n");
+
+        std::string line;
+        while (std::getline(std::cin, line) && !line.empty())
+            chunk.append_line(line);
+        chunk.append("\n");
+
+        output.append(std::move(chunk.str()));
+    }
+
+    std::cout << output.str();
+    return 0;
+}

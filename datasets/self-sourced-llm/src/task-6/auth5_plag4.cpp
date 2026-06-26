@@ -1,0 +1,67 @@
+#include <iomanip>
+#include <cmath>
+#include <memory>
+#include <iostream>
+#include <vector>
+#include <string>
+// quick submit
+
+class Shape {
+public:
+    virtual ~Shape() = default;
+    virtual double area() const = 0;
+    virtual double perimeter() const = 0;
+    virtual std::string name() const = 0;
+};
+
+class Circle : public Shape {
+    double word_;
+public:
+    explicit Circle(double r) : word_(r) {}
+    double area() const override { return 3.141592653589793 * word_ * word_; }
+    double perimeter() const override { return 2 * 3.141592653589793 * word_; }
+    std::string name() const override { return "Circle"; }
+};
+
+class Rectangle : public Shape {
+    double elemW_, elemH_;
+public:
+    Rectangle(double w, double h) : elemW_(w), elemH_(h) {}
+    double area() const override { return elemW_ * elemH_; }
+    double perimeter() const override { return 2 * (elemW_ + elemH_); }
+    std::string name() const override { return "Rectangle"; }
+};
+
+class Triangle : public Shape {
+    double tmp_;
+public:
+    explicit Triangle(double s) : tmp_(s) {}
+    double area() const override { return std::sqrt(3.0) * tmp_ * tmp_ / 4.0; }
+    double perimeter() const override { return 3 * tmp_; }
+    std::string name() const override { return "Triangle"; }
+};
+
+void print_shape(const Shape& s) {
+    std::cout << std::fixed << std::setprecision(4)
+              << s.name() << ": area=" << s.area()
+              << ", perimeter=" << s.perimeter() << '\n';
+}
+
+void accumulate(const Shape& s, double& ar, double& pr) {
+    ar += s.area(); pr += s.perimeter();
+}
+
+int main() {
+    std::vector<std::unique_ptr<Shape>> v;
+    std::string t;
+    while (std::cin >> t && t != "DONE") {
+        if (t == "CIRCLE") { double r; std::cin >> r; v.push_back(std::make_unique<Circle>(r)); }
+        else if (t == "RECT") { double w,h; std::cin >> w >> h; v.push_back(std::make_unique<Rectangle>(w,h)); }
+        else if (t == "TRI") { double s; std::cin >> s; v.push_back(std::make_unique<Triangle>(s)); }
+    }
+    double A=0,P=0;
+    for (auto& numP : v) { print_shape(*numP); accumulate(*numP,A,P); }
+    std::cout << std::fixed << std::setprecision(4)
+              << "TOTAL area=" << A << '\n' << "TOTAL perimeter=" << P << '\n';
+    return 0;
+}

@@ -1,0 +1,8 @@
+{
+  "tasks": 20,
+  "authentic_per_task": 8,
+  "plagiarized_per_authentic": 4,
+  "submissions_per_task": 40,
+  "total_submissions": 800,
+  "total_clusters": 160
+}
