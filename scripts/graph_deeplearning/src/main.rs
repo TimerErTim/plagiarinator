@@ -1,14 +1,25 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use burn::{
-    Tensor, backend::{Autodiff, autodiff::grads::Gradients}, grad_clipping::GradientClippingConfig, module::{AutodiffModule, Module}, nn::loss::BinaryCrossEntropyLossConfig, optim::{Adam, AdamConfig, AdamW, AdamWConfig, GradientsParams, Optimizer, adaptor::OptimizerAdaptor, decay::WeightDecayConfig}, prelude::Backend, record::{FullPrecisionSettings, NamedMpkGzFileRecorder}, tensor::{BasicOps, backend::AutodiffBackend, cast::ToElement}
+    backend::Autodiff,
+    grad_clipping::GradientClippingConfig,
+    module::{AutodiffModule, Module},
+    nn::loss::BinaryCrossEntropyLossConfig,
+    optim::{
+        adaptor::OptimizerAdaptor, decay::WeightDecayConfig, Adam, AdamConfig, GradientsParams,
+        Optimizer,
+    },
+    prelude::Backend,
+    record::{FullPrecisionSettings, NamedMpkGzFileRecorder},
+    tensor::{backend::AutodiffBackend, BasicOps},
+    Tensor,
 };
 use burn_store::ModuleStore;
-use data_loading::{dataset_loader::load_dataset, full_cpp_dataset};
+use data_loading::full_cpp_dataset;
 
+mod learning_run;
 mod loading;
 mod logging;
-mod learning_run;
 mod validation;
 use decider_model::{
     data::{analyze_plagiarism, parse_cpp_file},
@@ -17,9 +28,10 @@ use decider_model::{
 use logging::create_tensorboard_logger;
 use rand::SeedableRng;
 
-use crate::{loading::{
-    PlagiarismTrainItem, PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader,
-}, validation::{validate, validation_from_tensor_predictions}};
+use crate::{
+    loading::{chunked_iter, make_testset_loader, make_trainset_loader, PrefetchIterator},
+    validation::{validate, validation_from_tensor_predictions},
+};
 
 pub fn main() {
     // Backend type selection
@@ -90,10 +102,7 @@ pub fn main() {
 
     // init optimizer and loss function
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
-    let mut optimizer = PlagiarismOptimizer::new(
-        0.005,
-        0.001,
-    );
+    let mut optimizer = PlagiarismOptimizer::new(0.005, 0.001);
 
     for (step, batch) in batched_loader.enumerate() {
         if step % checkpoint_interval == 0 {
@@ -125,7 +134,9 @@ pub fn main() {
             );
             tensorboard_logger.log_scalar(
                 "validation/precision",
-                validation_output.unbiased_classification_statistic.precision,
+                validation_output
+                    .unbiased_classification_statistic
+                    .precision,
                 step as u64,
             );
             tensorboard_logger.log_scalar(
@@ -188,21 +199,29 @@ pub fn main() {
         let loss = loss_fn.forward(predictions.clone(), targets.clone());
 
         // Logging
-        let stats = validation_from_tensor_predictions(
-            loss.clone(),
-            predictions,
-            targets.float(),
-        );
+        let stats = validation_from_tensor_predictions(loss.clone(), predictions, targets.float());
         print!(".");
         tensorboard_logger.log_scalar("training/loss", stats.average_loss, step as u64);
-        tensorboard_logger.log_scalar("training/precision", stats.unbiased_classification_statistic.precision, step as u64);
-        tensorboard_logger.log_scalar("training/recall", stats.unbiased_classification_statistic.recall, step as u64);
-        tensorboard_logger.log_scalar("training/f1_score", stats.unbiased_classification_statistic.f1_score, step as u64);
+        tensorboard_logger.log_scalar(
+            "training/precision",
+            stats.unbiased_classification_statistic.precision,
+            step as u64,
+        );
+        tensorboard_logger.log_scalar(
+            "training/recall",
+            stats.unbiased_classification_statistic.recall,
+            step as u64,
+        );
+        tensorboard_logger.log_scalar(
+            "training/f1_score",
+            stats.unbiased_classification_statistic.f1_score,
+            step as u64,
+        );
         std::io::stdout().flush().unwrap();
         tensorboard_logger.flush();
 
         // Optimization step
-        let mut grads = loss.backward();
+        let grads = loss.backward();
         model = optimizer.step(model, grads);
     }
 }
@@ -214,23 +233,30 @@ pub struct PlagiarismOptimizer<B: AutodiffBackend> {
 }
 
 impl<B: AutodiffBackend> PlagiarismOptimizer<B> {
-    pub fn new(
-        main_lr: f64,
-        embedding_lr: f64,
-    ) -> Self {
+    pub fn new(main_lr: f64, embedding_lr: f64) -> Self {
         let optimizer = AdamConfig::new()
             .with_weight_decay(Some(WeightDecayConfig::new(0.01)))
             .with_grad_clipping(Some(GradientClippingConfig::Value(1.0)))
             .init();
-        Self { embedding_lr, main_lr, optimizer }
+        Self {
+            embedding_lr,
+            main_lr,
+            optimizer,
+        }
     }
 
-    pub fn step(&mut self, mut model: PlagiarismDecider<B>, mut grads: B::Gradients) -> PlagiarismDecider<B> {
+    pub fn step(
+        &mut self,
+        mut model: PlagiarismDecider<B>,
+        mut grads: B::Gradients,
+    ) -> PlagiarismDecider<B> {
         let embedding_grads = GradientsParams::from_module(&mut grads, &model.embedding);
         // Collects all other gradients remaining in the gradients object
         let main_grads = GradientsParams::from_module(&mut grads, &model);
         model = self.optimizer.step(self.main_lr, model, main_grads);
-        model = self.optimizer.step(self.embedding_lr, model, embedding_grads);
+        model = self
+            .optimizer
+            .step(self.embedding_lr, model, embedding_grads);
         model
     }
 }

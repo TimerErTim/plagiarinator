@@ -4,9 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::dataset_loader::LanguageDataset;
 
 fn is_authentic_submission(name: &str) -> bool {
-    name.starts_with("auth")
-        && name.ends_with(".cpp")
-        && !name.contains("_plag")
+    name.starts_with("auth") && name.ends_with(".cpp") && !name.contains("_plag")
 }
 
 fn is_plagiarized_submission(name: &str) -> bool {
@@ -43,7 +41,9 @@ fn is_cpp_file(path: impl AsRef<Path>) -> bool {
 ///
 /// - **Authentic pairs:** every unordered pair of `auth*.cpp` files across all tasks.
 /// - **Plagiarized pairs:** each `authN_plagM.cpp` paired with its source `authN.cpp`.
-pub fn load_self_sourced_llm_dataset(dataset_root: impl AsRef<Path>) -> Result<LanguageDataset, String> {
+pub fn load_self_sourced_llm_dataset(
+    dataset_root: impl AsRef<Path>,
+) -> Result<LanguageDataset, String> {
     let dataset_root = dataset_root.as_ref();
     let src_root = dataset_root.join("src");
 
@@ -65,18 +65,15 @@ pub fn load_self_sourced_llm_dataset(dataset_root: impl AsRef<Path>) -> Result<L
     })?;
 
     for task_entry in task_entries {
-        let task_entry = task_entry.map_err(|e| format!("Failed to read task directory entry: {e}"))?;
+        let task_entry =
+            task_entry.map_err(|e| format!("Failed to read task directory entry: {e}"))?;
         let task_dir = task_entry.path();
         if !task_dir.is_dir() {
             continue;
         }
 
-        let file_entries = fs::read_dir(&task_dir).map_err(|e| {
-            format!(
-                "Failed to read task directory {}: {e}",
-                task_dir.display()
-            )
-        })?;
+        let file_entries = fs::read_dir(&task_dir)
+            .map_err(|e| format!("Failed to read task directory {}: {e}", task_dir.display()))?;
 
         for file_entry in file_entries {
             let file_entry =

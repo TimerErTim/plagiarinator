@@ -1,7 +1,12 @@
-use burn::{Tensor, module::Module, nn::loss::BinaryCrossEntropyLossConfig, tensor::{backend::Backend, cast::ToElement}};
+use crate::loading::PlagiarismTrainItem;
+use burn::{
+    module::Module,
+    nn::loss::BinaryCrossEntropyLossConfig,
+    tensor::{backend::Backend, cast::ToElement},
+    Tensor,
+};
 use decider_model::PlagiarismDecider;
 use serde::{Deserialize, Serialize};
-use crate::loading::PlagiarismTrainItem;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClassificationStatistics {
@@ -51,8 +56,7 @@ pub fn validate<B: Backend>(
     }
     let predictions = Tensor::cat(predictions, 0);
     let targets = Tensor::cat(targets, 0);
-    let loss = loss_fn
-        .forward(predictions.clone(), targets.clone());
+    let loss = loss_fn.forward(predictions.clone(), targets.clone());
 
     validation_from_tensor_predictions(loss, predictions, targets.float())
 }
@@ -64,10 +68,16 @@ pub fn validation_from_tensor_predictions<B: Backend>(
 ) -> ValidationResult {
     let loss = loss.into_scalar().to_f64();
     let predictions = predictions_from_tensors(predictions, targets);
-    let mut classification_statistics = all_classification_statistics_from_predictions(&predictions);
-    let best_classification_statistic = classification_statistics.iter().max_by(|s1, s2| s1.f1_score.partial_cmp(&s2.f1_score).unwrap()).unwrap().clone();
+    let mut classification_statistics =
+        all_classification_statistics_from_predictions(&predictions);
+    let best_classification_statistic = classification_statistics
+        .iter()
+        .max_by(|s1, s2| s1.f1_score.partial_cmp(&s2.f1_score).unwrap())
+        .unwrap()
+        .clone();
     classification_statistics.sort_by(|s1, s2| s1.threshold.partial_cmp(&s2.threshold).unwrap());
-    let unbiased_classification_statistic = classification_statistics[classification_statistics.len() / 2].clone();
+    let unbiased_classification_statistic =
+        classification_statistics[classification_statistics.len() / 2].clone();
 
     ValidationResult {
         average_loss: loss,
@@ -102,7 +112,10 @@ pub fn classification_statistics_from_predictions(
     let mut false_negative = 0;
 
     for prediction in predictions {
-        match (prediction.prediction.clamp(0.0, 1.0) >= threshold as f32, prediction.target >= 0.5) {
+        match (
+            prediction.prediction.clamp(0.0, 1.0) >= threshold as f32,
+            prediction.target >= 0.5,
+        ) {
             (true, true) => true_positive += 1,
             (false, false) => true_negative += 1,
             (true, false) => false_positive += 1,
@@ -141,8 +154,10 @@ pub fn all_classification_statistics_from_predictions(
     predictions: &[ValidationPrediction],
 ) -> Vec<ClassificationStatistics> {
     let steps = 250;
-    (0..=(steps + 1)).map(|i| {
-        let threshold = i as f64 / steps as f64;
-        classification_statistics_from_predictions(&predictions, threshold)
-    }).collect()
+    (0..=(steps + 1))
+        .map(|i| {
+            let threshold = i as f64 / steps as f64;
+            classification_statistics_from_predictions(predictions, threshold)
+        })
+        .collect()
 }

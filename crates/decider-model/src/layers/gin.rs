@@ -4,15 +4,9 @@ use burn::{
     Tensor,
     config::Config,
     module::Module,
-    nn::{
-        BatchNorm, Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig,
-        Linear, LinearConfig,
-    },
+    nn::{LayerNorm, LayerNormConfig, Linear, LinearConfig},
     prelude::Backend,
-    tensor::{
-        Int,
-        activation::{relu, sigmoid},
-    },
+    tensor::activation::relu,
 };
 
 use crate::data::Graph;

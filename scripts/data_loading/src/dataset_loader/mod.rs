@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use rand::{Rng, SeedableRng, rngs::SmallRng};
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 mod cpp_dataset;
 mod self_sourced_llm_dataset;
@@ -93,14 +93,9 @@ impl LanguageDataset {
         (train_dataset, test_dataset)
     }
 
-    pub fn train_test_split(
-        mut self
-    ) -> (LanguageDataset, LanguageDataset) {
+    pub fn train_test_split(mut self) -> (LanguageDataset, LanguageDataset) {
         // Make equal split of plagiarized and authentic pairs
-        let len = self
-            .plagiarized_pairs
-            .len()
-            .max(self.authentic_pairs.len());
+        let len = self.plagiarized_pairs.len().max(self.authentic_pairs.len());
         let rem_plagiarized_pairs = self
             .plagiarized_pairs
             .iter()
@@ -113,22 +108,12 @@ impl LanguageDataset {
             .skip(len)
             .cloned()
             .collect::<Vec<_>>();
-        self.plagiarized_pairs = self
-            .plagiarized_pairs
-            .into_iter()
-            .take(len)
-            .collect();
-        self.authentic_pairs = self
-            .authentic_pairs
-            .into_iter()
-            .take(len)
-            .collect();
+        self.plagiarized_pairs = self.plagiarized_pairs.into_iter().take(len).collect();
+        self.authentic_pairs = self.authentic_pairs.into_iter().take(len).collect();
 
         let (train_dataset, mut test_dataset) =
             self.split_dataset(0.8, &mut SmallRng::seed_from_u64(42));
-        test_dataset
-            .plagiarized_pairs
-            .extend(rem_plagiarized_pairs);
+        test_dataset.plagiarized_pairs.extend(rem_plagiarized_pairs);
         test_dataset.authentic_pairs.extend(rem_authentic_pairs);
 
         (train_dataset, test_dataset)

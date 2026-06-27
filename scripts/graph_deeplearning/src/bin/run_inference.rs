@@ -1,7 +1,7 @@
-use burn::{backend::Autodiff, prelude::Backend};
+use burn::backend::Autodiff;
 use burn_store::ModuleSnapshot;
-use graph_deeplearning::load_trained_model;
 use decider_model::data::{analyze_plagiarism, parse_cpp_file};
+use graph_deeplearning::load_trained_model;
 
 pub fn main() {
     use std::env;
@@ -14,7 +14,7 @@ pub fn main() {
     if args.len() != 3 {
         eprintln!(
             "Usage: {} <item1> <item2>",
-            args.get(0).map(|s| s.as_str()).unwrap_or("run_inference")
+            args.first().map(|s| s.as_str()).unwrap_or("run_inference")
         );
         std::process::exit(1);
     }
@@ -30,4 +30,3 @@ pub fn main() {
     let analysis = analyze_plagiarism(file1, file2, model).unwrap();
     println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
 }
-

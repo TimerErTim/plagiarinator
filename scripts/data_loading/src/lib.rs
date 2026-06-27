@@ -1,6 +1,4 @@
-use crate::dataset_loader::{
-    load_cpp_dataset, load_self_sourced_llm_dataset, LanguageDataset,
-};
+use crate::dataset_loader::{load_cpp_dataset, load_self_sourced_llm_dataset, LanguageDataset};
 
 pub mod dataset_loader;
 pub mod split;

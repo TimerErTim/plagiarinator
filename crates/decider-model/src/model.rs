@@ -1,10 +1,15 @@
 use burn::{
-    Tensor, config::Config, module::Module, nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig, LayerNorm, LayerNormConfig, Linear, LinearConfig, SwiGlu, SwiGluConfig}, prelude::Backend, tensor::{Int, activation::{relu, sigmoid, silu}, linalg::cosine_similarity},
+    Tensor,
+    config::Config,
+    module::Module,
+    nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig, SwiGlu, SwiGluConfig},
+    prelude::Backend,
+    tensor::{Int, linalg::cosine_similarity},
 };
 
 use crate::{
     data::Graph,
-    layers::{GINConv, GINConvConfig, GraphCompress, GraphCompressConfig},
+    layers::{GINConv, GINConvConfig},
 };
 
 #[derive(Config, Debug)]
@@ -19,11 +24,14 @@ pub struct PlagiarismDeciderConfig {
 
 impl PlagiarismDeciderConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> PlagiarismDecider<B> {
-
         PlagiarismDecider {
             embedding: EmbeddingConfig::new(self.num_classes, self.embedding_size).init(device),
             graph_compression: GINConvConfig::new(self.embedding_size, self.layers).init(device),
-            graph_representation: SwiGluConfig::new(self.embedding_size * (self.layers + 1), self.representation_size).init(device),
+            graph_representation: SwiGluConfig::new(
+                self.embedding_size * (self.layers + 1),
+                self.representation_size,
+            )
+            .init(device),
             dropout: DropoutConfig::new(self.dropout_rate).init(),
         }
     }
@@ -66,8 +74,8 @@ impl<B: Backend> PlagiarismDecider<B> {
         let similarity = cosine_similarity(compressed_graph_1, compressed_graph_2, 0, None);
         let similarity = similarity / 2.001 + 0.5; // Range [>0, <1]
         let probability = Tensor::asin(Tensor::sqrt(similarity));
-        let probability = probability * 2.0 / std::f64::consts::PI;
-        probability // Range    [0, 1]
+
+        probability * 2.0 / std::f64::consts::PI // Range    [0, 1]
     }
 
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {

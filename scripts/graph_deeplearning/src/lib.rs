@@ -1,10 +1,9 @@
-use burn::{backend::Autodiff, prelude::Backend};
-use burn_store::ModuleSnapshot;
-use decider_model::{PlagiarismDecider, load_model};
+use burn::prelude::Backend;
+use decider_model::{load_model, PlagiarismDecider};
 
-pub mod validation;
 pub mod loading;
 pub mod logging;
+pub mod validation;
 
 pub fn load_trained_model<B: Backend>(device: &B::Device) -> PlagiarismDecider<B> {
     let model_weights_path = std::env::var("MODEL_WEIGHTS_PATH").unwrap();
