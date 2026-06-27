@@ -15,6 +15,7 @@ pub struct ClassificationStatistics {
     pub true_negative: usize,
     pub false_positive: usize,
     pub false_negative: usize,
+    pub false_positive_rate: f64,
     pub precision: f64,
     pub recall: f64,
     pub f1_score: f64,
@@ -35,6 +36,8 @@ pub struct ValidationResult {
     pub best_classification_statistic: ClassificationStatistics,
     /// Default threshold of 0.5 is unbiased
     pub unbiased_classification_statistic: ClassificationStatistics,
+    pub roc_auc: f64,
+    pub pr_auc: f64,
 }
 
 pub fn validate<B: Backend>(
@@ -79,6 +82,9 @@ pub fn validation_from_tensor_predictions<B: Backend>(
     let unbiased_classification_statistic =
         classification_statistics[classification_statistics.len() / 2].clone();
 
+    let roc_auc = area_under_curve(classification_statistics.iter().map(|s| (s.false_positive_rate, s.recall)).collect());
+    let pr_auc = area_under_curve(classification_statistics.iter().map(|s| (s.precision, s.recall)).collect());
+
     ValidationResult {
         average_loss: loss,
         item_count: predictions.len(),
@@ -86,6 +92,8 @@ pub fn validation_from_tensor_predictions<B: Backend>(
         classification_statistics,
         best_classification_statistic,
         unbiased_classification_statistic,
+        roc_auc,
+        pr_auc,
     }
 }
 
@@ -123,6 +131,11 @@ pub fn classification_statistics_from_predictions(
         }
     }
 
+    let false_positive_rate = if true_negative + false_positive > 0 {
+        false_positive as f64 / (true_negative + false_positive) as f64
+    } else {
+        0.0
+    };
     let precision = if true_positive + false_positive > 0 {
         true_positive as f64 / (true_positive + false_positive) as f64
     } else {
@@ -144,6 +157,7 @@ pub fn classification_statistics_from_predictions(
         true_negative,
         false_positive,
         false_negative,
+        false_positive_rate,
         precision,
         recall,
         f1_score,
@@ -160,4 +174,27 @@ pub fn all_classification_statistics_from_predictions(
             classification_statistics_from_predictions(predictions, threshold)
         })
         .collect()
+}
+
+pub fn area_under_curve(mut points: Vec<(f64, f64)>) -> f64 {
+    // Sort points by x coordinate, then by y coordinate for ties
+    points.sort_by(|a, b| {
+        match a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal) {
+            std::cmp::Ordering::Equal => a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal),
+            other => other,
+        }
+    });
+
+    let mut area = 0.0;
+    for i in 0..points.len() - 1 {
+        let (x0, y0) = points[i];
+        let (x1, y1) = points[i + 1];
+        if x1 != x0 {
+            // Trapezoidal rule (area under segment); linear interpolation between points
+            area += (x1 - x0) * (y0 + y1) / 2.0;
+        }
+        // If x1 == x0, points are vertical duplicates, area is zero for this segment
+        // So, simply skip, not adding to area
+    }
+    area
 }

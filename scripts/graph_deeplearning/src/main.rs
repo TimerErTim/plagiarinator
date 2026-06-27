@@ -149,6 +149,16 @@ pub fn main() {
                 validation_output.unbiased_classification_statistic.f1_score,
                 step as u64,
             );
+            tensorboard_logger.log_scalar(
+                "validation/roc_auc",
+                validation_output.roc_auc,
+                step as u64,
+            );
+            tensorboard_logger.log_scalar(
+                "validation/pr_auc",
+                validation_output.pr_auc,
+                step as u64,
+            );
             serde_json::to_writer_pretty(
                 File::create(validation_dir.join(format!("validation_{step}.json"))).unwrap(),
                 &validation_output,
