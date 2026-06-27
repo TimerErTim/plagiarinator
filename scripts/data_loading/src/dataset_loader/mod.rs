@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
 
-use cpp_dataset::load_cpp_dataset;
-use rand::{Rng, SeedableRng, rng, rngs::{self, ThreadRng}};
+use rand::{Rng, SeedableRng, rngs::SmallRng};
 
 mod cpp_dataset;
+mod self_sourced_llm_dataset;
+
+pub use cpp_dataset::load_cpp_dataset;
+pub use self_sourced_llm_dataset::load_self_sourced_llm_dataset;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FilePair {
@@ -122,7 +125,7 @@ impl LanguageDataset {
             .collect();
 
         let (train_dataset, mut test_dataset) =
-            self.split_dataset(0.8, &mut rngs::SmallRng::seed_from_u64(42));
+            self.split_dataset(0.8, &mut SmallRng::seed_from_u64(42));
         test_dataset
             .plagiarized_pairs
             .extend(rem_plagiarized_pairs);
@@ -133,6 +136,13 @@ impl LanguageDataset {
 
     pub fn len(&self) -> usize {
         self.plagiarized_pairs.len() + self.authentic_pairs.len()
+    }
+
+    pub fn merge(mut self, other: Self) -> Self {
+        debug_assert_eq!(self.lang_name, other.lang_name);
+        self.plagiarized_pairs.extend(other.plagiarized_pairs);
+        self.authentic_pairs.extend(other.authentic_pairs);
+        self
     }
 }
 
