@@ -64,7 +64,8 @@ impl<B: Backend> PlagiarismDecider<B> {
         let compressed_graph_1 = self.compress_embedded_graph(embedded_graph_1);
         let compressed_graph_2 = self.compress_embedded_graph(embedded_graph_2);
         let similarity = cosine_similarity(compressed_graph_1, compressed_graph_2, 0, None);
-        relu(similarity)
+        let similarity = similarity + 1 / 2; // Range [0, 1]
+        Tensor::asin(Tensor::sqrt(similarity))
     }
 
     pub fn forward(&self, graph_1: Graph<B, Int>, graph_2: Graph<B, Int>) -> Tensor<B, 1> {
