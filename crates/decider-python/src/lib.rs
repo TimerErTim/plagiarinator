@@ -2,7 +2,7 @@ use std::path::Path;
 
 use burn::backend::{
     autodiff::Autodiff,
-    ndarray::{NdArray, NdArrayDevice},
+    flex::{Flex, FlexDevice},
 };
 use burn::store::BurnpackStore;
 use burn_store::ModuleSnapshot;
@@ -16,7 +16,7 @@ use pyo3::types::{PyDict, PyList};
 
 #[pyclass(unsendable)]
 pub struct PlagiarismModel {
-    model: PlagiarismDecider<Autodiff<NdArray>>,
+    model: PlagiarismDecider<Autodiff<Flex>>,
 }
 
 #[pymethods]
@@ -30,9 +30,9 @@ impl PlagiarismModel {
             )));
         }
 
-        let device = NdArrayDevice::default();
+        let device = FlexDevice::default();
         let mut store = BurnpackStore::from_file(&weights_path);
-        let mut model = init_model::<Autodiff<NdArray>>(&device);
+        let mut model = init_model::<Autodiff<Flex>>(&device);
         model.load_from(&mut store).map_err(|e| {
             PyIOError::new_err(format!(
                 "failed to load model weights from {weights_path}: {e}"
