@@ -1,11 +1,10 @@
-#include <iomanip>
-#include <cmath>
-#include <memory>
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <vector>
-// quick submit
+#include <sstream>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <string>
 
 class Shape {
 public:
@@ -16,14 +15,14 @@ public:
 };
 
 class Circle : public Shape {
-    double word;
+    double radius;
 public:
-    explicit Circle(double r) : word(r) {}
+    explicit Circle(double r) : radius(r) {}
     double area() const override {
-        return 3.141592653589793 * word * word;
+        return 3.141592653589793 * radius * radius;
     }
     double perimeter() const override {
-        return 2.0 * 3.141592653589793 * word;
+        return 2.0 * 3.141592653589793 * radius;
     }
     std::string name() const override { return "Circle"; }
 };
@@ -38,13 +37,13 @@ public:
 };
 
 class Triangle : public Shape {
-    double tmp;
+    double sideLength;
 public:
-    explicit Triangle(double s) : tmp(s) {}
+    explicit Triangle(double s) : sideLength(s) {}
     double area() const override {
-        return std::sqrt(3.0) / 4.0 * tmp * tmp;
+        return std::sqrt(3.0) / 4.0 * sideLength * sideLength;
     }
-    double perimeter() const override { return 3.0 * tmp; }
+    double perimeter() const override { return 3.0 * sideLength; }
     std::string name() const override { return "Triangle"; }
 };
 

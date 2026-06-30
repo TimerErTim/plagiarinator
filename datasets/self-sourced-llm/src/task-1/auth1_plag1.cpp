@@ -1,76 +1,75 @@
-#include <iostream>
 #include <vector>
+#include <iostream>
 #include <cstring>
 #include <cctype>
 #include <algorithm>
 
 class StringBuffer {
-    char* buf_;
-    std::size_t n_;
+    char* heap_;
+    std::size_t nchars_;
 
 public:
     StringBuffer(const char* s) {
-        n_ = std::strlen(s);
-        buf_ = new char[n_ + 1];
-        std::strcpy(buf_, s);
+        nchars_ = std::strlen(s);
+        heap_ = new char[nchars_ + 1];
+        std::strcpy(heap_, s);
     }
 
-    ~StringBuffer() { delete[] buf_; }
+    ~StringBuffer() { delete[] heap_; }
 
     StringBuffer(const StringBuffer& o) {
-        n_ = o.n_;
-        buf_ = new char[n_ + 1];
-        std::strcpy(buf_, o.buf_);
+        nchars_ = o.nchars_;
+        heap_ = new char[nchars_ + 1];
+        std::strcpy(heap_, o.heap_);
     }
 
     StringBuffer& operator=(const StringBuffer& o) {
         if (this != &o) {
-            delete[] buf_;
-            n_ = o.n_;
-            buf_ = new char[n_ + 1];
-            std::strcpy(buf_, o.buf_);
+            delete[] heap_;
+            nchars_ = o.nchars_;
+            heap_ = new char[nchars_ + 1];
+            std::strcpy(heap_, o.heap_);
         }
         return *this;
     }
 
     void trim() {
-        std::size_t i = 0;
-        while (i < n_ && std::isspace(static_cast<unsigned char>(buf_[i])))
-            i++;
-        std::size_t j = n_;
-        while (j > i && std::isspace(static_cast<unsigned char>(buf_[j - 1])))
-            j--;
-        std::size_t k = 0;
-        while (i < j)
-            buf_[k++] = buf_[i++];
-        buf_[k] = '\0';
-        n_ = k;
+        std::size_t lo = 0;
+        while (lo < nchars_ && std::isspace(static_cast<unsigned char>(heap_[lo])))
+            lo++;
+        std::size_t hi = nchars_;
+        while (hi > lo && std::isspace(static_cast<unsigned char>(heap_[hi - 1])))
+            hi--;
+        std::size_t trimmed = hi - lo;
+        for (std::size_t j = 0; j < trimmed; j++)
+            heap_[j] = heap_[lo + j];
+        heap_[trimmed] = '\0';
+        nchars_ = trimmed;
     }
 
-    const char* c_str() const { return buf_; }
-    std::size_t size() const { return n_; }
+    const char* c_str() const { return heap_; }
+    std::size_t size() const { return nchars_; }
 
     bool operator<(const StringBuffer& o) const {
-        return std::strcmp(buf_, o.buf_) < 0;
+        return std::strcmp(heap_, o.heap_) < 0;
     }
 };
 
 int main() {
-    std::vector<StringBuffer> names;
-    std::string line;
-    while (std::getline(std::cin, line))
-        names.push_back(StringBuffer(line.c_str()));
+    std::vector<StringBuffer> entries;
+    std::string row;
+    while (std::getline(std::cin, row))
+        entries.emplace_back(row.c_str());
 
-    for (std::size_t idx = 0; idx < names.size(); ++idx)
-        names[idx].trim();
+    for (auto& item : entries)
+        item.trim();
 
-    std::vector<StringBuffer> kept;
-    for (const StringBuffer& s : names)
-        if (s.size() != 0)
-            kept.push_back(s);
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+                                 [](const StringBuffer& s) { return s.size() == 0; }),
+                  entries.end());
+    std::sort(entries.begin(), entries.end());
 
-    std::sort(kept.begin(), kept.end());
-    for (const StringBuffer& s : kept)
-        std::cout << s.c_str() << std::endl;
+    for (const auto& item : entries)
+        std::cout << item.c_str() << std::endl;
     return 0;
 }

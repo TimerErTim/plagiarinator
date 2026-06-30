@@ -1,10 +1,9 @@
+#include <unordered_set>
+#include <vector>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
-// cleaned up version
 
 struct GraphNode {
     std::string label;
@@ -12,14 +11,14 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> nodes_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> nodesx_;
 
     std::shared_ptr<GraphNode> getOrCreate(const std::string& name) {
-        auto it = nodes_.find(name);
-        if (it != nodes_.end()) return it->second;
+        auto it = nodesx_.find(name);
+        if (it != nodesx_.end()) return it->second;
         auto node = std::make_shared<GraphNode>();
         node->label = name;
-        nodes_[name] = node;
+        nodesx_[name] = node;
         return node;
     }
 
@@ -29,8 +28,8 @@ class Graph {
         if (!cur || seen.count(cur->label)) return false;
         if (cur->label == target) return true;
         seen.insert(cur->label);
-        for (const auto& nxt : cur->edges)
-            if (dfsReach(nxt, target, seen)) return true;
+        for (std::size_t i = 0; i < cur->edges.size(); ++i)
+            if (dfsReach(cur->edges[i], target, seen)) return true;
         return false;
     }
 
@@ -40,12 +39,12 @@ public:
     void addEdge(const std::string& from, const std::string& to) {
         auto a = getOrCreate(from);
         auto b = getOrCreate(to);
-        a->edges.push_back(b);
+        a->edges.emplace_back(b);
     }
 
     bool query(const std::string& from, const std::string& to) const {
-        auto it = nodes_.find(from);
-        if (it == nodes_.end()) return false;
+        auto it = nodesx_.find(from);
+        if (it == nodesx_.end()) return false;
         std::unordered_set<std::string> visited;
         return dfsReach(it->second, to, visited);
     }
@@ -53,18 +52,18 @@ public:
 
 int main() {
     Graph g;
-    std::string cmd;
-    while (std::cin >> cmd) {
-        if (cmd == "END") break;
-        if (cmd == "ADD_NODE") {
-            std::string tag;
-            std::cin >> tag;
-            g.addNode(tag);
-        } else if (cmd == "ADD_EDGE") {
+    std::string cmd_v;
+    while (std::cin >> cmd_v) {
+        if (cmd_v == "END") break;
+        if (cmd_v == "ADD_NODE") {
+            std::string name;
+            std::cin >> name;
+            g.addNode(name);
+        } else if (cmd_v == "ADD_EDGE") {
             std::string u, v;
             std::cin >> u >> v;
             g.addEdge(u, v);
-        } else if (cmd == "QUERY") {
+        } else if (cmd_v == "QUERY") {
             std::string u, v;
             std::cin >> u >> v;
             std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;

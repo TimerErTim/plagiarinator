@@ -1,10 +1,9 @@
+#include <vector>
+#include <variant>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
-#include <vector>
-// cleaned up version
 
 template <typename Derived>
 class Printable {
@@ -50,7 +49,7 @@ struct Temperature : Printable<Temperature> {
 
 template <typename T>
 void print_metric(const Printable<T>& metric) {
-    std::cout << metric.to_string() << '\n';
+    std::cout << metric.to_string() << std::endl;
 }
 
 using Record = std::variant<metrics::Distance, metrics::Mass, metrics::Temperature>;
@@ -61,15 +60,15 @@ struct RecordVisitor {
 };
 
 int main() {
-    std::vector<Record> rows;
-    for (std::string type; std::cin >> type && type != "END";) {
-        double n;
-        std::cin >> n;
-        if (type == "DIST") rows.emplace_back(metrics::Distance(n));
-        else if (type == "MASS") rows.emplace_back(metrics::Mass(n));
-        else if (type == "TEMP") rows.emplace_back(metrics::Temperature(n));
+    std::vector<Record> entries;
+    for (std::string tag; std::cin >> tag && tag != "END";) {
+        double v;
+        std::cin >> v;
+        if (tag == "DIST") entries.push_back(metrics::Distance(v));
+        else if (tag == "MASS") entries.push_back(metrics::Mass(v));
+        else if (tag == "TEMP") entries.push_back(metrics::Temperature(v));
     }
 
-    for (const auto& rhs : rows) std::visit(RecordVisitor{}, rhs);
+    for (const auto& r : entries) std::visit(RecordVisitor{}, r);
     return 0;
 }

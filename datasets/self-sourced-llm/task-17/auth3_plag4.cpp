@@ -1,9 +1,8 @@
-#include <iostream>
 #include <algorithm>
-#include <type_traits>
+#include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
-// quick submit
 
 namespace util {
 
@@ -46,6 +45,6 @@ int main() {
             std::cout << items[static_cast<std::size_t>(i)];
         }
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }

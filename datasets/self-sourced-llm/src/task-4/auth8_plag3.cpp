@@ -1,25 +1,28 @@
-#include <vector>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
-// from lab partner
+#include <vector>
+#include <fstream>
+#include <iomanip>
+// borrowed from roommate's homework
 
-class FileWriter {
-    std::ofstream body;
-    std::string tag;
+class FileWriter
+{
+    std::ofstream fileOut_;
+    std::string dest_;
 
-    void shutdown() {
-        if (body.is_open())
-            body.close();
+    void shutdown()
+    {
+        if (fileOut_.is_open())
+            fileOut_.close();
     }
 
 public:
-    explicit FileWriter(const std::string& location)
-        : tag(location) {
-        body.open(tag);
+    explicit FileWriter(const std::string& dest)
+        : dest_(dest)
+    {
+        fileOut_.open(dest_);
     }
 
     ~FileWriter() { shutdown(); }
@@ -27,60 +30,65 @@ public:
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
-    FileWriter(FileWriter&& donor) noexcept
-        : body(std::move(donor.body)),
-          tag(std::move(donor.tag)) {}
+    FileWriter(FileWriter&& rhs) noexcept
+        : fileOut_(std::move(rhs.fileOut_)),
+          dest_(std::move(rhs.dest_)) {}
 
-    FileWriter& operator=(FileWriter&& donor) noexcept {
-        if (this != &donor) {
+    FileWriter& operator=(FileWriter&& rhs) noexcept
+    {
+        if (this != &rhs)
+        {
             shutdown();
-            body = std::move(donor.body);
-            tag = std::move(donor.tag);
+            fileOut_ = std::move(rhs.fileOut_);
+            dest_ = std::move(rhs.dest_);
         }
         return *this;
     }
 
-    void write_line(const std::string& text) {
-        body << text << '\n';
+    void write_line(const std::string& txt)
+    {
+        fileOut_ << txt << '\n';
     }
 };
 
-static std::string gradeToken(int score) {
-    if (score >= 90) return "A";
-    if (score >= 80) return "B";
-    if (score >= 70) return "C";
-    if (score >= 60) return "D";
+static std::string letterGrade(int pts)
+{
+    if (pts >= 90) return "A";
+    if (pts >= 80) return "B";
+    if (pts >= 70) return "C";
+    if (pts >= 60) return "D";
     return "F";
 }
 
-int main() {
+int main()
+{
     std::stringstream stdinCopy;
     stdinCopy << std::cin.rdbuf();
 
-    std::vector<std::pair<std::string, int>> rows;
-    std::string str;
-    while (std::getline(stdinCopy, str)) {
-        std::size_t commaPos = str.find(',');
-        rows.emplace_back(str.substr(0, commaPos),
-                          std::stoi(str.substr(commaPos + 1)));
+    std::vector<std::pair<std::string, int>> data;
+    std::string ln;
+    while (std::getline(stdinCopy, ln))
+    {
+        std::size_t pos = ln.find(',');
+        data.emplace_back(ln.substr(0, pos), std::stoi(ln.substr(pos + 1)));
     }
 
-    FileWriter reportWriter("report.txt");
-    reportWriter.write_line("Student Report");
-    reportWriter.write_line("--------------");
+    FileWriter w("report.txt");
+    w.write_line("Student Report");
+    w.write_line("--------------");
 
-    double scoreSum = 0.0;
-    for (const auto& row : rows) {
-        scoreSum += row.second;
-        reportWriter.write_line(row.first + ": " + std::to_string(row.second)
-                                + " [" + gradeToken(row.second) + "]");
+    double sum = 0.0;
+    for (const auto& item : data)
+    {
+        sum += item.second;
+        w.write_line(item.first + ": " + std::to_string(item.second)
+                     + " [" + letterGrade(item.second) + "]");
     }
 
-    std::ostringstream avgStream;
-    avgStream << std::fixed << std::setprecision(1)
-              << "Average: " << scoreSum / rows.size();
-    reportWriter.write_line(avgStream.str());
+    std::ostringstream avg;
+    avg << std::fixed << std::setprecision(1) << "Average: " << sum / data.size();
+    w.write_line(avg.str());
 
-    std::cout << "Report written to report.txt" << '\n';
+    std::cout << "Report written to report.txt" << std::endl;
     return 0;
 }

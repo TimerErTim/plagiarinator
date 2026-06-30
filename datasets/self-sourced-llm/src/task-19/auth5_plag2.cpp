@@ -1,15 +1,16 @@
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
-class StringBuilder {
+class StringBuilder
+{
     std::string storage;
 
 public:
     StringBuilder() = default;
     StringBuilder(StringBuilder&& from) noexcept : storage(std::move(from.storage)) {}
-    StringBuilder& operator=(StringBuilder&& from) noexcept {
+    StringBuilder& operator=(StringBuilder&& from) noexcept
+    {
         storage = std::move(from.storage);
         from.storage.clear();
         return *this;
@@ -17,17 +18,20 @@ public:
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& text) {
+    StringBuilder& append(const std::string& text)
+    {
         storage += text;
         return *this;
     }
 
-    StringBuilder& append(std::string&& text) {
+    StringBuilder& append(std::string&& text)
+    {
         storage += std::move(text);
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& text) {
+    StringBuilder& append_line(const std::string& text)
+    {
         storage.append(text).push_back('\n');
         return *this;
     }
@@ -36,34 +40,45 @@ public:
     void clear() { storage.clear(); }
 };
 
+static void strip_leading(std::string& title)
+{
+    if (title.size() && title[0] == ' ') title = title.substr(1);
+}
+
+static std::string build_section_body(std::istream& in, const std::string& title)
+{
+    std::string body;
+    body.reserve(128);
+    body += "# ";
+    body += title;
+    body += "\n";
+
+    std::string row;
+    while (std::getline(in, row))
+    {
+        if (row.empty()) break;
+        body += row;
+        body += '\n';
+    }
+    body += '\n';
+    return body;
+}
+
 int main()
 {
     StringBuilder master;
     std::string tag;
 
-    while (std::cin >> tag) {
+    while (std::cin >> tag)
+    {
         if (tag == "END") break;
         if (tag != "SECTION") continue;
 
-        std::string name;
-        std::getline(std::cin, name);
-        if (name.size() && name[0] == ' ') name = name.substr(1);
+        std::string title;
+        std::getline(std::cin, title);
+        strip_leading(title);
 
-        std::string body;
-        body.reserve(128);
-        body += "# ";
-        body += name;
-        body += "\n";
-
-        std::string input;
-        while (std::getline(std::cin, input)) {
-            if (input.empty()) break;
-            body += input;
-            body += '\n';
-        }
-        body += '\n';
-
-        master.append(std::move(body));
+        master.append(std::move(build_section_body(std::cin, title)));
     }
 
     std::cout << master.str();

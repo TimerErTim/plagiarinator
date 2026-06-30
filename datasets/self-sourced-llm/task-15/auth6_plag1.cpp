@@ -1,10 +1,10 @@
+#include <cstdio>
+#include <vector>
+#include <variant>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
-#include <vector>
-// cleaned up version
 
 template <typename Derived>
 class Printable {
@@ -15,12 +15,12 @@ public:
 };
 
 struct Distance : Printable<Distance> {
-    double value_m{};
-    explicit Distance(double m) : value_m(m) {}
+    double meters{};
+    explicit Distance(double m) : meters(m) {}
     std::string format() const {
         std::ostringstream out;
         out << std::fixed << std::setprecision(1);
-        out << "Distance: " << value_m << " m";
+        out << "Distance: " << meters << " m";
         return out.str();
     }
 };
@@ -53,19 +53,19 @@ void print_metric(const Printable<T>& metric) {
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> store;
-    std::string s;
+    std::vector<std::variant<Distance, Mass, Temperature>> buf;
+    std::string word;
 
-    while (std::cin >> s) {
-        if (s == "END") break;
-        double n;
-        std::cin >> n;
-        if (s == "DIST") store.emplace_back(Distance(n));
-        else if (s == "MASS") store.emplace_back(Mass(n));
-        else if (s == "TEMP") store.emplace_back(Temperature(n));
+    while (std::cin >> word) {
+        if (word == "END") break;
+        double val;
+        std::cin >> val;
+        if (word == "DIST") buf.push_back(Distance(val));
+        else if (word == "MASS") buf.push_back(Mass(val));
+        else if (word == "TEMP") buf.push_back(Temperature(val));
     }
 
-    for (const auto& rec : store) {
+    for (const auto& rec : buf) {
         std::visit([](const auto& m) { print_metric(m); }, rec);
     }
     return 0;

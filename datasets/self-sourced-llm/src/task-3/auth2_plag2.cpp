@@ -1,11 +1,10 @@
-#include <vector>
 #include <unordered_set>
-#include <unordered_map>
-#include <string>
-#include <queue>
-#include <memory>
+#include <vector>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <queue>
+#include <string>
+#include <unordered_map>
 
 using std::cin;
 using std::cout;
@@ -18,22 +17,37 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-struct GraphNode {
-    std::string label;
-    std::vector<std::shared_ptr<GraphNode>> edges;
+struct GraphNode
+{
+    string label;
+    vector<shared_ptr<GraphNode>> edges;
 };
 
 class Graph
 {
-    unordered_map<string, shared_ptr<GraphNode>> table_;
+    unordered_map<string, shared_ptr<GraphNode>> registry;
 
     shared_ptr<GraphNode> ensure(const string& id)
     {
-        if (table_.count(id)) return table_[id];
+        if (registry.count(id)) return registry[id];
         auto n = make_shared<GraphNode>();
         n->label = id;
-        table_[id] = n;
+        registry[id] = n;
         return n;
+    }
+
+    void enqueueNeighbors(const shared_ptr<GraphNode>& cur,
+                          queue<shared_ptr<GraphNode>>& q,
+                          unordered_set<string>& seen) const
+    {
+        for (auto& n : cur->edges)
+        {
+            if (!seen.count(n->label))
+            {
+                seen.insert(n->label);
+                q.push(n);
+            }
+        }
     }
 
 public:
@@ -41,27 +55,22 @@ public:
 
     void addEdge(const string& a, const string& b)
     {
-        ensure(a)->edges.push_back(ensure(b));
+        ensure(a)->edges.emplace_back(ensure(b));
     }
 
     bool query(const string& src, const string& dst) const
     {
-        auto it = table_.find(src);
-        if (it == table_.end()) return false;
+        auto it = registry.find(src);
+        if (it == registry.end()) return false;
         queue<shared_ptr<GraphNode>> q;
         unordered_set<string> seen;
         q.push(it->second);
         seen.insert(src);
-        while (!q.empty()) {
+        while (!q.empty())
+        {
             auto cur = q.front(); q.pop();
             if (cur->label == dst) return true;
-            for (auto& n : cur->edges)
-{
-                if (!seen.count(n->label)) {
-                    seen.insert(n->label);
-                    q.push(n);
-                }
-            }
+            enqueueNeighbors(cur, q, seen);
         }
         return false;
     }
@@ -69,21 +78,23 @@ public:
 
 int main()
 {
-    Graph G;
-    string verb;
-    while (cin >> verb)
-{
-        if (verb == "END") break;
-        if (verb == "ADD_NODE")
-{
+    Graph graph;
+    string token;
+    while (cin >> token)
+    {
+        if (token == "END") break;
+        if (token == "ADD_NODE")
+        {
             string n; cin >> n;
-            G.addNode(n);
-        } else if (verb == "ADD_EDGE") {
-            string u, v; cin >> u >> v;
-            G.addEdge(u, v);
-        } else if (verb == "QUERY") {
-            string u, v; cin >> u >> v;
-            cout << (G.query(u, v) ? "REACHABLE" : "UNREACHABLE") << endl;
+            graph.addNode(n);
+        } else if (token == "ADD_EDGE")
+        {
+            string v, u; cin >> v >> u;
+            graph.addEdge(u, v);
+        } else if (token == "QUERY")
+        {
+            string v, u; cin >> v >> u;
+            cout << (graph.query(u, v) ? "REACHABLE" : "UNREACHABLE") << endl;
         }
     }
     return 0;

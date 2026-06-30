@@ -1,20 +1,20 @@
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 #include <string>
-#include <utility>
 #include <vector>
-// cleaned up version
+#include <functional>
+#include <utility>
 
 class Sensor {
     double celsiusReading;
     std::vector<std::pair<std::string, std::function<void(double)>>> callbacks;
 
     void dispatch(double value) const {
-        for (const auto& pair : callbacks) {
+        for (std::size_t i = 0; i < callbacks.size(); i++) {
+            const auto& pair = callbacks[i];
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << pair.first << "] temp=" << value << std::endl;
+                      << "[" << pair.first << "] temp=" << value << '\n';
             if (pair.second)
                 pair.second(value);
         }
@@ -22,7 +22,7 @@ class Sensor {
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        callbacks.emplace_back(name, std::move(callback));
+        callbacks.push_back({name, std::move(callback)});
     }
 
     void set_value(double celsius) {
@@ -38,14 +38,14 @@ int main() {
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    std::string elem;
-    while (input >> elem) {
-        if (elem == "END") break;
-        if (elem == "SUB") {
+    std::string token;
+    while (input >> token) {
+        if (token == "END") break;
+        if (token == "SUB") {
             std::string name;
             input >> name;
             sensor.subscribe(name, [](double) {});
-        } else if (elem == "SET") {
+        } else if (token == "SET") {
             double temp;
             input >> temp;
             sensor.set_value(temp);

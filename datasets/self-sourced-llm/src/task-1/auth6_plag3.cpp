@@ -1,81 +1,76 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <iostream>
-// from lab partner
+#include <cctype>
+// borrowed from roommate's homework
 
 namespace {
 
 class StringBuffer {
-    char* ref_;
-    std::size_t cnt_;
+    char* heap;
+    std::size_t heapSize;
 
 public:
     explicit StringBuffer(const char* input) {
-        cnt_ = std::strlen(input);
-        ref_ = new char[cnt_ + 1];
-        std::strcpy(ref_, input);
+        heapSize = std::strlen(input);
+        heap = new char[heapSize + 1];
+        std::strcpy(heap, input);
     }
 
-    ~StringBuffer() { delete[] ref_; }
+    ~StringBuffer() { delete[] heap; }
 
     StringBuffer(const StringBuffer& peer) {
-        cnt_ = peer.cnt_;
-        ref_ = new char[cnt_ + 1];
-        std::strcpy(ref_, peer.ref_);
+        heapSize = peer.heapSize;
+        heap = new char[heapSize + 1];
+        std::strcpy(heap, peer.heap);
     }
 
     StringBuffer& operator=(const StringBuffer& peer) {
         if (this == &peer) return *this;
-        delete[] ref_;
-        cnt_ = peer.cnt_;
-        ref_ = new char[cnt_ + 1];
-        std::strcpy(ref_, peer.ref_);
+        delete[] heap;
+        heapSize = peer.heapSize;
+        heap = new char[heapSize + 1];
+        std::strcpy(heap, peer.heap);
         return *this;
     }
 
     void trim() {
-        std::size_t front = 0;
-        while (front < cnt_ &&
-               std::isspace(static_cast<unsigned char>(ref_[front])))
-            front++;
-        std::size_t back = cnt_;
-        while (back > front &&
-               std::isspace(static_cast<unsigned char>(ref_[back - 1])))
-            back--;
-        /* manual */ std::memmove(ref_, ref_ + front, back - front);
-        cnt_ = back - front;
-        ref_[cnt_] = '\0';
+        std::size_t lo = 0;
+        while (lo < heapSize && std::isspace(static_cast<unsigned char>(heap[lo])))
+            lo++;
+        std::size_t hi = heapSize;
+        while (hi > lo && std::isspace(static_cast<unsigned char>(heap[hi - 1])))
+            hi--;
+        std::size_t span = hi - lo;
+        for (std::size_t k = span; k-- > 0;)
+            heap[k] = heap[lo + k];
+        heap[span] = '\0';
+        heapSize = span;
     }
 
-    const char* c_str() const { return ref_; }
-    std::size_t size() const { return cnt_; }
+    const char* c_str() const { return heap; }
+    std::size_t size() const { return heapSize; }
 
     bool operator<(const StringBuffer& peer) const {
-        return std::strcmp(ref_, peer.ref_) < 0;
+        return std::strcmp(heap, peer.heap) < 0;
     }
 };
 
-} // namespace
+}
 
 int main() {
-    std::vector<StringBuffer> rows;
+    std::vector<StringBuffer> lines;
     std::string lineBuf;
     while (std::getline(std::cin, lineBuf))
-        rows.emplace_back(lineBuf.c_str());
+        lines.emplace_back(lineBuf.c_str());
 
-    for (StringBuffer& row : rows)
-        row.trim();
-
-    rows.erase(std::remove_if(rows.begin(), rows.end(),
-                              [](const StringBuffer& r) {
-                                  return r.size() == 0;
-                              }),
-               rows.end());
-
-    std::sort(rows.begin(), rows.end());
-    for (const StringBuffer& row : rows)
-        std::cout << row.c_str() << '\n';
+    for (auto& ln : lines) ln.trim();
+    lines.erase(std::remove_if(lines.begin(), lines.end(),
+                              [](const StringBuffer& r) { return r.size() == 0; }),
+               lines.end());
+    std::sort(lines.begin(), lines.end());
+    for (const StringBuffer& ln : lines)
+        std::cout << ln.c_str() << std::endl;
     return 0;
 }

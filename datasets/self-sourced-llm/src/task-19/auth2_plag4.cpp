@@ -1,49 +1,48 @@
-#include <sstream>
 #include <iostream>
-#include <utility>
+#include <sstream>
 #include <string>
-// quick submit
+#include <utility>
 
 class StringBuilder {
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : word_(std::move(o.word_)) {}
+    StringBuilder(StringBuilder&& o) noexcept : buf_(std::move(o.buf_)) {}
     StringBuilder& operator=(StringBuilder&& o) noexcept {
-        word_ = std::move(o.word_);
+        buf_ = std::move(o.buf_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s) {
-        word_ += s;
+        buf_ += s;
         return *this;
     }
 
     StringBuilder& append(std::string&& s) {
-        word_ += std::move(s);
+        buf_ += std::move(s);
         return *this;
     }
 
     StringBuilder& append_line(const std::string& s) {
-        word_.append(s);
-        word_.push_back('\n');
+        buf_.append(s);
+        buf_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return word_; }
-    void clear() { word_.clear(); }
+    const std::string& str() const { return buf_; }
+    void clear() { buf_.clear(); }
 
 private:
-    std::string word_;
+    std::string buf_;
 };
 
 int main() {
     StringBuilder document;
 
-    for (std::string word; std::cin >> word;) {
-        if (word == "END") break;
-        if (word != "SECTION") continue;
+    for (std::string cmd2; std::cin >> cmd2;) {
+        if (cmd2 == "END") break;
+        if (cmd2 != "SECTION") continue;
 
         std::string heading;
         std::getline(std::cin, heading);
@@ -52,10 +51,10 @@ int main() {
         std::ostringstream block;
         block << "# " << heading << "\n";
 
-        std::string str;
-        while (std::getline(std::cin, str)) {
-            if (str.empty()) break;
-            block << str << '\n';
+        std::string row;
+        while (std::getline(std::cin, row)) {
+            if (row.empty()) break;
+            block << row << '\n';
         }
         block << '\n';
 

@@ -1,8 +1,7 @@
-#include <memory>
 #include <iostream>
-#include <unordered_map>
+#include <memory>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -10,11 +9,11 @@ struct Image {
 };
 
 class ImageCache {
-    std::unordered_map<std::string, std::weak_ptr<Image>> data_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> table_;
 
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        std::weak_ptr<Image>& slot = data_[key];
+        std::weak_ptr<Image>& slot = table_[key];
         if (std::shared_ptr<Image> hit = slot.lock()) return hit;
         std::shared_ptr<Image> img = std::make_shared<Image>();
         img->name = key;
@@ -25,16 +24,16 @@ public:
 
     std::size_t size() const {
         std::size_t count = 0;
-        for (const auto& pair : data_)
+        for (const auto& pair : table_)
             if (!pair.second.expired()) ++count;
         return count;
     }
 
-    void drop_all() { data_.clear(); }
+    void drop_all() { table_.clear(); }
 
-    std::string query(const std::string& key) const {
-        auto found = data_.find(key);
-        if (found == data_.end()) return "EXPIRED";
+    std::string lookup_key(const std::string& key) const {
+        auto found = table_.find(key);
+        if (found == table_.end()) return "EXPIRED";
         if (std::shared_ptr<Image> live = found->second.lock())
             return "pixels=" + std::to_string(live->pixel_count);
         return "EXPIRED";
@@ -42,23 +41,23 @@ public:
 };
 
 int main() {
-    ImageCache ref;
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word == "LOAD") {
-            std::string tag;
+    ImageCache cache;
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "LOAD") {
+            std::string k;
             int n;
-            std::cin >> tag >> n;
-            auto msg = ref.load(tag, n);
-            std::cout << "loaded " << msg->name << " pixels=" << msg->pixel_count << '\n';
-            msg.reset();
-        } else if (word == "QUERY") {
-            std::string tag;
-            std::cin >> tag;
-            std::cout << ref.query(tag) << '\n';
-        } else if (word == "DROP_ALL") {
-            ref.drop_all();
+            std::cin >> k >> n;
+            auto ptr = cache.load(k, n);
+            std::cout << "loaded " << ptr->name << " pixels=" << ptr->pixel_count << '\n';
+            ptr.reset();
+        } else if (cmd == "QUERY") {
+            std::string k;
+            std::cin >> k;
+            std::cout << cache.lookup_key(k) << '\n';
+        } else if (cmd == "DROP_ALL") {
+            cache.drop_all();
         }
     }
     return 0;

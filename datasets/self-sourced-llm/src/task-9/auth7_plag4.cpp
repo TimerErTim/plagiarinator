@@ -1,9 +1,8 @@
+#include <string>
+#include <vector>
+#include <iostream>
 #include <iomanip>
 #include <functional>
-#include <string>
-#include <iostream>
-#include <vector>
-// quick submit
 
 class Sensor {
     double v;

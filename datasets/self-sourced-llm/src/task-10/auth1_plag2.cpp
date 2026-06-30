@@ -1,100 +1,115 @@
-#include <vector>
-#include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <vector>
 
-class IntBST {
-    struct Node {
+class IntBST
+{
+    struct Node
+    {
         int value;
         Node* left;
         Node* right;
         explicit Node(int v) : value(v), left(nullptr), right(nullptr) {}
     };
 
-    Node* rootNode_;
+    Node* rootx_;
 
-    static void destroy(Node* n) {
+    static void destroy(Node* n)
+    {
         if (!n) return;
         destroy(n->left);
         destroy(n->right);
         delete n;
     }
 
-    Node* insertNode(Node* n, int v) {
+    Node* insertNode(Node* n, int v)
+    {
         if (!n) return new Node(v);
         if (v < n->value) n->left = insertNode(n->left, v);
         else if (v > n->value) n->right = insertNode(n->right, v);
         return n;
     }
 
-    bool containsNode(const Node* n, int v) const {
+    bool lookupNode(const Node* n, int v) const
+    {
         if (!n) return false;
         if (v == n->value) return true;
-        return v < n->value ? containsNode(n->left, v) : containsNode(n->right, v);
+        if (v < n->value) return lookupNode(n->left, v);
+        return lookupNode(n->right, v);
     }
 
-    void inorderNode(const Node* n, std::vector<int>& out) const {
+    void inorderNode(const Node* n, std::vector<int>& out) const
+    {
         if (!n) return;
         inorderNode(n->left, out);
         out.push_back(n->value);
         inorderNode(n->right, out);
     }
 
-    Node* minNode(Node* n) const {
+    Node* minNode(Node* n) const
+    {
         while (n && n->left) n = n->left;
         return n;
     }
 
 public:
-    IntBST() : rootNode_(nullptr) {}
-    ~IntBST() { destroy(rootNode_); }
+    IntBST() : rootx_(nullptr) {}
+    ~IntBST() { destroy(rootx_); }
 
-    void insert(int value) { rootNode_ = insertNode(rootNode_, value); }
+    void insert(int value) { rootx_ = insertNode(rootx_, value); }
 
-    bool contains(int value) const { return containsNode(rootNode_, value); }
+    bool contains(int value) const { return lookupNode(rootx_, value); }
 
-    void inorder(std::vector<int>& out) const { inorderNode(rootNode_, out); }
+    void inorder(std::vector<int>& out) const { inorderNode(rootx_, out); }
 
-    int& min() {
-        Node* m = minNode(rootNode_);
+    int& min()
+    {
+        Node* m = minNode(rootx_);
         return m->value;
     }
 
-    const int& min() const {
-        Node* m = minNode(rootNode_);
+    const int& min() const
+    {
+        Node* m = minNode(rootx_);
         return m->value;
     }
 
-    bool empty() const { return rootNode_ == nullptr; }
+    bool empty() const { return rootx_ == nullptr; }
 };
 
 int main()
 {
-    IntBST t;
-    std::string op;
-    while (std::cin >> op)
-{
-        if (op == "DONE") break;
-        t.insert(std::stoi(op));
+    IntBST tree;
+    std::string token;
+    while (std::cin >> token)
+    {
+        if (token == "DONE") break;
+        tree.insert(std::stoi(token));
     }
 
-    while (std::cin >> op)
-{
-        if (op == "DONE") break;
-        if (op == "CONTAINS")
-{
+    while (std::cin >> token)
+    {
+        if (token == "DONE") break;
+        if (token == "CONTAINS")
+        {
             int x; std::cin >> x;
-            std::cout << (t.contains(x) ? "YES" : "NO") << '\n';
-        } else if (op == "MIN") {
-            if (t.empty()) std::cout << "EMPTY\n";
-            else std::cout << t.min() << '\n';
-        } else if (op == "PRINT") {
+            if (tree.contains(x)) std::cout << "YES\n";
+            else std::cout << "NO\n";
+        }
+        else if (token == "MIN")
+        {
+            if (tree.empty()) std::cout << "EMPTY\n";
+            else std::cout << tree.min() << '\n';
+        }
+        else if (token == "PRINT")
+        {
             std::vector<int> vals;
-            t.inorder(vals);
-            for (std::size_t i = 0; i < vals.size(); ++i) {
-                if (i) std::cout << ' ';
-                std::cout << vals[i];
+            tree.inorder(vals);
+            for (std::size_t j = 0; j < vals.size(); ++j)
+            {
+                if (j) std::cout << ' ';
+                std::cout << vals[j];
             }
             std::cout << '\n';
         }

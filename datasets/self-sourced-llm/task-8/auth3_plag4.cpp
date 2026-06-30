@@ -1,12 +1,11 @@
 #include <vector>
 #include <iostream>
-// quick submit
 
 template <typename T>
 class Matrix {
     std::size_t rowCount_;
     std::size_t colCount_;
-    std::vector<T> word_;
+    std::vector<T> elements_;
 
     static bool compatibleMultiply(std::size_t aCols, std::size_t bRows) {
         return aCols == bRows;
@@ -14,14 +13,14 @@ class Matrix {
 
 public:
     Matrix(std::size_t rows, std::size_t cols)
-        : rowCount_(rows), colCount_(cols), word_(rows * cols, T{}) {}
+        : rowCount_(rows), colCount_(cols), elements_(rows * cols, T{}) {}
 
     T& operator()(std::size_t r, std::size_t c) {
-        return word_[r * colCount_ + c];
+        return elements_[r * colCount_ + c];
     }
 
     const T& operator()(std::size_t r, std::size_t c) const {
-        return word_[r * colCount_ + c];
+        return elements_[r * colCount_ + c];
     }
 
     std::size_t rows() const { return rowCount_; }
@@ -29,14 +28,14 @@ public:
 
     Matrix operator+(const Matrix& rhs) const {
         Matrix result(rowCount_, colCount_);
-        for (std::size_t idx = 0; idx < word_.size(); ++idx)
-            result.word_[idx] = word_[idx] + rhs.word_[idx];
+        for (std::size_t idx = elements_.size(); idx-- > 0;)
+            result.elements_[idx] = elements_[idx] + rhs.elements_[idx];
         return result;
     }
 
     Matrix operator*(const Matrix& rhs) const {
         if (!compatibleMultiply(colCount_, rhs.rowCount_))
-            return Matrix(0, 0); // signal via empty - handled in main
+            return Matrix(0, 0);
         Matrix product(rowCount_, rhs.colCount_);
         for (std::size_t i = 0; i < rowCount_; ++i) {
             for (std::size_t j = 0; j < rhs.colCount_; ++j) {
@@ -49,7 +48,7 @@ public:
         return product;
     }
 
-    bool valid() const { return rowCount_ > 0 || colCount_ > 0 || word_.empty(); }
+    bool valid() const { return rowCount_ > 0 || colCount_ > 0 || elements_.empty(); }
 
     friend std::ostream& operator<<(std::ostream& out, const Matrix& mat) {
         for (std::size_t i = 0; i < mat.rowCount_; ++i) {
@@ -75,13 +74,13 @@ Matrix<T> loadMatrix(std::istream& in) {
 }
 
 int main() {
-    Matrix<int> A = loadMatrix<int>(std::cin);
-    Matrix<int> B = loadMatrix<int>(std::cin);
-    if (A.cols() != B.rows()) {
+    Matrix<int> matA = loadMatrix<int>(std::cin);
+    Matrix<int> matB = loadMatrix<int>(std::cin);
+    if (matA.cols() != matB.rows()) {
         std::cout << "ERROR\n";
         return 0;
     }
-    Matrix<int> C = A * B + A;
-    std::cout << C;
+    Matrix<int> matC = matA * matB + matA;
+    std::cout << matC;
     return 0;
 }

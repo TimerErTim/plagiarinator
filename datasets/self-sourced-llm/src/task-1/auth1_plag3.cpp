@@ -1,82 +1,76 @@
-#include <vector>
 #include <iostream>
+#include <vector>
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 // borrowed from roommate's homework
 
 class StringBuffer {
-    char* text;
-    std::size_t count;
+    char* txt;
+    std::size_t txtLen;
 
 public:
-    StringBuffer(const char* input) {
-        count = std::strlen(input);
-        text = new char[count + 1];
-        for (std::size_t p = 0; p <= count; ++p)
-            text[p] = input[p];
+    StringBuffer(const char* raw) {
+        txtLen = std::strlen(raw);
+        txt = new char[txtLen + 1];
+        std::strcpy(txt, raw);
     }
 
-    ~StringBuffer() {
-        delete[] text;
+    ~StringBuffer() { delete[] txt; }
+
+    StringBuffer(const StringBuffer& peer) {
+        txtLen = peer.txtLen;
+        txt = new char[txtLen + 1];
+        std::strcpy(txt, peer.txt);
     }
 
-    StringBuffer(const StringBuffer& rhs) {
-        count = rhs.count;
-        text = new char[count + 1];
-        std::strcpy(text, rhs.text);
-    }
-
-    StringBuffer& operator=(const StringBuffer& rhs) {
-        if (this != &rhs) {
-            delete[] text;
-            count = rhs.count;
-            text = new char[count + 1];
-            std::strcpy(text, rhs.text);
+    StringBuffer& operator=(const StringBuffer& peer) {
+        if (this != &peer) {
+            delete[] txt;
+            txtLen = peer.txtLen;
+            txt = new char[txtLen + 1];
+            std::strcpy(txt, peer.txt);
         }
         return *this;
     }
 
     void trim() {
-        int start = 0;
-        int end = static_cast<int>(count);
-        while (start < end && std::isspace(static_cast<unsigned char>(text[start])))
-            start++;
-        while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])))
-            end--;
-        int out = 0;
-        for (int p = start; p < end; ++p)
-            text[out++] = text[p];
-        text[out] = '\0';
-        count = static_cast<std::size_t>(out);
+        std::size_t left = 0;
+        while (left < txtLen && std::isspace(static_cast<unsigned char>(txt[left])))
+            left++;
+        std::size_t right = txtLen;
+        while (right > left && std::isspace(static_cast<unsigned char>(txt[right - 1])))
+            right--;
+        std::size_t outLen = right - left;
+        for (std::size_t k = outLen; k-- > 0;)
+            txt[k] = txt[left + k];
+        txt[outLen] = '\0';
+        txtLen = outLen;
     }
 
-    const char* c_str() const { return text; }
-    std::size_t size() const { return count; }
+    const char* c_str() const { return txt; }
+    std::size_t size() const { return txtLen; }
 
-    bool operator<(const StringBuffer& rhs) const {
-        return std::strcmp(text, rhs.text) < 0;
+    bool operator<(const StringBuffer& peer) const {
+        return std::strcmp(txt, peer.txt) < 0;
     }
 };
 
 int main() {
-    std::vector<StringBuffer> rows;
-    std::string row;
-    while (std::getline(std::cin, row))
-        rows.emplace_back(row.c_str());
+    std::vector<StringBuffer> roster;
+    std::string ln;
+    while (std::getline(std::cin, ln))
+        roster.emplace_back(ln.c_str());
 
-    for (StringBuffer& sb : rows)
-        sb.trim();
+    for (auto& entry : roster)
+        entry.trim();
 
-    std::sort(rows.begin(), rows.end());
-    for (std::vector<StringBuffer>::iterator it = rows.begin(); it != rows.end(); ) {
-        if (it->size() == 0)
-            it = rows.erase(it);
-        else
-            ++it;
-    }
+    roster.erase(std::remove_if(roster.begin(), roster.end(),
+                                [](const StringBuffer& s) { return s.size() == 0; }),
+                 roster.end());
+    std::sort(roster.begin(), roster.end());
 
-    for (const StringBuffer& sb : rows)
-        std::cout << sb.c_str() << std::endl;
+    for (const auto& entry : roster)
+        std::cout << entry.c_str() << std::endl;
     return 0;
 }

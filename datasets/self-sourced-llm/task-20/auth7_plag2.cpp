@@ -1,8 +1,7 @@
+#include <array>
+#include <iostream>
 #include <utility>
 #include <string>
-#include <iostream>
-#include <array>
-// adapted from classmate submission
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -46,18 +45,27 @@ bool closing_matches(char open, char close) {
     return false;
 }
 
+bool try_close(FixedStack<char, 128>& brackets, char c)
+{
+    char top;
+    if (!brackets.pop(top)) return false;
+    return closing_matches(top, c);
+}
+
 }  // namespace balance
 
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> brackets;
-    for (unsigned char raw : s) {
+    for (unsigned char raw : s)
+    {
         char c = static_cast<char>(raw);
-        if (c == '(' || c == '[' || c == '{') {
+        if (c == '(' || c == '[' || c == '{')
+        {
             if (!brackets.push(c)) return false;
-        } else if (c == ')' || c == ']' || c == '}') {
-            char top;
-            if (!brackets.pop(top)) return false;
-            if (!balance::closing_matches(top, c)) return false;
+        }
+        else if (c == ')' || c == ']' || c == '}')
+        {
+            if (!balance::try_close(brackets, c)) return false;
         }
     }
     return brackets.size() == 0;
@@ -65,9 +73,10 @@ bool is_balanced(const std::string& s) {
 
 int main()
 {
-    for (std::string input; std::getline(std::cin, input);) {
-        if (input == "END") break;
-        std::cout << (is_balanced(input) ? "OK" : "FAIL") << '\n';
+    for (std::string line; std::getline(std::cin, line);)
+    {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

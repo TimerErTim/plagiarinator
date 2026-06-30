@@ -1,11 +1,10 @@
-#include <memory>
-#include <iostream>
-#include <string>
 #include <queue>
-#include <unordered_set>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-// quick submit
+#include <iostream>
+#include <memory>
 
 struct GraphNode {
     std::string label;
@@ -13,15 +12,15 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> nodes;
 
     std::shared_ptr<GraphNode> fetch(const std::string& key) {
-        if (!ref_.count(key)) {
+        if (!nodes.count(key)) {
             auto ptr = std::make_shared<GraphNode>();
             ptr->label = key;
-            ref_[key] = ptr;
+            nodes[key] = ptr;
         }
-        return ref_[key];
+        return nodes[key];
     }
 
 public:
@@ -32,10 +31,10 @@ public:
     }
 
     bool query(const std::string& start, const std::string& end) const {
-        if (!ref_.count(start)) return false;
+        if (!nodes.count(start)) return false;
         std::queue<std::shared_ptr<GraphNode>> frontier;
         std::unordered_set<std::string> done;
-        frontier.push(ref_.at(start));
+        frontier.push(nodes.at(start));
         done.insert(start);
         while (!frontier.empty()) {
             auto now = frontier.front();
@@ -53,19 +52,19 @@ public:
 };
 
 int main() {
-    Graph g;
+    Graph G;
     std::string word;
     while (std::cin >> word) {
         if (word == "END") break;
         if (word == "ADD_NODE") {
             std::string n; std::cin >> n;
-            g.addNode(n);
+            G.addNode(n);
         } else if (word == "ADD_EDGE") {
             std::string f, t; std::cin >> f >> t;
-            g.addEdge(f, t);
+            G.addEdge(f, t);
         } else if (word == "QUERY") {
             std::string f, t; std::cin >> f >> t;
-            std::cout << (g.query(f, t) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (G.query(f, t) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

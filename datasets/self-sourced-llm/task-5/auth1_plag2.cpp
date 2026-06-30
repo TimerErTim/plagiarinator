@@ -6,19 +6,22 @@
 // adapted from classmate submission
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     std::size_t limit_;
     std::list<std::pair<Key, Value>> chain_;
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> idx_;
 
-    void touch(typename std::list<std::pair<Key, Value>>::iterator it) {
+    void touch(typename std::list<std::pair<Key, Value>>::iterator it)
+    {
         chain_.splice(chain_.begin(), chain_, it);
     }
 
 public:
     explicit LRUCache(std::size_t capacity) : limit_(capacity) {}
 
-    bool get(const Key& key, Value& out) {
+    bool get(const Key& key, Value& out)
+    {
         auto it = idx_.find(key);
         if (it == idx_.end()) return false;
         out = it->second->second;
@@ -26,7 +29,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto it = idx_.find(key);
         if (it != idx_.end()) {
             it->second->second = value;
@@ -51,10 +55,10 @@ int main()
 
     std::string verb;
     while (std::cin >> verb)
-{
+    {
         if (verb == "END") break;
         if (verb == "GET")
-{
+        {
             std::string key;
             std::cin >> key;
             int val;

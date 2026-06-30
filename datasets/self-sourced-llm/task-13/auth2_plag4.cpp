@@ -1,11 +1,10 @@
-#include <iostream>
 #include <condition_variable>
-#include <queue>
+#include <iostream>
 #include <mutex>
-#include <thread>
+#include <queue>
 #include <sstream>
+#include <thread>
 #include <vector>
-// quick submit
 
 template <typename T>
 class BlockingQueue {
@@ -42,26 +41,26 @@ private:
 };
 
 struct Script {
-    std::size_t producers, consumers, word_;
+    std::size_t producers, consumers, items;
 };
 
 Script read_script() {
     Script s{};
     std::string w;
-    std::cin >> w >> s.producers >> w >> s.consumers >> w >> s.word_;
+    std::cin >> w >> s.producers >> w >> s.consumers >> w >> s.items;
     return s;
 }
 
 int main() {
-    Script ref = read_script();
-    BlockingQueue<int> q(ref.word_ + 2);
+    Script settings = read_script();
+    BlockingQueue<int> q(settings.items + 2);
     std::vector<std::thread> workers;
     std::mutex tally_mu;
     std::size_t tally = 0;
 
     int next = 0;
-    for (std::size_t i = 0; i < ref.producers; ++i) {
-        std::size_t share = ref.word_ / ref.producers + (i < ref.word_ % ref.producers ? 1 : 0);
+    for (std::size_t i = 0; i < settings.producers; ++i) {
+        std::size_t share = settings.items / settings.producers + (i < settings.items % settings.producers ? 1 : 0);
         int begin = next;
         next += static_cast<int>(share);
         workers.emplace_back([&, share, begin]() {
@@ -70,7 +69,7 @@ int main() {
         });
     }
 
-    for (std::size_t i = 0; i < ref.consumers; ++i) {
+    for (std::size_t i = 0; i < settings.consumers; ++i) {
         workers.emplace_back([&]() {
             while (true) {
                 int val = q.pop();
@@ -80,10 +79,10 @@ int main() {
                 {
                     std::lock_guard<std::mutex> g(tally_mu);
                     ++tally;
-                    done = (tally == ref.word_);
+                    done = (tally == settings.items);
                 }
                 if (done) {
-                    for (std::size_t tag = 0; tag < ref.consumers; ++tag)
+                    for (std::size_t k = 0; k < settings.consumers; ++k)
                         q.push(-1);
                 }
             }

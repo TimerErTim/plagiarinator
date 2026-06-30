@@ -1,12 +1,11 @@
-#include <array>
 #include <iostream>
-#include <string>
 #include <utility>
-// cleaned up version
+#include <string>
+#include <array>
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> content_;
+    std::array<T, N> buf_;
     std::size_t len_ = 0;
 
     bool full() const { return len_ >= N; }
@@ -14,25 +13,25 @@ class FixedStack {
 public:
     bool push(const T& value) {
         if (full()) return false;
-        content_[len_++] = value;
+        buf_[len_++] = value;
         return true;
     }
 
     bool push(T&& value) {
         if (full()) return false;
-        content_[len_++] = std::move(value);
+        buf_[len_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
         if (len_ == 0) return false;
-        out = content_[--len_];
+        out = buf_[--len_];
         return true;
     }
 
     bool peek(T& out) const {
         if (len_ == 0) return false;
-        out = content_[len_ - 1];
+        out = buf_[len_ - 1];
         return true;
     }
 
@@ -53,7 +52,8 @@ bool pairs(char o, char c) {
 
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> stack;
-    for (char ch : s) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        char ch = s[i];
         if (is_open(ch)) {
             if (!stack.push(ch)) return false;
         } else if (is_close(ch)) {
@@ -65,10 +65,10 @@ bool is_balanced(const std::string& s) {
 }
 
 int main() {
-    std::string s;
-    while (std::getline(std::cin, s)) {
-        if (s == "END") break;
-        std::cout << (is_balanced(s) ? "OK" : "FAIL") << std::endl;
+    std::string row;
+    while (std::getline(std::cin, row)) {
+        if (row == "END") break;
+        std::cout << (is_balanced(row) ? "OK" : "FAIL") << std::endl;
     }
     return 0;
 }

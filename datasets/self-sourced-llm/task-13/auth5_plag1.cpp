@@ -1,11 +1,11 @@
-#include <atomic>
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <queue>
+#include <vector>
 #include <string>
+#include <queue>
+#include <mutex>
+#include <iostream>
+#include <condition_variable>
+#include <atomic>
 #include <thread>
-// cleaned up version
 
 template <typename T>
 class BlockingQueue {
@@ -20,17 +20,17 @@ public:
     void push(T value) {
         std::unique_lock<std::mutex> lk(mu);
         full_cv.wait(lk, [&] { return q.size() < cap; });
-        q.push(std::move(value));
+        q.emplace(std::move(value));
         empty_cv.notify_one();
     }
 
     T pop() {
         std::unique_lock<std::mutex> lk(mu);
         empty_cv.wait(lk, [&] { return !q.empty(); });
-        T lhs = std::move(q.front());
+        T x = std::move(q.front());
         q.pop();
         full_cv.notify_one();
-        return lhs;
+        return x;
     }
 
     std::size_t size() const {
@@ -39,42 +39,44 @@ public:
     }
 };
 
-static void start_producers(BlockingQueue<int>& bq, std::size_t p, std::size_t n, std::vector<std::thread>& out) {
+static void spawn_producers(BlockingQueue<int>& bq, std::size_t p, std::size_t n, std::vector<std::thread>& out) {
     std::size_t each = n / p, rem = n % p, cur = 0;
-    for (std::size_t i = 0; i < p; ++i) {
+    for (std::size_t i = 0; i < p; i++) {
         std::size_t k = each + (i < rem);
         std::size_t start = cur;
         cur += k;
         out.emplace_back([&, k, start] {
-            for (std::size_t j = 0; j < k; ++j) bq.push(static_cast<int>(start + j));
+            for (std::size_t j = 0; j < k; j++)
+                bq.push(static_cast<int>(start + j));
         });
     }
 }
 
 int main() {
-    std::size_t p, conf, cnt;
+    std::size_t p, c, n;
     std::string tag;
-    std::cin >> tag >> p >> tag >> conf >> tag >> cnt;
+    std::cin >> tag >> p >> tag >> c >> tag >> n;
 
-    BlockingQueue<int> bq(cnt);
+    BlockingQueue<int> bq(n);
     std::vector<std::thread> ts;
     std::atomic<std::size_t> count{0};
 
-    start_producers(bq, p, cnt, ts);
+    spawn_producers(bq, p, n, ts);
 
-    for (std::size_t i = 0; i < conf; ++i) {
+    for (std::size_t i = 0; i < c; i++) {
         ts.emplace_back([&] {
             while (true) {
-                int n = bq.pop();
-                if (n < 0) break;
-                std::cout << "got " << n << '\n';
-                if (count.fetch_add(1) + 1 == cnt)
-                    for (std::size_t j = 0; j < conf; ++j) bq.push(-1);
+                int v = bq.pop();
+                if (v < 0) break;
+                std::cout << "got " << v << std::endl;
+                if (count.fetch_add(1) + 1 == n)
+                    for (std::size_t j = 0; j < c; j++)
+                        bq.push(-1);
             }
         });
     }
 
-    for (auto& piece : ts) piece.join();
-    std::cout << "DONE\n";
+    for (auto& t : ts) t.join();
+    std::cout << "DONE" << std::endl;
     return 0;
 }

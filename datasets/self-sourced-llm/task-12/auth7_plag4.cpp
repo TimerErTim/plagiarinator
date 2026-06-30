@@ -1,9 +1,8 @@
-#include <sstream>
 #include <iostream>
-#include <variant>
+#include <sstream>
 #include <string>
+#include <variant>
 #include <vector>
-// quick submit
 
 struct Number { int value; };
 struct Add { int l, r; };
@@ -41,21 +40,21 @@ Expr make_bin(int l, int r, char op) {
 }  // namespace
 
 int main() {
-    std::string text;
-    while (std::getline(std::cin, text) && !text.empty()) {
-        std::vector<Expr> ref;
-        std::istringstream rd(text);
-        std::string tmp;
-        while (rd >> tmp) {
-            if (tmp == "+" || tmp == "-" || tmp == "*" || tmp == "/") {
-                int b = visit_eval(ref.back()); ref.pop_back();
-                int a = visit_eval(ref.back()); ref.pop_back();
-                ref.push_back(make_bin(a, b, tmp[0]));
+    std::string line;
+    while (std::getline(std::cin, line) && !line.empty()) {
+        std::vector<Expr> st;
+        std::istringstream rd(line);
+        std::string tok;
+        while (rd >> tok) {
+            if (tok == "+" || tok == "-" || tok == "*" || tok == "/") {
+                int b = visit_eval(st.back()); st.pop_back();
+                int a = visit_eval(st.back()); st.pop_back();
+                st.push_back(make_bin(a, b, tok[0]));
             } else {
-                ref.emplace_back(Number{std::stoi(tmp)});
+                st.emplace_back(Number{std::stoi(tok)});
             }
         }
-        int ans = visit_eval(ref.back());
+        int ans = visit_eval(st.back());
         if (ans == (1 << 30)) std::cout << "ERROR\n";
         else std::cout << ans << '\n';
     }

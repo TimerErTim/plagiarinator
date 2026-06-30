@@ -1,33 +1,33 @@
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <utility>
-#include <string>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+// quick submit before deadline
 
 class FileWriter {
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream handle_;
+    std::string name_;
 
 public:
-    FileWriter(const std::string& name) : tmp_(name) { word_.open(tmp_); }
-    ~FileWriter() { if (word_.is_open()) word_.close(); }
+    FileWriter(const std::string& name) : name_(name) { handle_.open(name_); }
+    ~FileWriter() { if (handle_.is_open()) handle_.close(); }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
-    FileWriter(FileWriter&& o) noexcept : word_(std::move(o.word_)), tmp_(std::move(o.tmp_)) {}
+    FileWriter(FileWriter&& o) noexcept : handle_(std::move(o.handle_)), name_(std::move(o.name_)) {}
     FileWriter& operator=(FileWriter&& o) noexcept {
         if (this != &o) {
-            if (word_.is_open()) word_.close();
-            word_ = std::move(o.word_);
-            tmp_ = std::move(o.tmp_);
+            if (handle_.is_open()) handle_.close();
+            handle_ = std::move(o.handle_);
+            name_ = std::move(o.name_);
         }
         return *this;
     }
 
-    void write_line(const std::string& s) { word_ << s << '\n'; }
+    void write_line(const std::string& s) { handle_ << s << std::endl; }
 };
 
 static char grade(int x) {
@@ -35,22 +35,22 @@ static char grade(int x) {
 }
 
 int main() {
-    std::vector<std::pair<std::string,int>> arr;
+    std::vector<std::pair<std::string,int>> data;
     std::string ln;
     while (std::getline(std::cin, ln)) {
         auto c = ln.find(',');
-        arr.emplace_back(ln.substr(0,c), std::stoi(ln.substr(c+1)));
+        data.emplace_back(ln.substr(0,c), std::stoi(ln.substr(c+1)));
     }
     FileWriter w("report.txt");
     w.write_line("Student Report");
     w.write_line("--------------");
     double sm = 0;
-    for (auto& d : arr) {
+    for (auto& d : data) {
         sm += d.second;
         w.write_line(d.first + ": " + std::to_string(d.second) + " [" + grade(d.second) + "]");
     }
     std::ostringstream o;
-    o << std::fixed << std::setprecision(1) << "Average: " << sm / arr.size();
+    o << std::fixed << std::setprecision(1) << "Average: " << sm / data.size();
     w.write_line(o.str());
     std::cout << "Report written to report.txt\n";
     return 0;

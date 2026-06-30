@@ -1,66 +1,66 @@
-#include <array>
 #include <iostream>
 #include <string>
+#include <array>
 #include <utility>
-// cleaned up version
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> content_;
-    std::size_t top_ = 0;
+    std::array<T, N> buffer_;
+    std::size_t head_ = 0;
 
 public:
     bool push(const T& value) {
-        if (top_ >= N) return false;
-        content_[top_++] = value;
+        if (head_ >= N) return false;
+        buffer_[head_++] = value;
         return true;
     }
 
     bool push(T&& value) {
-        if (top_ >= N) return false;
-        content_[top_++] = std::move(value);
+        if (head_ >= N) return false;
+        buffer_[head_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
-        if (top_ == 0) return false;
-        out = content_[--top_];
+        if (head_ == 0) return false;
+        out = buffer_[--head_];
         return true;
     }
 
     bool peek(T& out) const {
-        if (top_ == 0) return false;
-        out = content_[top_ - 1];
+        if (head_ == 0) return false;
+        out = buffer_[head_ - 1];
         return true;
     }
 
-    std::size_t size() const { return top_; }
+    std::size_t size() const { return head_; }
 };
 
-static bool matches(char open, char close) {
+static bool bracket_ok(char open, char close) {
     return (open == '(' && close == ')') || (open == '[' && close == ']') ||
            (open == '{' && close == '}');
 }
 
 bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> st;
-    for (char ch : s) {
+    FixedStack<char, 128> stack;
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        char ch = s[i];
         if (ch == '(' || ch == '[' || ch == '{') {
-            if (!st.push(ch)) return false;
+            if (!stack.push(ch)) return false;
         } else if (ch == ')' || ch == ']' || ch == '}') {
             char open;
-            if (!st.pop(open)) return false;
-            if (!matches(open, ch)) return false;
+            if (!stack.pop(open)) return false;
+            if (!bracket_ok(open, ch)) return false;
         }
     }
-    return st.size() == 0;
+    return stack.size() == 0;
 }
 
 int main() {
-    std::string s;
-    while (std::getline(std::cin, s)) {
-        if (s == "END") break;
-        std::cout << (is_balanced(s) ? "OK" : "FAIL") << std::endl;
+    std::string row;
+    while (std::getline(std::cin, row)) {
+        if (row == "END") break;
+        std::cout << (is_balanced(row) ? "OK" : "FAIL") << std::endl;
     }
     return 0;
 }

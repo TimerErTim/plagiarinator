@@ -1,11 +1,12 @@
-#include <unordered_map>
-#include <iostream>
 #include <list>
+#include <iostream>
+#include <unordered_map>
 #include <string>
-// from lab partner
+// borrowed from roommate's homework
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     std::size_t box;
     std::list<std::pair<Key, Value>> pool;
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> ref;
@@ -13,7 +14,8 @@ class LRUCache {
 public:
     explicit LRUCache(std::size_t c) : box(c) {}
 
-    bool get(const Key& k, Value& o) {
+    bool get(const Key& k, Value& o)
+    {
         auto p = ref.find(k);
         if (p == ref.end()) return false;
         o = p->second->second;
@@ -21,7 +23,8 @@ public:
         return true;
     }
 
-    void put(const Key& k, const Value& v) {
+    void put(const Key& k, const Value& v)
+    {
         if (ref.count(k)) {
             ref[k]->second = v;
             pool.splice(pool.begin(), pool, ref[k]);
@@ -36,20 +39,23 @@ public:
     }
 };
 
-int main() {
-    std::string s; std::size_t n;
-    std::cin >> s >> n;
-    LRUCache<std::string, int> c(n);
-    std::string ln, k; int v;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "GET") {
+int main()
+{
+    std::string tag; std::size_t n;
+    std::cin >> tag >> n;
+    LRUCache<std::string, int> obj(n);
+    std::string cmd, k; int v;
+    while (std::cin >> cmd)
+    {
+        if (cmd == "END") break;
+        if (cmd == "GET")
+        {
             std::cin >> k;
-            if (c.get(k, v)) std::cout << "HIT " << v << '\n';
-            else std::cout << "MISS\n";
-        } else if (ln == "PUT") {
+            if (obj.get(k, v)) std::cout << "HIT " << v << std::endl;
+            else std::cout << "MISS" << std::endl;
+        } else if (cmd == "PUT") {
             std::cin >> k >> v;
-            c.put(k, v);
+            obj.put(k, v);
         }
     }
     return 0;

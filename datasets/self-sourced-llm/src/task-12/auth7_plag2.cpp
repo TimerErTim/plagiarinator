@@ -1,9 +1,8 @@
-#include <vector>
-#include <variant>
-#include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
 
 struct Number { int value; };
 struct Add { int l, r; };
@@ -15,13 +14,16 @@ using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
 namespace {
 
-int visit_eval(const Expr& e) {
-    struct Fn {
+int visit_eval(const Expr& e)
+{
+    struct Fn
+    {
         int operator()(Number n) const { return n.value; }
         int operator()(Add a) const { return visit_eval(Expr{Number{a.l}}) + visit_eval(Expr{Number{a.r}}); }
         int operator()(Sub s) const { return s.l - s.r; }
         int operator()(Mul m) const { return m.l * m.r; }
-        int operator()(Div d) const {
+        int operator()(Div d) const
+        {
             if (d.r == 0) return 1 << 30;
             return d.l / d.r;
         }
@@ -29,8 +31,10 @@ int visit_eval(const Expr& e) {
     return std::visit(Fn{}, e);
 }
 
-Expr make_bin(int l, int r, char op) {
-    switch (op) {
+Expr make_bin(int l, int r, char op)
+{
+    switch (op)
+    {
         case '+': return Add{l, r};
         case '-': return Sub{l, r};
         case '*': return Mul{l, r};
@@ -38,31 +42,38 @@ Expr make_bin(int l, int r, char op) {
     }
 }
 
+static bool is_op(const std::string& item)
+{
+    return item == "+" || item == "-" || item == "*" || item == "/";
+}
+
+static void process_line(const std::string& text)
+{
+    std::vector<Expr> st;
+    std::istringstream rd(text);
+    std::string item;
+    while (rd >> item)
+    {
+        if (is_op(item))
+        {
+            int b = visit_eval(st.back()); st.pop_back();
+            int a = visit_eval(st.back()); st.pop_back();
+            st.push_back(make_bin(a, b, item[0]));
+        }
+        else
+            st.emplace_back(Number{std::stoi(item)});
+    }
+    int ans = visit_eval(st.back());
+    if (ans == (1 << 30)) std::cout << "ERROR\n";
+    else std::cout << ans << '\n';
+}
+
 }  // namespace
 
 int main()
-
 {
-    std::string input;
-    while (std::getline(std::cin, input) && !input.empty()) 
-{
-        std::vector<Expr> st;
-        std::istringstream rd(input);
-        std::string entry;
-        while (rd >> entry) 
-{
-            if (entry == "+" || entry == "-" || entry == "*" || entry == "/") 
-{
-                int b = visit_eval(st.back()); st.pop_back();
-                int a = visit_eval(st.back()); st.pop_back();
-                st.push_back(make_bin(a, b, entry[0]));
-            } else {
-                st.push_back(Number{std::stoi(entry)});
-            }
-        }
-        int ans = visit_eval(st.back());
-        if (ans == (1 << 30)) std::cout << "ERROR\n";
-        else std::cout << ans << '\n';
-    }
+    std::string text;
+    while (std::getline(std::cin, text) && !text.empty())
+        process_line(text);
     return 0;
 }

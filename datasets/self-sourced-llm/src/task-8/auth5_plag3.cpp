@@ -1,62 +1,72 @@
-#include <vector>
 #include <iostream>
-// TODO: refactor later
+#include <vector>
+// reused matrix class from study group
 
 template <typename T>
 class Matrix {
-    std::size_t R, C;
-    std::vector<T> d;
+    std::size_t rowCount, colCount;
+    std::vector<T> elems;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : R(r), C(c), d(r * c, T()) {}
+    Matrix(std::size_t rows, std::size_t cols)
+        : rowCount(rows), colCount(cols), elems(rows * cols, T()) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return d[r * C + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return d[r * C + c]; }
+    T& operator()(std::size_t row, std::size_t col) { return elems[row * colCount + col]; }
+    const T& operator()(std::size_t row, std::size_t col) const { return elems[row * colCount + col]; }
 
-    Matrix operator+(const Matrix& o) const {
-        Matrix m(R, C);
-        for (std::size_t i = 0; i < d.size(); ++i) m.d[i] = d[i] + o.d[i];
-        return m;
+    std::size_t rows() const { return rowCount; }
+    std::size_t cols() const { return colCount; }
+
+    Matrix operator+(const Matrix& peer) const {
+        Matrix out(rowCount, colCount);
+        for (std::size_t i = elems.size(); i-- > 0;)
+            out.elems[i] = elems[i] + peer.elems[i];
+        return out;
     }
 
-    Matrix operator*(const Matrix& o) const {
-        Matrix m(R, o.C);
-        for (std::size_t i = 0; i < R; ++i)
-            for (std::size_t j = 0; j < o.C; ++j)
-                for (std::size_t k = 0; k < C; ++k)
-                    m(i, j) += (*this)(i, k) * o(k, j);
-        return m;
+    Matrix operator*(const Matrix& peer) const {
+        Matrix out(rowCount, peer.colCount);
+        for (std::size_t i = 0; i < rowCount; ++i) {
+            for (std::size_t j = 0; j < peer.colCount; ++j) {
+                T acc = T();
+                for (std::size_t k = colCount; k-- > 0;)
+                    acc += (*this)(i, k) * peer(k, j);
+                out(i, j) = acc;
+            }
+        }
+        return out;
     }
-
-    std::size_t rows() const { return R; }
-    std::size_t cols() const { return C; }
 
     friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-        for (std::size_t i = 0; i < m.R; ++i) {
-            for (std::size_t j = 0; j < m.C; ++j) {
-                if (j) os << ' ';
+        for (std::size_t i = 0; i < m.rowCount; ++i) {
+            for (std::size_t j = 0; j < m.colCount; ++j) {
+                if (j > 0) os << ' ';
                 os << m(i, j);
             }
-            os << '\n';
+            os << std::endl;
         }
         return os;
     }
 };
 
+template <typename T>
+Matrix<T> readFromStream(std::istream& in) {
+    std::size_t r, c;
+    in >> r >> c;
+    Matrix<T> m(r, c);
+    for (std::size_t i = 0; i < r; ++i)
+        for (std::size_t j = 0; j < c; ++j)
+            in >> m(i, j);
+    return m;
+}
+
 int main() {
-    std::size_t ra, ca;
-    std::cin >> ra >> ca;
-    Matrix<int> A(ra, ca);
-    for (std::size_t i = 0; i < ra; ++i)
-        for (std::size_t j = 0; j < ca; ++j)
-            std::cin >> A(i, j);
-    std::size_t rb, cb;
-    std::cin >> rb >> cb;
-    if (ca != rb) { std::cout << "ERROR\n"; return 0; }
-    Matrix<int> B(rb, cb);
-    for (std::size_t i = 0; i < rb; ++i)
-        for (std::size_t j = 0; j < cb; ++j)
-            std::cin >> B(i, j);
-    std::cout << A * B + A;
+    Matrix<int> a = readFromStream<int>(std::cin);
+    Matrix<int> b = readFromStream<int>(std::cin);
+    if (a.cols() != b.rows()) {
+        std::cout << "ERROR" << std::endl;
+        return 0;
+    }
+    std::cout << a * b + a;
     return 0;
 }

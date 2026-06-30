@@ -2,95 +2,103 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-// TODO: refactor later
+// tweaked from lab partner code
 
 class IntBST {
-    struct Node {
-        int value;
-        Node* left;
-        Node* right;
-        explicit Node(int v) : value(v), left(nullptr), right(nullptr) {}
+    struct Vertex {
+        int payload;
+        Vertex* lo;
+        Vertex* hi;
+        explicit Vertex(int p) : payload(p), lo(nullptr), hi(nullptr) {}
     };
 
-    Node* ptr;
+    Vertex* rootz_;
 
-    static void destroy(Node* n) {
-        if (!n) return;
-        destroy(n->left);
-        destroy(n->right);
-        delete n;
+    static void wipe(Vertex* vtx) {
+        if (!vtx) return;
+        std::vector<Vertex*> order;
+        std::vector<Vertex*> pending;
+        pending.push_back(vtx);
+        while (!pending.empty()) {
+            Vertex* cur = pending.back();
+            pending.pop_back();
+            order.push_back(cur);
+            if (cur->lo) pending.push_back(cur->lo);
+            if (cur->hi) pending.push_back(cur->hi);
+        }
+        for (std::size_t k = order.size(); k-- > 0;)
+            delete order[k];
     }
 
-    Node* insertNode(Node* n, int v) {
-        if (!n) return new Node(v);
-        if (v < n->value) n->left = insertNode(n->left, v);
-        else if (v > n->value) n->right = insertNode(n->right, v);
-        return n;
+    Vertex* attach(Vertex* vtx, int p) {
+        if (!vtx) return new Vertex(p);
+        if (p < vtx->payload) vtx->lo = attach(vtx->lo, p);
+        else if (p > vtx->payload) vtx->hi = attach(vtx->hi, p);
+        return vtx;
     }
 
-    bool containsNode(const Node* n, int v) const {
-        if (!n) return false;
-        if (v == n->value) return true;
-        return v < n->value ? containsNode(n->left, v) : containsNode(n->right, v);
+    bool seek(const Vertex* vtx, int p) const {
+        if (!vtx) return false;
+        if (p == vtx->payload) return true;
+        if (p < vtx->payload) return seek(vtx->lo, p);
+        return seek(vtx->hi, p);
     }
 
-    void inorderNode(const Node* n, std::vector<int>& out) const {
-        if (!n) return;
-        inorderNode(n->left, out);
-        out.push_back(n->value);
-        inorderNode(n->right, out);
+    void flatten(const Vertex* vtx, std::vector<int>& buf) const {
+        if (!vtx) return;
+        flatten(vtx->lo, buf);
+        buf.push_back(vtx->payload);
+        flatten(vtx->hi, buf);
     }
 
-    Node* minNode(Node* n) const {
-        while (n && n->left) n = n->left;
-        return n;
+    Vertex* floorNode(Vertex* vtx) const {
+        if (!vtx) return nullptr;
+        for (; vtx->lo != nullptr; vtx = vtx->lo) {}
+        return vtx;
     }
 
 public:
-    IntBST() : ptr(nullptr) {}
-    ~IntBST() { destroy(ptr); }
+    IntBST() : rootz_(nullptr) {}
+    ~IntBST() { wipe(rootz_); }
 
-    void insert(int value) { ptr = insertNode(ptr, value); }
+    void insert(int value) { rootz_ = attach(rootz_, value); }
 
-    bool contains(int value) const { return containsNode(ptr, value); }
+    bool contains(int value) const { return seek(rootz_, value); }
 
-    void inorder(std::vector<int>& out) const { inorderNode(ptr, out); }
+    void inorder(std::vector<int>& out) const { flatten(rootz_, out); }
 
-    int& min() {
-        Node* m = minNode(ptr);
-        return m->value;
-    }
+    int& min() { return floorNode(rootz_)->payload; }
 
-    const int& min() const {
-        Node* m = minNode(ptr);
-        return m->value;
-    }
+    const int& min() const { return floorNode(rootz_)->payload; }
 
-    bool empty() const { return ptr == nullptr; }
+    bool empty() const { return rootz_ == nullptr; }
 };
 
 int main() {
-    IntBST hold;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "DONE") break;
-        hold.insert(std::stoi(ln));
+    IntBST grove;
+    std::string line;
+    while (std::cin >> line) {
+        if (line == "DONE") break;
+        grove.insert(std::stoi(line));
     }
 
-    while (std::cin >> ln) {
-        if (ln == "DONE") break;
-        if (ln == "CONTAINS") {
-            int x; std::cin >> x;
-            std::cout << (hold.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (ln == "MIN") {
-            if (hold.empty()) std::cout << "EMPTY\n";
-            else std::cout << hold.min() << std::endl;
-        } else if (ln == "PRINT") {
-            std::vector<int> vals;
-            hold.inorder(vals);
-            for (std::size_t i = 0; i < vals.size(); ++i) {
-                if (i) std::cout << ' ';
-                std::cout << vals[i];
+    while (std::cin >> line) {
+        if (line == "DONE") break;
+        if (line == "CONTAINS") {
+            int target;
+            std::cin >> target;
+            std::cout << (grove.contains(target) ? "YES" : "NO") << std::endl;
+        } else if (line == "MIN") {
+            if (grove.empty())
+                std::cout << "EMPTY" << std::endl;
+            else
+                std::cout << grove.min() << std::endl;
+        } else if (line == "PRINT") {
+            std::vector<int> seq;
+            grove.inorder(seq);
+            for (std::size_t idx = 0; idx < seq.size(); ++idx) {
+                if (idx > 0) std::cout << ' ';
+                std::cout << seq[idx];
             }
             std::cout << std::endl;
         }

@@ -1,51 +1,51 @@
-#include <vector>
-#include <functional>
-#include <iomanip>
 #include <iostream>
-#include <string>
+#include <iomanip>
+#include <functional>
 #include <utility>
-// TODO: refactor later
+#include <vector>
+#include <string>
+// adapted from classmate submission
 
-class Sensor {
-    double body;
-    std::vector<std::pair<std::string, std::function<void(double)>>> subscribers_;
+class ReadingHub {
+    double liveTemp_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> clientList_;
 
     void notifyAll() {
-        for (const auto& entry : subscribers_) {
+        for (const auto& entry : clientList_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << entry.first << "] temp=" << body
+                      << "[" << entry.first << "] temp=" << liveTemp_
                       << std::endl;
             if (entry.second)
-                entry.second(body);
+                entry.second(liveTemp_);
         }
     }
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        subscribers_.push_back({name, std::move(callback)});
+        clientList_.push_back({name, std::move(callback)});
     }
 
     void set_value(double celsius) {
-        body = celsius;
+        liveTemp_ = celsius;
         notifyAll();
     }
 
-    double value() const { return body; }
+    double value() const { return liveTemp_; }
 };
 
 int main() {
-    Sensor temperatureSensor;
+    ReadingHub hub;
     std::string command;
     while (std::cin >> command) {
         if (command == "END") break;
         if (command == "SUB") {
-            std::string id;
-            std::cin >> id;
-            temperatureSensor.subscribe(id, [](double) {});
+            std::string observerName;
+            std::cin >> observerName;
+            hub.subscribe(observerName, [](double) {});
         } else if (command == "SET") {
             double reading;
             std::cin >> reading;
-            temperatureSensor.set_value(reading);
+            hub.set_value(reading);
         }
     }
     return 0;

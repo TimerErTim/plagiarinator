@@ -1,11 +1,10 @@
 #include <iostream>
-// quick submit
+#include <utility>
 
 template <typename T>
 class Vector {
 public:
-    Vector() : word_(nullptr), sz_(0), cap_(0) {}
-
+    Vector() : buf_(nullptr), sz_(0), cap_(0) {}
     ~Vector() { release(); }
 
     Vector(const Vector& rhs) { copy_from(rhs); }
@@ -20,36 +19,36 @@ public:
 
     void push_back(const T& val) {
         ensure(capacity_needed());
-        word_[sz_++] = val;
+        buf_[sz_++] = val;
     }
 
     void push_back(T&& val) {
         ensure(capacity_needed());
-        word_[sz_++] = std::move(val);
+        buf_[sz_++] = std::move(val);
     }
 
-    T& operator[](std::size_t idx) { return word_[idx]; }
-    const T& operator[](std::size_t idx) const { return word_[idx]; }
+    T& operator[](std::size_t idx) { return buf_[idx]; }
+    const T& operator[](std::size_t idx) const { return buf_[idx]; }
 
     std::size_t size() const { return sz_; }
-    T* data() { return word_; }
-    const T* data() const { return word_; }
+    T* data() { return buf_; }
+    const T* data() const { return buf_; }
 
 private:
-    T* word_;
+    T* buf_;
     std::size_t sz_, cap_;
 
     void release() {
-        delete[] word_;
-        word_ = nullptr;
+        delete[] buf_;
+        buf_ = nullptr;
         sz_ = cap_ = 0;
     }
 
     void copy_from(const Vector& rhs) {
         sz_ = rhs.sz_;
         cap_ = rhs.cap_;
-        word_ = new T[cap_];
-        for (std::size_t i = 0; i < sz_; ++i) word_[i] = rhs.word_[i];
+        buf_ = new T[cap_];
+        for (std::size_t i = 0; i < sz_; ++i) buf_[i] = rhs.buf_[i];
     }
 
     std::size_t capacity_needed() const { return sz_ == cap_ ? (cap_ ? cap_ * 2 : 4) : cap_; }
@@ -57,19 +56,19 @@ private:
     void ensure(std::size_t need) {
         if (need == cap_) {
             T* next = new T[need];
-            for (std::size_t i = 0; i < sz_; ++i) next[i] = word_[i];
-            delete[] word_;
-            word_ = next;
+            for (std::size_t i = 0; i < sz_; ++i) next[i] = buf_[i];
+            delete[] buf_;
+            buf_ = next;
             cap_ = need;
         }
     }
 };
 
 int main() {
-    std::size_t count;
-    std::cin >> count;
+    std::size_t item_count;
+    std::cin >> item_count;
     Vector<int> nums;
-    for (std::size_t i = 0; i < count; ++i) {
+    for (std::size_t i = 0; i < item_count; ++i) {
         int v;
         std::cin >> v;
         nums.push_back(v);
@@ -91,6 +90,7 @@ int main() {
         s += deduped[i];
         p = (p * deduped[i]) % M;
     }
-    std::cout << "SUM " << s << "\nPROD " << p << '\n';
+    std::cout << "SUM " << s << '\n';
+    std::cout << "PROD " << p << '\n';
     return 0;
 }

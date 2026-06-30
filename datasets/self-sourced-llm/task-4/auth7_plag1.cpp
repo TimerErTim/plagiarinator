@@ -1,10 +1,10 @@
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 // cleaned up version
 
 class FileWriter {
@@ -25,7 +25,7 @@ public:
         }
         return *this;
     }
-    void write_line(const std::string& l) { f_ << l << '\n'; }
+    void write_line(const std::string& l) { f_ << l << std::endl; }
 };
 
 int main() {
@@ -34,7 +34,7 @@ int main() {
         auto k = s.find(',');
         recs.emplace_back(s.substr(0,k), std::stoi(s.substr(k+1)));
     }
-    FileWriter fw = FileWriter("report.txt");
+    FileWriter fw("report.txt");
     fw.write_line("Student Report");
     fw.write_line("--------------");
     double tot = 0;

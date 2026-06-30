@@ -1,9 +1,8 @@
-#include <vector>
-#include <string>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 class Vehicle {
 public:
@@ -34,13 +33,22 @@ public:
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& in) {
-    if (kind=="CAR")
-{double x;in>>x;return std::make_unique<Car>(x);}
-    if (kind=="TRUCK")
-{double x;in>>x;return std::make_unique<Truck>(x);}
+std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& in)
+{
+    if (kind=="CAR"){double x;in>>x;return std::make_unique<Car>(x);}
+    if (kind=="TRUCK"){double x;in>>x;return std::make_unique<Truck>(x);}
     if (kind=="BIKE") return std::make_unique<Bike>();
     return nullptr;
+}
+
+bool extract(const std::string& tag, std::istream& in,
+             std::unique_ptr<Vehicle>& veh, double& dist)
+{
+    veh = create_vehicle(tag, in);
+    if (!veh)
+        return false;
+    in >> dist;
+    return true;
 }
 
 int main()
@@ -49,15 +57,20 @@ int main()
     std::vector<double> D;
     std::string k;
     while(std::cin>>k)
-{
-        auto p=create_vehicle(k,std::cin);
-        if(!p)
-{std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR\n";continue;}
-        double d;std::cin>>d;
+    {
+        std::unique_ptr<Vehicle> p;
+        double d;
+        if(!extract(k, std::cin, p, d))
+        {
+            std::string rest; std::getline(std::cin, rest);
+            std::cout << "ERROR\n";
+            continue;
+        }
         V.push_back(std::move(p)); D.push_back(d);
     }
     double s=0;
-    for(size_t i=0;i<V.size();++i){
+    for(size_t i=0;i<V.size();++i)
+    {
         double f=V[i]->fuel_needed(D[i]); s+=f;
         std::cout<<"Trip "<<i+1<<": "<<V[i]->type()
                  <<" needs "<<std::fixed<<std::setprecision(2)<<f<<" liters\n";

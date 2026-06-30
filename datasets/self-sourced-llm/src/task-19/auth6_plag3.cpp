@@ -1,56 +1,61 @@
 #include <vector>
+#include <utility>
 #include <iostream>
 #include <string>
-#include <utility>
-// TODO: refactor later
+// tweaked from lab partner code
 
-class StringBuilder {
-    std::string body_;
+class StringBuilder
+{
+    std::string store_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : body_(std::move(o.body_)) {}
-    StringBuilder& operator=(StringBuilder&& o) noexcept {
-        body_ = std::move(o.body_);
+    StringBuilder(StringBuilder&& o) noexcept : store_(std::move(o.store_)) {}
+    StringBuilder& operator=(StringBuilder&& o) noexcept
+    {
+        store_ = std::move(o.store_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) { body_ += s; return *this; }
-    StringBuilder& append(std::string&& s) { body_ += std::move(s); return *this; }
+    StringBuilder& append(const std::string& s) { store_ += s; return *this; }
+    StringBuilder& append(std::string&& s) { store_ += std::move(s); return *this; }
     StringBuilder& append_line(const std::string& s) { return append(s).append("\n"); }
-    const std::string& str() const { return body_; }
-    void clear() { body_.clear(); }
+    const std::string& str() const { return store_; }
+    void clear() { store_.clear(); }
 };
 
-int main() {
-    StringBuilder text;
-    std::string word;
+int main()
+{
+    StringBuilder rollup;
+    std::string tok;
 
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word != "SECTION") continue;
+    while (std::cin >> tok)
+    {
+        if (tok == "END") break;
+        if (tok != "SECTION") continue;
 
         std::string hdr;
         std::getline(std::cin, hdr);
         hdr.erase(0, hdr.find_first_not_of(' '));
 
-        std::vector<std::string> lines;
+        std::vector<std::string> rows;
         std::string ln;
-        while (std::getline(std::cin, ln)) {
+        while (std::getline(std::cin, ln))
+        {
             if (ln.empty()) break;
-            lines.push_back(ln);
+            rows.push_back(ln);
         }
 
-        StringBuilder seg;
-        seg.append("# ").append(hdr).append_line("");
-        for (const auto& l : lines) seg.append_line(l);
-        seg.append_line("");
+        StringBuilder segment;
+        segment.append("# ").append(hdr).append_line("");
+        for (const auto& row : rows) segment.append_line(row);
+        segment.append_line("");
 
-        text.append(std::move(seg.str()));
+        rollup.append(std::move(segment.str()));
     }
 
-    std::cout << text.str();
+    std::cout << rollup.str();
     return 0;
 }

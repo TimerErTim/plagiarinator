@@ -1,19 +1,18 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : word_(std::move(other.word_)) {
-        other.word_.clear();
+    StringBuilder(StringBuilder&& other) noexcept : payload_(std::move(other.payload_)) {
+        other.payload_.clear();
     }
 
     StringBuilder& operator=(StringBuilder&& other) noexcept {
-        word_ = std::move(other.word_);
-        other.word_.clear();
+        payload_ = std::move(other.payload_);
+        other.payload_.clear();
         return *this;
     }
 
@@ -21,26 +20,26 @@ public:
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& piece) {
-        word_.append(piece);
+        payload_.append(piece);
         return *this;
     }
 
     StringBuilder& append(std::string&& piece) {
-        word_.append(std::move(piece));
+        payload_.append(std::move(piece));
         return *this;
     }
 
     StringBuilder& append_line(const std::string& piece) {
-        word_.append(piece);
-        word_.push_back('\n');
+        payload_.append(piece);
+        payload_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return word_; }
-    void clear() { word_.clear(); }
+    const std::string& str() const { return payload_; }
+    void clear() { payload_.clear(); }
 
 private:
-    std::string word_;
+    std::string payload_;
 };
 
 void consume_section(StringBuilder& doc, std::istream& in) {
@@ -61,14 +60,14 @@ void consume_section(StringBuilder& doc, std::istream& in) {
 }
 
 int main() {
-    StringBuilder document;
-    std::string word;
+    StringBuilder doc;
+    std::string token;
 
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word == "SECTION") consume_section(document, std::cin);
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "SECTION") consume_section(doc, std::cin);
     }
 
-    std::cout << document.str();
+    std::cout << doc.str();
     return 0;
 }

@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <sstream>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 class Vehicle {
 public:
@@ -14,18 +13,18 @@ public:
 };
 
 class Car : public Vehicle {
-    double consumption_;
+    double rate_;
 public:
-    explicit Car(double r) : consumption_(r) {}
-    double fuel_needed(double d) const override { return consumption_ * d / 100.0; }
+    explicit Car(double r) : rate_(r) {}
+    double fuel_needed(double d) const override { return rate_ * d / 100.0; }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double consumption_;
+    double rate_;
 public:
-    explicit Truck(double r) : consumption_(r) {}
-    double fuel_needed(double d) const override { return consumption_ * d; }
+    explicit Truck(double r) : rate_(r) {}
+    double fuel_needed(double d) const override { return rate_ * d; }
     std::string type() const override { return "TRUCK"; }
 };
 
@@ -35,31 +34,45 @@ public:
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& cfg) {
-    if (kind == "CAR")
-{ double x; cfg >> x; return std::make_unique<Car>(x); }
-    if (kind == "TRUCK")
-{ double x; cfg >> x; return std::make_unique<Truck>(x); }
+std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& cfg)
+{
+    if (kind == "CAR") { double x; cfg >> x; return std::make_unique<Car>(x); }
+    if (kind == "TRUCK") { double x; cfg >> x; return std::make_unique<Truck>(x); }
     if (kind == "BIKE") return std::make_unique<Bike>();
     return nullptr;
+}
+
+bool extract(const std::string& line, std::unique_ptr<Vehicle>& veh, double& dist)
+{
+    std::istringstream s(line);
+    std::string k;
+    s >> k;
+    veh = create_vehicle(k, s);
+    if (!veh)
+        return false;
+    s >> dist;
+    return true;
 }
 
 int main()
 {
     std::vector<std::unique_ptr<Vehicle>> vs;
     std::vector<double> ds;
-    for (std::string ln; std::getline(std::cin, ln);) {
-        std::istringstream s(ln);
-        std::string k; s >> k;
-        auto v = create_vehicle(k, s);
-        if (!v)
-{ std::cout << "ERROR\n"; continue; }
-        double d; s >> d;
+    for (std::string ln; std::getline(std::cin, ln);)
+    {
+        std::unique_ptr<Vehicle> v;
+        double d;
+        if (!extract(ln, v, d))
+        {
+            std::cout << "ERROR\n";
+            continue;
+        }
         vs.push_back(std::move(v));
         ds.push_back(d);
     }
     double t = 0;
-    for (std::size_t i = 0; i < vs.size(); ++i) {
+    for (std::size_t i = 0; i < vs.size(); ++i)
+    {
         double f = vs[i]->fuel_needed(ds[i]);
         t += f;
         std::cout << "Trip " << i+1 << ": " << vs[i]->type()

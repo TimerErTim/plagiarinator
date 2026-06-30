@@ -1,5 +1,5 @@
 #include <iostream>
-// adapted from classmate submission
+#include <utility>
 
 namespace ds {
 
@@ -54,39 +54,37 @@ public:
     const T* data() const { return arr; }
 };
 
+static bool is_duplicate(const Vector<int>& vec, int value)
+{
+    for (std::size_t j = 0; j < vec.size(); ++j)
+        if (vec[j] == value) return true;
+    return false;
+}
+
 }  // namespace ds
 
 int main()
-
 {
     using ds::Vector;
 
     int n;
     std::cin >> n;
     Vector<int> values;
-    for (int i = 0; i < n; ++i) 
-{
+    for (int i = 0; i < n; ++i) {
         int x;
         std::cin >> x;
         values.push_back(x);
     }
 
     Vector<int> distinct;
-    for (std::size_t i = 0; i < values.size(); ++i) 
-{
+    for (std::size_t i = 0; i < values.size(); ++i) {
         const int& ref = values[i];
-        bool already = false;
-        for (std::size_t j = 0; j < distinct.size(); ++j) 
-{
-            if (distinct[j] == ref) { already = true; break; }
-        }
-        if (!already) distinct.push_back(ref);
+        if (!ds::is_duplicate(distinct, ref)) distinct.push_back(ref);
     }
 
     long long sum = 0, prod = 1;
     constexpr long long MOD = 1000000007;
-    for (std::size_t i = 0; i < distinct.size(); ++i) 
-{
+    for (std::size_t i = 0; i < distinct.size(); ++i) {
         sum += distinct[i];
         prod = (prod * distinct[i]) % MOD;
     }

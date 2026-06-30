@@ -1,6 +1,5 @@
-#include <vector>
 #include <iostream>
-// quick submit
+#include <vector>
 
 using std::cin;
 using std::cout;
@@ -60,14 +59,13 @@ int main()
 {
     size_t ra, ca, rb, cb;
     cin >> ra >> ca;
-    Matrix<int> A(ra, ca);
+    Matrix<int> matA(ra, ca);
     for (size_t i = 0; i < ra; ++i)
-        for (size_t j = 0; j < ca; ++j) cin >> A(i, j);
+        for (size_t j = 0; j < ca; ++j) cin >> matA(i, j);
     cin >> rb >> cb;
-    Matrix<int> B(rb, cb);
+    Matrix<int> matB(rb, cb);
     for (size_t i = 0; i < rb; ++i)
-        for (size_t j = 0; j < cb; ++j) cin >> B(i, j);
-    Matrix<int> C = A * B + A;
-    cout << C;
+        for (size_t j = 0; j < cb; ++j) cin >> matB(i, j);
+    cout << matA * matB + matA;
     return 0;
 }

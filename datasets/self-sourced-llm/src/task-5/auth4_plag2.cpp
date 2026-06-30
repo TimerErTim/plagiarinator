@@ -1,53 +1,56 @@
 #include <unordered_map>
-#include <string>
 #include <list>
 #include <iostream>
+#include <string>
 // adapted from classmate submission
 
 template <typename Key, typename Value>
-class LRUCache {
-    std::size_t limit_;
-    std::list<std::pair<Key, Value>> chain_;
-    std::unordered_map<Key, decltype(chain_.begin())> idx_;
+class LRUCache
+{
+    std::size_t maxSize;
+    std::list<std::pair<Key, Value>> dq;
+    std::unordered_map<Key, decltype(dq.begin())> pos;
 
 public:
-    LRUCache(std::size_t capacity) : limit_(capacity) {}
+    LRUCache(std::size_t capacity) : maxSize(capacity) {}
 
-    bool get(const Key& key, Value& out) {
-        if (!idx_.count(key)) return false;
-        auto it = idx_[key];
+    bool get(const Key& key, Value& out)
+    {
+        if (!pos.count(key)) return false;
+        auto it = pos[key];
         out = it->second;
-        chain_.splice(chain_.begin(), chain_, it);
+        dq.splice(dq.begin(), dq, it);
         return true;
     }
 
-    void put(const Key& key, const Value& val) {
-        if (idx_.count(key)) {
-            idx_[key]->second = val;
-            chain_.splice(chain_.begin(), chain_, idx_[key]);
+    void put(const Key& key, const Value& val)
+    {
+        if (pos.count(key)) {
+            pos[key]->second = val;
+            dq.splice(dq.begin(), dq, pos[key]);
             return;
         }
-        if (chain_.size() == limit_) {
-            idx_.erase(chain_.back().first);
-            chain_.pop_back();
+        if (dq.size() == maxSize) {
+            pos.erase(dq.back().first);
+            dq.pop_back();
         }
-        chain_.emplace_front(key, val);
-        idx_[key] = chain_.begin();
+        dq.emplace_front(key, val);
+        pos[key] = dq.begin();
     }
 };
 
 int main()
 {
-    std::string capTag;
-    std::size_t limit;
-    std::cin >> capTag >> limit;
-    LRUCache<std::string, int> lru(limit);
+    std::string capWord;
+    std::size_t capVal;
+    std::cin >> capWord >> capVal;
+    LRUCache<std::string, int> lru(capVal);
     std::string verb;
     while (std::cin >> verb)
-{
+    {
         if (verb == "END") break;
         if (verb == "GET")
-{
+        {
             std::string k; std::cin >> k;
             int v;
             std::cout << (lru.get(k, v) ? "HIT " + std::to_string(v) : "MISS") << '\n';

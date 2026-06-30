@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <cmath>
-#include <memory>
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <iomanip>
+#include <memory>
 #include <string>
-// quick submit
 
 #define PI_VAL 3.141592653589793
 
@@ -19,7 +18,7 @@ public:
 class Circle : public Shape {
     double r;
 public:
-    Circle(double word) : r(word) {}
+    Circle(double rad) : r(rad) {}
     double area() const override { return PI_VAL * r * r; }
     double perimeter() const override { return 2 * PI_VAL * r; }
     std::string name() const override { return "Circle"; }
@@ -35,11 +34,11 @@ public:
 };
 
 class Triangle : public Shape {
-    double tmp;
+    double side;
 public:
-    Triangle(double s) : tmp(s) {}
-    double area() const override { return (std::sqrt(3.0) / 4.0) * tmp * tmp; }
-    double perimeter() const override { return 3.0 * tmp; }
+    Triangle(double s) : side(s) {}
+    double area() const override { return (std::sqrt(3.0) / 4.0) * side * side; }
+    double perimeter() const override { return 3.0 * side; }
     std::string name() const override { return "Triangle"; }
 };
 
@@ -56,27 +55,27 @@ void accumulate(const Shape& s, double& a_sum, double& p_sum) {
 
 int main() {
     std::vector<std::unique_ptr<Shape>> collection;
-    std::string opt;
-    while (std::cin >> opt && opt != "DONE") {
-        if (opt == "CIRCLE") {
+    std::string kind;
+    while (std::cin >> kind && kind != "DONE") {
+        if (kind == "CIRCLE") {
             double rad; std::cin >> rad;
             collection.push_back(std::unique_ptr<Shape>(new Circle(rad)));
-        } else if (opt == "RECT") {
+        } else if (kind == "RECT") {
             double w, h; std::cin >> w >> h;
             collection.push_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
-        } else if (opt == "TRI") {
+        } else if (kind == "TRI") {
             double s; std::cin >> s;
             collection.push_back(std::unique_ptr<Shape>(new Triangle(s)));
         }
     }
 
-    double numA = 0, numP = 0;
+    double a = 0, p = 0;
     for (size_t i = 0; i < collection.size(); ++i) {
         print_shape(*collection[i]);
-        accumulate(*collection[i], numA, numP);
+        accumulate(*collection[i], a, p);
     }
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << numA << '\n'
-              << "TOTAL perimeter=" << numP << '\n';
+              << "TOTAL area=" << a << '\n'
+              << "TOTAL perimeter=" << p << '\n';
     return 0;
 }

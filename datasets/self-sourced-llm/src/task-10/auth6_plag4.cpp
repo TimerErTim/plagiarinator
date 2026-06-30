@@ -1,8 +1,7 @@
+#include <string>
+#include <vector>
 #include <sstream>
 #include <iostream>
-#include <vector>
-#include <string>
-// quick submit
 
 class IntBST {
     struct Node {
@@ -12,7 +11,7 @@ class IntBST {
         explicit Node(int d) : data(d), leftChild(nullptr), rightChild(nullptr) {}
     };
 
-    Node* elemRoot_;
+    Node* rootv_;
 
     void freeNodes(Node* node) {
         if (!node) return;
@@ -50,44 +49,44 @@ class IntBST {
     }
 
 public:
-    IntBST() : elemRoot_(nullptr) {}
-    ~IntBST() { freeNodes(elemRoot_); }
+    IntBST() : rootv_(nullptr) {}
+    ~IntBST() { freeNodes(rootv_); }
 
-    void insert(int value) { elemRoot_ = insertHelper(elemRoot_, value); }
-    bool contains(int value) const { return containsHelper(elemRoot_, value); }
-    void inorder(std::vector<int>& out) const { inorderHelper(elemRoot_, out); }
+    void insert(int value) { rootv_ = insertHelper(rootv_, value); }
+    bool contains(int value) const { return containsHelper(rootv_, value); }
+    void inorder(std::vector<int>& out) const { inorderHelper(rootv_, out); }
 
-    int& min() { return minNodeHelper(elemRoot_)->data; }
-    const int& min() const { return minNodeHelper(elemRoot_)->data; }
+    int& min() { return minNodeHelper(rootv_)->data; }
+    const int& min() const { return minNodeHelper(rootv_)->data; }
 
-    bool empty() const { return elemRoot_ == nullptr; }
+    bool empty() const { return rootv_ == nullptr; }
 };
 
 int main() {
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    IntBST ref;
-    std::string elem;
-    while (input >> elem) {
-        if (elem == "DONE") break;
-        ref.insert(std::stoi(elem));
+    IntBST tree;
+    std::string tmp_token;
+    while (input >> tmp_token) {
+        if (tmp_token == "DONE") break;
+        tree.insert(std::stoi(tmp_token));
     }
 
-    while (input >> elem) {
-        if (elem == "DONE") break;
-        if (elem == "CONTAINS") {
+    while (input >> tmp_token) {
+        if (tmp_token == "DONE") break;
+        if (tmp_token == "CONTAINS") {
             int value;
             input >> value;
-            std::cout << (ref.contains(value) ? "YES" : "NO") << std::endl;
-        } else if (elem == "MIN") {
-            if (ref.empty())
+            std::cout << (tree.contains(value) ? "YES" : "NO") << std::endl;
+        } else if (tmp_token == "MIN") {
+            if (tree.empty())
                 std::cout << "EMPTY" << std::endl;
             else
-                std::cout << ref.min() << std::endl;
-        } else if (elem == "PRINT") {
+                std::cout << tree.min() << std::endl;
+        } else if (tmp_token == "PRINT") {
             std::vector<int> ordered;
-            ref.inorder(ordered);
+            tree.inorder(ordered);
             for (std::size_t i = 0; i < ordered.size(); ++i) {
                 if (i > 0) std::cout << ' ';
                 std::cout << ordered[i];

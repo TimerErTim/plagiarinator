@@ -1,8 +1,7 @@
-#include <memory>
 #include <iostream>
-#include <unordered_map>
+#include <memory>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -14,25 +13,25 @@ public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
         if (auto sp = lookup(key)) return sp;
         auto img = std::shared_ptr<Image>(new Image{key, pixels});
-        data_[key] = img;
+        slots_[key] = img;
         return img;
     }
 
     std::size_t size() const {
         std::size_t n = 0;
-        for (const auto& kv : data_)
+        for (const auto& kv : slots_)
             if (!kv.second.expired()) ++n;
         return n;
     }
 
-    void drop_all() { data_.clear(); }
+    void drop_all() { slots_.clear(); }
 
 private:
-    std::unordered_map<std::string, std::weak_ptr<Image>> data_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> slots_;
 
     std::shared_ptr<Image> lookup(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) return {};
+        auto it = slots_.find(key);
+        if (it == slots_.end()) return {};
         return it->second.lock();
     }
 
@@ -47,24 +46,24 @@ public:
 
 int main() {
     ImageCache c;
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word == "LOAD") {
-            std::string tag;
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "LOAD") {
+            std::string k;
             int v;
-            std::cin >> tag >> v;
+            std::cin >> k >> v;
             {
-                auto im = c.load(tag, v);
+                auto im = c.load(k, v);
                 std::cout << "loaded " << im->name << " pixels=" << im->pixel_count << '\n';
             }
-        } else if (word == "QUERY") {
-            std::string tag;
-            std::cin >> tag;
-            int num;
-            if (c.query(tag, num)) std::cout << "pixels=" << num << '\n';
+        } else if (cmd == "QUERY") {
+            std::string k;
+            std::cin >> k;
+            int px;
+            if (c.query(k, px)) std::cout << "pixels=" << px << '\n';
             else std::cout << "EXPIRED\n";
-        } else if (word == "DROP_ALL") {
+        } else if (cmd == "DROP_ALL") {
             c.drop_all();
         }
     }

@@ -1,11 +1,10 @@
+#include <unordered_set>
+#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
-// cleaned up version
 
 struct GraphNode {
     std::string label;
@@ -44,7 +43,8 @@ public:
             std::shared_ptr<GraphNode> active = pending.front();
             pending.pop();
             if (active->label == dst) return true;
-            for (const std::shared_ptr<GraphNode>& neighbor : active->edges) {
+            for (std::size_t i = 0; i < active->edges.size(); ++i) {
+                const std::shared_ptr<GraphNode>& neighbor = active->edges[i];
                 if (visited.insert(neighbor->label).second)
                     pending.push(neighbor);
             }
@@ -58,9 +58,9 @@ int main() {
     for (std::string token; std::cin >> token;) {
         if (token == "END") break;
         if (token == "ADD_NODE") {
-            std::string tag;
-            std::cin >> tag;
-            g.addNode(tag);
+            std::string name;
+            std::cin >> name;
+            g.addNode(name);
         } else if (token == "ADD_EDGE") {
             std::string u, v;
             std::cin >> u >> v;

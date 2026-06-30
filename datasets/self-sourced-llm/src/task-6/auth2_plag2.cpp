@@ -1,14 +1,12 @@
-#include <vector>
-#include <string>
-#include <memory>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <vector>
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::fixed;
 using std::make_unique;
 using std::setprecision;
@@ -30,11 +28,11 @@ public:
 
 class Circle : public Shape
 {
-    double rad;
+    double radius;
 public:
-    Circle(double r): rad(r) {}
-    double area() const override { return PI * rad * rad; }
-    double perimeter() const override { return 2 * PI * rad; }
+    Circle(double r): radius(r) {}
+    double area() const override { return PI * radius * radius; }
+    double perimeter() const override { return 2 * PI * radius; }
     string name() const override { return "Circle"; }
 };
 
@@ -50,11 +48,11 @@ public:
 
 class Triangle : public Shape
 {
-    double edge;
+    double side;
 public:
-    Triangle(double s): edge(s) {}
-    double area() const override { return sqrt(3.0) / 4.0 * edge * edge; }
-    double perimeter() const override { return 3 * edge; }
+    Triangle(double s): side(s) {}
+    double area() const override { return sqrt(3.0) / 4.0 * side * side; }
+    double perimeter() const override { return 3 * side; }
     string name() const override { return "Triangle"; }
 };
 
@@ -62,7 +60,7 @@ void print_shape(const Shape& s)
 {
     cout << fixed << setprecision(4)
          << s.name() << ": area=" << s.area()
-         << ", perimeter=" << s.perimeter() << endl;
+         << ", perimeter=" << s.perimeter() << '\n';
 }
 
 void accumulate(const Shape& s, double& a, double& p)
@@ -71,32 +69,44 @@ void accumulate(const Shape& s, double& a, double& p)
     p += s.perimeter();
 }
 
+unique_ptr<Shape> extract(const string& tok, std::istream& in)
+{
+    if (tok == "CIRCLE")
+    {
+        double r; in >> r;
+        return make_unique<Circle>(r);
+    }
+    if (tok == "RECT")
+    {
+        double w, h; in >> w >> h;
+        return make_unique<Rectangle>(w, h);
+    }
+    if (tok == "TRI")
+    {
+        double s; in >> s;
+        return make_unique<Triangle>(s);
+    }
+    return nullptr;
+}
+
 int main()
 {
-    vector<unique_ptr<Shape>> list;
+    vector<unique_ptr<Shape>> items;
     string tok;
-    while (cin >> tok && tok != "DONE")
-{
-        if (tok == "CIRCLE")
-{
-            double r; cin >> r;
-            list.push_back(make_unique<Circle>(r));
-        } else if (tok == "RECT") {
-            double w, h; cin >> w >> h;
-            list.push_back(make_unique<Rectangle>(w, h));
-        } else if (tok == "TRI") {
-            double s; cin >> s;
-            list.push_back(make_unique<Triangle>(s));
-        }
+    while (cin >> tok)
+    {
+        if (tok == "DONE") break;
+        auto sh = extract(tok, cin);
+        if (sh) items.push_back(std::move(sh));
     }
-    double a = 0, p = 0;
-    for (auto& sh : list)
-{
-        print_shape(*sh);
-        accumulate(*sh, a, p);
+    double ta = 0, tp = 0;
+    for (size_t idx = 0; idx < items.size(); ++idx)
+    {
+        print_shape(*items[idx]);
+        accumulate(*items[idx], ta, tp);
     }
     cout << fixed << setprecision(4)
-         << "TOTAL area=" << a << endl
-         << "TOTAL perimeter=" << p << endl;
+         << "TOTAL area=" << ta << '\n'
+         << "TOTAL perimeter=" << tp << '\n';
     return 0;
 }

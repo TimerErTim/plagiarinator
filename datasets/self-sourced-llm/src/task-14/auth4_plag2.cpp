@@ -1,6 +1,6 @@
-#include <iostream>
 #include <algorithm>
-// adapted from classmate submission
+#include <iostream>
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -54,35 +54,40 @@ public:
     const T* data() const { return heap; }
 };
 
-int main()
-
+static void read_into(Vector<int>& raw, std::size_t k)
 {
-    std::size_t k;
-    std::cin >> k;
-    Vector<int> raw;
-    for (std::size_t i = 0; i < k; ++i) 
-{
-        int x;
-        std::cin >> x;
-        raw.push_back(x);
+    for (std::size_t i = 0; i < k; ++i) {
+        int val;
+        std::cin >> val;
+        raw.push_back(val);
     }
+}
 
-    Vector<int> out;
-    for (std::size_t i = 0; i < raw.size(); ++i) 
+static void unique_copy(const Vector<int>& raw, Vector<int>& out)
 {
+    for (std::size_t i = 0; i < raw.size(); ++i) {
         bool found = false;
-        for (std::size_t j = 0; j < out.size(); ++j) 
-{
+        for (std::size_t j = 0; j < out.size(); ++j) {
             if (out[j] == raw[i]) { found = true; break; }
         }
         if (!found) out.push_back(raw[i]);
     }
+}
+
+int main()
+{
+    std::size_t k;
+    std::cin >> k;
+    Vector<int> raw;
+    read_into(raw, k);
+
+    Vector<int> out;
+    unique_copy(raw, out);
 
     long long sum = 0;
     long long prod = 1;
     const long long P = 1000000007LL;
-    for (std::size_t i = 0; i < out.size(); ++i) 
-{
+    for (std::size_t i = 0; i < out.size(); ++i) {
         sum += out[i];
         prod = (prod * out[i]) % P;
     }

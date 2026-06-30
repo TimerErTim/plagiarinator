@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <memory>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <vector>
 
 class Shape {
 public:
@@ -17,34 +16,37 @@ public:
 namespace shapes {
 
 class Circle : public Shape {
-    double rad_;
+    double radius_;
 public:
-    explicit Circle(double rad) : rad_(rad) {}
-    double area() const override {
+    explicit Circle(double radius) : radius_(radius) {}
+    double area() const override
+    {
         static constexpr double pi = 3.141592653589793;
-        return pi * rad_ * rad_;
+        return pi * radius_ * radius_;
     }
-    double perimeter() const override {
+    double perimeter() const override
+    {
         static constexpr double pi = 3.141592653589793;
-        return 2.0 * pi * rad_;
+        return 2.0 * pi * radius_;
     }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double width_, height_;
+    double w_, h_;
 public:
-    Rectangle(double w, double h) : width_(w), height_(h) {}
-    double area() const override { return width_ * height_; }
-    double perimeter() const override { return 2.0 * (width_ + height_); }
+    Rectangle(double w, double h) : w_(w), h_(h) {}
+    double area() const override { return w_ * h_; }
+    double perimeter() const override { return 2.0 * (w_ + h_); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
     double side_;
 public:
-    explicit Triangle(double edge) : side_(edge) {}
-    double area() const override {
+    explicit Triangle(double side) : side_(side) {}
+    double area() const override
+    {
         return std::sqrt(3.0) / 4.0 * side_ * side_;
     }
     double perimeter() const override { return 3.0 * side_; }
@@ -53,45 +55,59 @@ public:
 
 } // namespace shapes
 
-void print_shape(const Shape& s) {
+void print_shape(const Shape& s)
+{
     std::cout << std::fixed << std::setprecision(4)
               << s.name() << ": area=" << s.area()
               << ", perimeter=" << s.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
+void accumulate(const Shape& s, double& area_sum, double& peri_sum)
+{
     area_sum += s.area();
     peri_sum += s.perimeter();
 }
 
+std::unique_ptr<Shape> extract(const std::string& tag, std::istream& in)
+{
+    if (tag == "CIRCLE")
+    {
+        double r; in >> r;
+        return std::make_unique<shapes::Circle>(r);
+    }
+    if (tag == "RECT")
+    {
+        double w, h; in >> w >> h;
+        return std::make_unique<shapes::Rectangle>(w, h);
+    }
+    if (tag == "TRI")
+    {
+        double s; in >> s;
+        return std::make_unique<shapes::Triangle>(s);
+    }
+    return nullptr;
+}
+
 int main()
 {
-    std::vector<std::unique_ptr<Shape>> list;
-    std::string kind;
-    while (std::cin >> kind && kind != "DONE")
-{
-        if (kind == "CIRCLE")
-{
-            double r; std::cin >> r;
-            list.push_back(std::make_unique<shapes::Circle>(r));
-        } else if (kind == "RECT") {
-            double w, h; std::cin >> w >> h;
-            list.push_back(std::make_unique<shapes::Rectangle>(w, h));
-        } else if (kind == "TRI") {
-            double s; std::cin >> s;
-            list.push_back(std::make_unique<shapes::Triangle>(s));
-        }
+    std::vector<std::unique_ptr<Shape>> figures;
+    std::string tag;
+    while (std::cin >> tag)
+    {
+        if (tag == "DONE") break;
+        auto fig = extract(tag, std::cin);
+        if (fig) figures.push_back(std::move(fig));
     }
 
-    double a = 0.0, p = 0.0;
-    for (const auto& fig : list)
-{
-        print_shape(*fig);
-        accumulate(*fig, a, p);
+    double areaTotal = 0.0, periTotal = 0.0;
+    for (std::size_t idx = 0; idx < figures.size(); ++idx)
+    {
+        print_shape(*figures[idx]);
+        accumulate(*figures[idx], areaTotal, periTotal);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << a << '\n'
-              << "TOTAL perimeter=" << p << '\n';
+              << "TOTAL area=" << areaTotal << '\n'
+              << "TOTAL perimeter=" << periTotal << '\n';
     return 0;
 }

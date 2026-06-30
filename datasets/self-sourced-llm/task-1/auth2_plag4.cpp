@@ -1,13 +1,11 @@
-#include <cctype>
-#include <algorithm>
-#include <iostream>
 #include <cstring>
+#include <cctype>
+#include <iostream>
 #include <vector>
-// quick submit
+#include <algorithm>
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::getline;
 using std::remove_if;
 using std::sort;
@@ -38,10 +36,7 @@ public:
 
     ~StringBuffer() { release(); }
 
-    StringBuffer(const StringBuffer& other)
-    {
-        copyFrom(other.buf, other.length);
-    }
+    StringBuffer(const StringBuffer& other) { copyFrom(other.buf, other.length); }
 
     StringBuffer& operator=(const StringBuffer& rhs)
     {
@@ -65,25 +60,22 @@ public:
     size_t size() const { return length; }
     bool empty() const { return length == 0; }
 
-    bool operator<(const StringBuffer& rhs) const
-    {
-        return strcmp(buf, rhs.buf) < 0;
-    }
+    bool operator<(const StringBuffer& rhs) const { return strcmp(buf, rhs.buf) < 0; }
 };
 
 int main()
 {
-    vector<StringBuffer> arr;
-    string word;
-    while (getline(cin, word))
-        arr.emplace_back(word.c_str());
+    vector<StringBuffer> roster;
+    string raw;
+    while (getline(cin, raw))
+        roster.push_back(raw.c_str());
 
-    for (auto& e : arr) e.trim();
-    arr.erase(remove_if(arr.begin(), arr.end(),
-        [](const StringBuffer& s){ return s.empty(); }), arr.end());
-    sort(arr.begin(), arr.end());
+    for (auto& e : roster) e.trim();
+    roster.erase(remove_if(roster.begin(), roster.end(),
+        [](const StringBuffer& s){ return s.empty(); }), roster.end());
+    sort(roster.begin(), roster.end());
 
-    for (const auto& e : arr)
+    for (const auto& e : roster)
         cout << e.c_str() << '\n';
     return 0;
 }

@@ -1,11 +1,12 @@
-#include <unordered_map>
-#include <iostream>
 #include <list>
+#include <iostream>
+#include <unordered_map>
 #include <string>
-// from lab partner
+// borrowed from roommate's homework
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     using NodeList = std::list<std::pair<Key, Value>>;
     using MapType = std::unordered_map<Key, typename NodeList::iterator>;
 
@@ -13,11 +14,13 @@ class LRUCache {
     NodeList pool;
     MapType ref;
 
-    void moveToFront(typename NodeList::iterator where) {
+    void moveToFront(typename NodeList::iterator where)
+    {
         pool.splice(pool.begin(), pool, where);
     }
 
-    void dropOldest() {
+    void dropOldest()
+    {
         ref.erase(pool.back().first);
         pool.pop_back();
     }
@@ -25,7 +28,8 @@ class LRUCache {
 public:
     explicit LRUCache(std::size_t capacity) : box(capacity) {}
 
-    bool get(const Key& key, Value& output) {
+    bool get(const Key& key, Value& output)
+    {
         auto iterator = ref.find(key);
         if (iterator == ref.end())
             return false;
@@ -34,7 +38,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto iterator = ref.find(key);
         if (iterator != ref.end()) {
             iterator->second->second = value;
@@ -48,23 +53,26 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     std::string capacityTag;
     std::size_t capacityValue;
     std::cin >> capacityTag >> capacityValue;
     LRUCache<std::string, int> obj(capacityValue);
 
     std::string command;
-    while (std::cin >> command) {
+    while (std::cin >> command)
+    {
         if (command == "END") break;
-        if (command == "GET") {
+        if (command == "GET")
+        {
             std::string key;
             std::cin >> key;
             int value;
             if (obj.get(key, value))
-                std::cout << "HIT " << value << '\n';
+                std::cout << "HIT " << value << std::endl;
             else
-                std::cout << "MISS" << '\n';
+                std::cout << "MISS" << std::endl;
         } else if (command == "PUT") {
             std::string key;
             int value;

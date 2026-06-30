@@ -1,66 +1,76 @@
-#include <vector>
-#include <unordered_set>
 #include <unordered_map>
-#include <string>
-#include <memory>
+#include <unordered_set>
+#include <vector>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
 
-struct GraphNode {
+struct GraphNode
+{
     std::string label;
     std::vector<std::shared_ptr<GraphNode>> edges;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> store_;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> vertsv_;
 
-    std::shared_ptr<GraphNode> nodeFor(const std::string& tag) {
-        if (store_.find(tag) == store_.end()) {
+    std::shared_ptr<GraphNode> nodeFor(const std::string& tag)
+    {
+        if (vertsv_.find(tag) == vertsv_.end())
+        {
             auto sp = std::make_shared<GraphNode>();
             sp->label = tag;
-            store_[tag] = sp;
+            vertsv_[tag] = sp;
         }
-        return store_[tag];
+        return vertsv_[tag];
     }
 
-    static bool dfs(const std::shared_ptr<GraphNode>& v,
-                    const std::string& tgt,
-                    std::unordered_set<std::string>& vis) {
+    static bool tryDfs(const std::shared_ptr<GraphNode>& v,
+                       const std::string& tgt,
+                       std::unordered_set<std::string>& vis)
+    {
         if (!v || vis.count(v->label)) return false;
         if (v->label == tgt) return true;
         vis.insert(v->label);
         for (auto& e : v->edges)
-            if (dfs(e, tgt, vis)) return true;
+            if (tryDfs(e, tgt, vis)) return true;
         return false;
     }
 
 public:
     void addNode(const std::string& tag) { nodeFor(tag); }
-    void addEdge(const std::string& x, const std::string& y) {
-        nodeFor(x)->edges.push_back(nodeFor(y));
+    void addEdge(const std::string& x, const std::string& y)
+    {
+        nodeFor(x)->edges.emplace_back(nodeFor(y));
     }
-    bool query(const std::string& x, const std::string& y) const {
-        auto p = store_.find(x);
-        if (p == store_.end()) return false;
+    bool query(const std::string& x, const std::string& y) const
+    {
+        auto p = vertsv_.find(x);
+        if (p == vertsv_.end()) return false;
         std::unordered_set<std::string> vis;
-        return dfs(p->second, y, vis);
+        return tryDfs(p->second, y, vis);
     }
 };
 
 int main()
 {
     Graph G;
-    std::string verb;
-    while (std::cin >> verb)
-{
-        if (verb == "END") break;
-        if (verb == "ADD_NODE")
-{
-            std::string s; std::cin >> s; G.addNode(s);
-        } else if (verb == "ADD_EDGE") {
-            std::string u, v; std::cin >> u >> v; G.addEdge(u, v);
-        } else if (verb == "QUERY") {
-            std::string u, v; std::cin >> u >> v;
+    std::string op;
+    while (std::cin >> op)
+    {
+        if (op == "END") break;
+        if (op == "ADD_NODE")
+        {
+            std::string s; std::cin >> s;
+            G.addNode(s);
+        } else if (op == "ADD_EDGE")
+        {
+            std::string v, u; std::cin >> v >> u;
+            G.addEdge(u, v);
+        } else if (op == "QUERY")
+        {
+            std::string v, u; std::cin >> v >> u;
             std::cout << (G.query(u, v) ? "REACHABLE" : "UNREACHABLE") << "\n";
         }
     }

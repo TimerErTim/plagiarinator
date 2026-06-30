@@ -1,9 +1,8 @@
-#include <iomanip>
 #include <iostream>
-#include <unordered_map>
+#include <iomanip>
 #include <string>
+#include <unordered_map>
 #include <vector>
-// quick submit
 
 template<typename T>
 struct LogFmt {
@@ -83,18 +82,18 @@ void process_log(std::istream& in) {
 }
 
 int main() {
-    Config c;
-    c.load(std::cin);
+    Config settings;
+    settings.load(std::cin);
 
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") return 0;
-        if (word == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            if (c.has(tag)) std::cout << c.get(tag) << '\n';
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") return 0;
+        if (op == "GET") {
+            std::string k;
+            std::cin >> k;
+            if (settings.has(k)) std::cout << settings.get(k) << '\n';
             else std::cout << "MISSING\n";
-        } else if (word == "LOG") {
+        } else if (op == "LOG") {
             process_log(std::cin);
         }
     }

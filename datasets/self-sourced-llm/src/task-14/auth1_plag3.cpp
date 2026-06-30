@@ -1,60 +1,59 @@
 #include <utility>
 #include <cstddef>
 #include <iostream>
-// TODO: refactor later
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
-    T* pool_ = nullptr;
-    std::size_t len_ = 0;
-    std::size_t cap_ = 0;
+    T* buf_;
+    std::size_t len_;
+    std::size_t cap_;
 
     void grow() {
         std::size_t ncap = cap_ ? cap_ * 2 : 4;
         T* fresh = new T[ncap];
-        for (std::size_t i = 0; i < len_; ++i) fresh[i] = pool_[i];
-        delete[] pool_;
-        pool_ = fresh;
+        for (std::size_t i = len_; i-- > 0;) fresh[i] = buf_[i];
+        delete[] buf_;
+        buf_ = fresh;
         cap_ = ncap;
     }
 
 public:
-    Vector() = default;
-
-    ~Vector() { delete[] pool_; }
+    Vector() : buf_(nullptr), len_(0), cap_(0) {}
+    ~Vector() { delete[] buf_; }
 
     Vector(const Vector& other) : len_(other.len_), cap_(other.cap_) {
-        pool_ = new T[cap_];
-        for (std::size_t i = 0; i < len_; ++i) pool_[i] = other.pool_[i];
+        buf_ = new T[cap_];
+        for (std::size_t i = 0; i < len_; ++i) buf_[i] = other.buf_[i];
     }
 
     Vector& operator=(const Vector& other) {
         if (this != &other) {
-            delete[] pool_;
+            delete[] buf_;
             len_ = other.len_;
             cap_ = other.cap_;
-            pool_ = new T[cap_];
-            for (std::size_t i = 0; i < len_; ++i) pool_[i] = other.pool_[i];
+            buf_ = new T[cap_];
+            for (std::size_t i = 0; i < len_; ++i) buf_[i] = other.buf_[i];
         }
         return *this;
     }
 
     void push_back(const T& value) {
         if (len_ == cap_) grow();
-        pool_[len_++] = value;
+        buf_[len_++] = value;
     }
 
     void push_back(T&& value) {
         if (len_ == cap_) grow();
-        pool_[len_++] = std::move(value);
+        buf_[len_++] = std::move(value);
     }
 
-    T& operator[](std::size_t i) { return pool_[i]; }
-    const T& operator[](std::size_t i) const { return pool_[i]; }
+    T& operator[](std::size_t i) { return buf_[i]; }
+    const T& operator[](std::size_t i) const { return buf_[i]; }
 
     std::size_t size() const { return len_; }
-    T* data() { return pool_; }
-    const T* data() const { return pool_; }
+    T* data() { return buf_; }
+    const T* data() const { return buf_; }
 };
 
 int main() {
@@ -78,7 +77,7 @@ int main() {
 
     long long sum = 0, prod = 1;
     const long long MOD = 1000000007LL;
-    for (std::size_t i = 0; i < unique.size(); ++i) {
+    for (std::size_t i = unique.size(); i-- > 0;) {
         sum += unique[i];
         prod = (prod * unique[i]) % MOD;
     }

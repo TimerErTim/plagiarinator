@@ -1,10 +1,9 @@
-#include <sstream>
 #include <iostream>
-#include <string>
+#include <sstream>
 #include <stdexcept>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 struct Number { int value; };
 struct Add { int a, b; };
@@ -63,9 +62,9 @@ void run_postfix(const std::string& text) {
 }
 
 int main() {
-    for (std::string str; std::getline(std::cin, str);) {
-        if (str.empty()) break;
-        run_postfix(str);
+    for (std::string line; std::getline(std::cin, line);) {
+        if (line.empty()) break;
+        run_postfix(line);
     }
     return 0;
 }

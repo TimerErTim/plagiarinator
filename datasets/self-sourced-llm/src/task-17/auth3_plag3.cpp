@@ -1,51 +1,63 @@
 #include <vector>
+#include <type_traits>
 #include <algorithm>
 #include <iostream>
 #include <string>
-#include <type_traits>
-// TODO: refactor later
+// found online
 
-namespace util {
+namespace arrange_ns
+{
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), std::less<T>{});
+template <typename Entry>
+typename std::enable_if<std::is_arithmetic<Entry>::value, void>::type
+reorder(std::vector<Entry>& heap)
+{
+    std::sort(heap.begin(), heap.end(), std::less<Entry>{});
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    auto cmp = [](const T& lhs, const T& rhs) {
-        return lhs.size() < rhs.size() || (lhs.size() == rhs.size() && lhs < rhs);
+template <typename Entry>
+typename std::enable_if<!std::is_arithmetic<Entry>::value, void>::type
+reorder(std::vector<Entry>& heap)
+{
+    auto ranker = [](const Entry& one, const Entry& two)
+    {
+        return one.size() < two.size() || (one.size() == two.size() && one < two);
     };
-    std::sort(data.begin(), data.end(), cmp);
+    std::sort(heap.begin(), heap.end(), ranker);
 }
 
-}  // namespace util
+}  // namespace arrange_ns
 
-int main() {
-    std::string kind;
-    int n;
-    std::cin >> kind >> n;
+int main()
+{
+    std::string flavor;
+    int tally;
+    std::cin >> flavor >> tally;
 
-    if (kind == "STR") {
-        std::vector<std::string> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
-        util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
-        }
-    } else {
-        std::vector<double> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
-        util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
+    if (flavor == "STR")
+    {
+        std::vector<std::string> heap(static_cast<std::size_t>(tally));
+        for (int cursor = 0; cursor < tally; ++cursor)
+            std::cin >> heap[static_cast<std::size_t>(cursor)];
+        arrange_ns::reorder(heap);
+        for (int cursor = 0; cursor < tally; ++cursor)
+        {
+            if (cursor) std::cout << ' ';
+            std::cout << heap[static_cast<std::size_t>(cursor)];
         }
     }
-    std::cout << '\n';
+    else
+    {
+        std::vector<double> heap(static_cast<std::size_t>(tally));
+        for (int cursor = 0; cursor < tally; ++cursor)
+            std::cin >> heap[static_cast<std::size_t>(cursor)];
+        arrange_ns::reorder(heap);
+        for (int cursor = 0; cursor < tally; ++cursor)
+        {
+            if (cursor) std::cout << ' ';
+            std::cout << heap[static_cast<std::size_t>(cursor)];
+        }
+    }
+    std::cout << std::endl;
     return 0;
 }

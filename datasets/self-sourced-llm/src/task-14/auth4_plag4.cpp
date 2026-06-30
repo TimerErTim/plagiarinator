@@ -1,6 +1,6 @@
-#include <iostream>
 #include <algorithm>
-// quick submit
+#include <iostream>
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -55,10 +55,10 @@ public:
 };
 
 int main() {
-    std::size_t tag;
-    std::cin >> tag;
+    std::size_t item_count;
+    std::cin >> item_count;
     Vector<int> raw;
-    for (std::size_t i = 0; i < tag; ++i) {
+    for (std::size_t i = 0; i < item_count; ++i) {
         int val;
         std::cin >> val;
         raw.push_back(val);

@@ -1,8 +1,7 @@
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <vector>
-// cleaned up version
+#include <string>
+#include <sstream>
+#include <iostream>
 
 class IntBST {
     struct Node {
@@ -12,7 +11,7 @@ class IntBST {
         explicit Node(int v) : value(v), left(nullptr), right(nullptr) {}
     };
 
-    Node* root_;
+    Node* rootk_;
 
     static void destroy(Node* n) {
         if (!n) return;
@@ -37,7 +36,7 @@ class IntBST {
     void inorderNode(const Node* n, std::vector<int>& out) const {
         if (!n) return;
         inorderNode(n->left, out);
-        out.push_back(n->value);
+        out.emplace_back(n->value);
         inorderNode(n->right, out);
     }
 
@@ -47,50 +46,50 @@ class IntBST {
     }
 
 public:
-    IntBST() : root_(nullptr) {}
-    ~IntBST() { destroy(root_); }
+    IntBST() : rootk_(nullptr) {}
+    ~IntBST() { destroy(rootk_); }
 
-    void insert(int value) { root_ = insertNode(root_, value); }
+    void insert(int value) { rootk_ = insertNode(rootk_, value); }
 
-    bool contains(int value) const { return containsNode(root_, value); }
+    bool contains(int value) const { return containsNode(rootk_, value); }
 
-    void inorder(std::vector<int>& out) const { inorderNode(root_, out); }
+    void inorder(std::vector<int>& out) const { inorderNode(rootk_, out); }
 
     int& min() {
-        Node* m = minNode(root_);
+        Node* m = minNode(rootk_);
         return m->value;
     }
 
     const int& min() const {
-        Node* m = minNode(root_);
+        Node* m = minNode(rootk_);
         return m->value;
     }
 
-    bool empty() const { return root_ == nullptr; }
+    bool empty() const { return rootk_ == nullptr; }
 };
 
 int main() {
-    IntBST bst;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        bst.insert(std::stoi(elem));
+    IntBST tree;
+    std::string tok;
+    while (std::cin >> tok) {
+        if (tok == "DONE") break;
+        tree.insert(std::stoi(tok));
     }
 
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        if (elem == "CONTAINS") {
+    while (std::cin >> tok) {
+        if (tok == "DONE") break;
+        if (tok == "CONTAINS") {
             int x; std::cin >> x;
-            std::cout << (bst.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (elem == "MIN") {
-            if (bst.empty()) std::cout << "EMPTY\n";
-            else std::cout << bst.min() << std::endl;
-        } else if (elem == "PRINT") {
-            std::vector<int> out;
-            bst.inorder(out);
-            for (std::size_t i = 0; i < out.size(); ++i) {
+            std::cout << (tree.contains(x) ? "YES" : "NO") << std::endl;
+        } else if (tok == "MIN") {
+            if (tree.empty()) std::cout << "EMPTY" << std::endl;
+            else std::cout << tree.min() << std::endl;
+        } else if (tok == "PRINT") {
+            std::vector<int> vals;
+            tree.inorder(vals);
+            for (std::size_t i = 0; i < vals.size(); i++) {
                 if (i) std::cout << ' ';
-                std::cout << out[i];
+                std::cout << vals[i];
             }
             std::cout << std::endl;
         }

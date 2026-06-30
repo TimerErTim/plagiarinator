@@ -1,10 +1,9 @@
-#include <iomanip>
 #include <cmath>
-#include <memory>
-#include <iostream>
 #include <vector>
+#include <iostream>
+#include <iomanip>
+#include <memory>
 #include <string>
-// quick submit
 
 using std::cin;
 using std::cout;
@@ -30,11 +29,11 @@ public:
 
 class Circle : public Shape
 {
-    double word;
+    double radius;
 public:
-    Circle(double r): word(r) {}
-    double area() const override { return PI * word * word; }
-    double perimeter() const override { return 2 * PI * word; }
+    Circle(double r): radius(r) {}
+    double area() const override { return PI * radius * radius; }
+    double perimeter() const override { return 2 * PI * radius; }
     string name() const override { return "Circle"; }
 };
 
@@ -50,11 +49,11 @@ public:
 
 class Triangle : public Shape
 {
-    double tmp;
+    double side;
 public:
-    Triangle(double s): tmp(s) {}
-    double area() const override { return sqrt(3.0) / 4.0 * tmp * tmp; }
-    double perimeter() const override { return 3 * tmp; }
+    Triangle(double s): side(s) {}
+    double area() const override { return sqrt(3.0) / 4.0 * side * side; }
+    double perimeter() const override { return 3 * side; }
     string name() const override { return "Triangle"; }
 };
 
@@ -73,27 +72,27 @@ void accumulate(const Shape& s, double& a, double& p)
 
 int main()
 {
-    vector<unique_ptr<Shape>> data;
+    vector<unique_ptr<Shape>> items;
     string tok;
     while (cin >> tok && tok != "DONE") {
         if (tok == "CIRCLE") {
             double r; cin >> r;
-            data.push_back(make_unique<Circle>(r));
+            items.push_back(make_unique<Circle>(r));
         } else if (tok == "RECT") {
             double w, h; cin >> w >> h;
-            data.push_back(make_unique<Rectangle>(w, h));
+            items.push_back(make_unique<Rectangle>(w, h));
         } else if (tok == "TRI") {
             double s; cin >> s;
-            data.push_back(make_unique<Triangle>(s));
+            items.push_back(make_unique<Triangle>(s));
         }
     }
-    double numA = 0, numP = 0;
-    for (auto& sh : data) {
+    double ta = 0, tp = 0;
+    for (auto& sh : items) {
         print_shape(*sh);
-        accumulate(*sh, numA, numP);
+        accumulate(*sh, ta, tp);
     }
     cout << fixed << setprecision(4)
-         << "TOTAL area=" << numA << endl
-         << "TOTAL perimeter=" << numP << endl;
+         << "TOTAL area=" << ta << endl
+         << "TOTAL perimeter=" << tp << endl;
     return 0;
 }

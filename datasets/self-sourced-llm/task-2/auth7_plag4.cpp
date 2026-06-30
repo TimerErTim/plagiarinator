@@ -1,7 +1,6 @@
-#include <sstream>
-#include <iostream>
 #include <string>
-// quick submit
+#include <iostream>
+#include <sstream>
 
 template <typename T>
 class LinkedList {
@@ -42,28 +41,28 @@ public:
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& u, const LinkedList<T>& v) {
-    LinkedList<T> w;
-    auto i = u.begin(), j = v.begin();
-    while (i != u.end() && j != v.end()) {
-        if (*i <= *j) { w.push_back(*i); ++i; }
-        else { w.push_back(*j); ++j; }
+LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
+    LinkedList<T> out;
+    auto i = lhs.begin(), j = rhs.begin();
+    while (i != lhs.end() && j != rhs.end()) {
+        if (*i <= *j) { out.push_back(*i); ++i; }
+        else { out.push_back(*j); ++j; }
     }
-    while (i != u.end()) { w.push_back(*i); ++i; }
-    while (j != v.end()) { w.push_back(*j); ++j; }
-    return w;
+    while (i != lhs.end()) { out.push_back(*i); ++i; }
+    while (j != rhs.end()) { out.push_back(*j); ++j; }
+    return out;
 }
 
 int main() {
-    LinkedList<int> a, b;
+    LinkedList<int> listOne, listTwo;
     std::string ln;
     std::getline(std::cin, ln);
-    { std::istringstream s(ln); int v; while (s >> v) a.push_back(v); }
+    { std::istringstream s(ln); int v; while (s >> v) listOne.push_back(v); }
     std::getline(std::cin, ln);
-    { std::istringstream s(ln); int v; while (s >> v) b.push_back(v); }
-    LinkedList<int> m = merge_sorted(a, b);
+    { std::istringstream s(ln); int v; while (s >> v) listTwo.push_back(v); }
+    LinkedList<int> answer = merge_sorted(listOne, listTwo);
     bool first = true;
-    for (auto p = m.begin(); p != m.end(); ++p) {
+    for (auto p = answer.begin(); p != answer.end(); ++p) {
         if (!first) std::cout << ' ';
         std::cout << *p;
         first = false;

@@ -1,6 +1,6 @@
 #include <vector>
 #include <iostream>
-// TODO: refactor later
+// got this structure from a friend
 
 using std::cin;
 using std::cout;
@@ -13,44 +13,45 @@ using std::vector;
 template <typename T>
 class Matrix
 {
-    size_t r, c;
-    vector<T> buf;
+    size_t rowN, colN;
+    vector<T> data;
 
 public:
-    Matrix(size_t rows, size_t cols): r(rows), c(cols), buf(rows * cols) {}
+    Matrix(size_t rows, size_t cols): rowN(rows), colN(cols), data(rows * cols) {}
 
-    T& operator()(size_t i, size_t j) { return buf[i * c + j]; }
-    const T& operator()(size_t i, size_t j) const { return buf[i * c + j]; }
+    T& operator()(size_t i, size_t j) { return data[i * colN + j]; }
+    const T& operator()(size_t i, size_t j) const { return data[i * colN + j]; }
 
-    size_t rows() const { return r; }
-    size_t cols() const { return c; }
+    size_t rows() const { return rowN; }
+    size_t cols() const { return colN; }
 
-    Matrix operator+(const Matrix& o) const
+    Matrix operator+(const Matrix& rhs) const
     {
-        Matrix out(r, c);
-        for (size_t i = 0; i < buf.size(); ++i) out.buf[i] = buf[i] + o.buf[i];
-        return out;
+        Matrix res(rowN, colN);
+        for (size_t i = data.size(); i-- > 0;)
+            res.data[i] = data[i] + rhs.data[i];
+        return res;
     }
 
-    Matrix operator*(const Matrix& o) const
+    Matrix operator*(const Matrix& rhs) const
     {
-        if (c != o.r) { cout << "ERROR" << endl; exit(0); }
-        Matrix out(r, o.c);
-        for (size_t i = 0; i < r; ++i)
-            for (size_t j = 0; j < o.c; ++j)
-                for (size_t k = 0; k < c; ++k)
-                    out(i, j) += (*this)(i, k) * o(k, j);
-        return out;
+        if (colN != rhs.rowN) { cout << "ERROR" << endl; exit(0); }
+        Matrix res(rowN, rhs.colN);
+        for (size_t i = 0; i < rowN; ++i)
+            for (size_t j = 0; j < rhs.colN; ++j)
+                for (size_t k = colN; k-- > 0;)
+                    res(i, j) += (*this)(i, k) * rhs(k, j);
+        return res;
     }
 
     friend ostream& operator<<(ostream& os, const Matrix& m)
     {
-        for (size_t i = 0; i < m.r; ++i) {
-            for (size_t j = 0; j < m.c; ++j) {
-                if (j) os << ' ';
+        for (size_t i = 0; i < m.rowN; ++i) {
+            for (size_t j = 0; j < m.colN; ++j) {
+                if (j > 0) os << ' ';
                 os << m(i, j);
             }
-            os << '\n';
+            os << endl;
         }
         return os;
     }
@@ -60,14 +61,14 @@ int main()
 {
     size_t ra, ca, rb, cb;
     cin >> ra >> ca;
-    Matrix<int> A(ra, ca);
+    Matrix<int> first(ra, ca);
     for (size_t i = 0; i < ra; ++i)
-        for (size_t j = 0; j < ca; ++j) cin >> A(i, j);
+        for (size_t j = 0; j < ca; ++j) cin >> first(i, j);
     cin >> rb >> cb;
-    Matrix<int> B(rb, cb);
+    Matrix<int> second(rb, cb);
     for (size_t i = 0; i < rb; ++i)
-        for (size_t j = 0; j < cb; ++j) cin >> B(i, j);
-    Matrix<int> C = A * B + A;
-    cout << C;
+        for (size_t j = 0; j < cb; ++j) cin >> second(i, j);
+    Matrix<int> combined = first * second + first;
+    cout << combined;
     return 0;
 }

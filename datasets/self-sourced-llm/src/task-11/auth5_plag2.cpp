@@ -1,9 +1,8 @@
-#include <vector>
-#include <unordered_map>
-#include <string>
-#include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <iomanip>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 template<typename T>
 struct LogFmt {
@@ -12,13 +11,15 @@ struct LogFmt {
 
 template<>
 struct LogFmt<double> {
-    static void write(std::ostream& o, double v) {
+    static void write(std::ostream& o, double v)
+    {
         o << std::fixed << std::setprecision(2) << v;
     }
 };
 
 template<typename... Ts>
-void log_line(std::ostream& out, Ts&&... xs) {
+void log_line(std::ostream& out, Ts&&... xs)
+{
     const char* sp = "";
     ([&] {
         out << sp;
@@ -28,42 +29,37 @@ void log_line(std::ostream& out, Ts&&... xs) {
     out << '\n';
 }
 
-class Config {
-    std::unordered_map<std::string, std::string> store_;
+class Config
+{
+    std::unordered_map<std::string, std::string> m_;
 
 public:
-    void load(std::istream& src) {
+    void load(std::istream& src)
+    {
         std::string l;
         while (std::getline(src, l) && l.length())
-            store_[l.substr(0, l.find('='))] = l.substr(l.find('=') + 1);
+            m_[l.substr(0, l.find('='))] = l.substr(l.find('=') + 1);
     }
 
-    bool has(const std::string& key) const { return store_.find(key) != store_.end(); }
+    bool has(const std::string& key) const { return m_.find(key) != m_.end(); }
 
-    const std::string& get(const std::string& key) const { return store_.find(key)->second; }
+    const std::string& get(const std::string& key) const { return m_.find(key)->second; }
 };
 
-bool digit_run(const std::string& s, size_t b) {
+static bool digit_run(const std::string& s, size_t b)
+{
     for (; b < s.size(); ++b) if (s[b] < '0' || s[b] > '9') return false;
     return b > 0;
 }
 
-bool intish(const std::string& s) {
+static bool intish(const std::string& s)
+{
     size_t i = (!s.empty() && (s[0] == '-' || s[0] == '+')) ? 1 : 0;
     return digit_run(s, i);
 }
 
-void do_log_cmd(std::istream& in) {
-    std::vector<std::string> parts;
-    std::string w;
-    while (in >> w) {
-        if (w == "GET" || w == "LOG" || w == "END") {
-            for (int i = static_cast<int>(w.size()) - 1; i >= 0; --i)
-                in.putback(w[static_cast<std::size_t>(i)]);
-            break;
-        }
-        parts.push_back(w);
-    }
+static void emit_parts(const std::vector<std::string>& parts)
+{
     if (parts.size() == 3) {
         if (intish(parts[1]))
             log_line(std::cout, parts[0], std::stoi(parts[1]), parts[2]);
@@ -82,25 +78,42 @@ void do_log_cmd(std::istream& in) {
     }
 }
 
-int main()
+void process_log(std::istream& in)
+{
+    std::vector<std::string> parts;
+    std::string w;
+    while (in >> w)
+    {
+        if (w == "GET" || w == "LOG" || w == "END")
+        {
+            for (std::size_t k = w.size(); k-- > 0;)
+                in.putback(w[k]);
+            break;
+        }
+        parts.push_back(w);
+    }
+    emit_parts(parts);
+}
 
+int main()
 {
     Config c;
     c.load(std::cin);
 
     std::string op;
-    while (std::cin >> op) 
-{
+    while (std::cin >> op)
+    {
         if (op == "END") return 0;
-        if (op == "GET") 
-{
+        if (op == "GET")
+        {
             std::string k;
             std::cin >> k;
             if (c.has(k)) std::cout << c.get(k) << '\n';
             else std::cout << "MISSING\n";
-        } else if (op == "LOG") 
-{
-            do_log_cmd(std::cin);
+        }
+        else if (op == "LOG")
+        {
+            process_log(std::cin);
         }
     }
     return 0;

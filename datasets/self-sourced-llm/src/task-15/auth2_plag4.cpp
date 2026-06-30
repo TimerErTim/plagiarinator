@@ -1,9 +1,9 @@
-#include <iomanip>
 #include <iostream>
-#include <variant>
+#include <iomanip>
 #include <string>
+#include <variant>
 #include <vector>
-// quick submit
+#include <cstdio>
 
 template <typename Derived>
 class Printable {
@@ -48,23 +48,23 @@ void print_metric(const Printable<T>& m) {
     std::cout << m.to_string() << std::endl;
 }
 
-using Metric = std::variant<Distance, Mass, Temperature>;
+using Reading = std::variant<Distance, Mass, Temperature>;
 
 int main() {
-    std::vector<Metric> list;
+    std::vector<Reading> data;
     std::string tag;
     double num;
 
     while (std::cin >> tag) {
         if (tag == "END") break;
         if (!(std::cin >> num)) break;
-        if (tag == "DIST") list.push_back(Distance(num));
-        else if (tag == "MASS") list.push_back(Mass(num));
-        else if (tag == "TEMP") list.push_back(Temperature(num));
+        if (tag == "DIST") data.push_back(Distance(num));
+        else if (tag == "MASS") data.push_back(Mass(num));
+        else if (tag == "TEMP") data.push_back(Temperature(num));
     }
 
-    for (const Metric& tmp : list) {
-        std::visit([](const auto& typed) { print_metric(typed); }, tmp);
+    for (const Reading& entry : data) {
+        std::visit([](const auto& typed) { print_metric(typed); }, entry);
     }
     return 0;
 }

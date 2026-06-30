@@ -1,7 +1,6 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-// quick submit
 
 template <typename T>
 class LinkedList {
@@ -10,31 +9,31 @@ class LinkedList {
         Node* next;
         Node(const T& v) : value(v), next(nullptr) {}
     };
-    Node* word_;
-    std::size_t tmp_;
+    Node* headTop;
+    std::size_t count_;
 
 public:
-    LinkedList() : word_(nullptr), tmp_(0) {}
+    LinkedList() : headTop(nullptr), count_(0) {}
     ~LinkedList() {
-        while (word_) {
-            Node* tmp = word_;
-            word_ = word_->next;
+        while (headTop) {
+            Node* tmp = headTop;
+            headTop = headTop->next;
             delete tmp;
         }
     }
 
     void push_back(const T& v) {
         Node* n = new Node(v);
-        if (!word_) word_ = n;
+        if (!headTop) headTop = n;
         else {
-            Node* cur = word_;
+            Node* cur = headTop;
             while (cur->next) cur = cur->next;
             cur->next = n;
         }
-        ++tmp_;
+        ++count_;
     }
 
-    std::size_t size() const { return tmp_; }
+    std::size_t size() const { return count_; }
 
     class Iterator {
         Node* node_;
@@ -45,7 +44,7 @@ public:
         bool operator!=(const Iterator& o) const { return node_ != o.node_; }
     };
 
-    Iterator begin() const { return Iterator(word_); }
+    Iterator begin() const { return Iterator(headTop); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -74,11 +73,11 @@ static LinkedList<int> readLine(std::istream& in) {
 }
 
 int main() {
-    LinkedList<int> lhs = readLine(std::cin);
-    LinkedList<int> rhs = readLine(std::cin);
-    LinkedList<int> tmp = merge_sorted(lhs, rhs);
+    LinkedList<int> seqA = readLine(std::cin);
+    LinkedList<int> seqB = readLine(std::cin);
+    LinkedList<int> combined = merge_sorted(seqA, seqB);
     bool first = true;
-    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+    for (auto it = combined.begin(); it != combined.end(); ++it) {
         if (!first) std::cout << ' ';
         std::cout << *it;
         first = false;

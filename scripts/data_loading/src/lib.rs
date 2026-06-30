@@ -18,6 +18,22 @@ pub fn full_cpp_dataset() -> Result<LanguageDataset, String> {
     Ok(homework_dataset.merge(self_sourced_dataset))
 }
 
+pub fn train_test_cpp_dataset() -> Result<(LanguageDataset, LanguageDataset), String> {
+    let dataset = full_cpp_dataset()?;
+    let (mut trainset, mut testset) = dataset.train_test_split();
+    // Trim trainset to shortest pair for balance
+    let min_len = trainset.plagiarized_pairs.len().min(trainset.authentic_pairs.len());
+    trainset.plagiarized_pairs = trainset.plagiarized_pairs.into_iter().take(min_len).collect();
+    trainset.authentic_pairs = trainset.authentic_pairs.into_iter().take(min_len).collect();
+
+    // Trim testset to shortest pair for balance
+    let min_len = testset.plagiarized_pairs.len().min(testset.authentic_pairs.len());
+    testset.plagiarized_pairs = testset.plagiarized_pairs.into_iter().take(min_len).collect();
+    testset.authentic_pairs = testset.authentic_pairs.into_iter().take(min_len).collect();
+
+    Ok((trainset, testset))
+}
+
 #[cfg(test)]
 mod tests {
     use super::full_cpp_dataset;

@@ -1,49 +1,53 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 // adapted from classmate submission
 
-class FileWriter {
-    std::ofstream stream_;
+class FileWriter
+{
+    std::ofstream file_;
     std::string fname_;
 
-    void closeIfOpen() {
-        if (stream_.is_open()) stream_.close();
-    }
-
 public:
-    explicit FileWriter(const std::string& fname) : fname_(fname) {
-        stream_.open(fname_);
+    explicit FileWriter(const std::string& fname) : fname_(fname)
+    {
+        file_.open(fname_);
     }
 
-    ~FileWriter() { closeIfOpen(); }
+    ~FileWriter()
+    {
+        if (file_.is_open()) file_.close();
+    }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& mv) noexcept
-        : stream_(std::move(mv.stream_)), fname_(std::move(mv.fname_)) {}
+        : file_(std::move(mv.file_)), fname_(std::move(mv.fname_)) {}
 
-    FileWriter& operator=(FileWriter&& mv) noexcept {
+    FileWriter& operator=(FileWriter&& mv) noexcept
+    {
         if (this != &mv)
-{
-            closeIfOpen();
-            stream_ = std::move(mv.stream_);
+        {
+            if (file_.is_open()) file_.close();
+            file_ = std::move(mv.file_);
             fname_ = std::move(mv.fname_);
         }
         return *this;
     }
 
-    void write_line(const std::string& text) {
-        stream_ << text << std::endl;
+    void write_line(const std::string& text)
+    {
+        file_ << text << std::endl;
     }
 };
 
-static std::string gradeLabel(int pts) {
+static std::string gradeLabel(int pts)
+{
     if (pts >= 90) return "A";
     if (pts >= 80) return "B";
     if (pts >= 70) return "C";
@@ -51,31 +55,38 @@ static std::string gradeLabel(int pts) {
     return "F";
 }
 
+static void writeStudentRow(FileWriter& w, const std::string& name, int score)
+{
+    std::ostringstream row;
+    row << name << ": " << score << " [" << gradeLabel(score) << "]";
+    w.write_line(row.str());
+}
+
 int main()
 {
     std::vector<std::pair<std::string, int>> students;
-    for (std::string ln; std::getline(std::cin, ln);) {
-        std::size_t sep = ln.find(',');
-        students.emplace_back(ln.substr(0, sep), std::stoi(ln.substr(sep + 1)));
+    std::string raw;
+    while (std::getline(std::cin, raw))
+    {
+        std::size_t sep = raw.find(',');
+        students.push_back({raw.substr(0, sep), std::stoi(raw.substr(sep + 1))});
     }
 
-    FileWriter fw("report.txt");
-    fw.write_line("Student Report");
-    fw.write_line("--------------");
+    FileWriter report("report.txt");
+    report.write_line("Student Report");
+    report.write_line("--------------");
 
     double acc = 0.0;
-    for (const auto& entry : students)
-{
-        acc += entry.second;
-        std::ostringstream row;
-        row << entry.first << ": " << entry.second << " [" << gradeLabel(entry.second) << "]";
-        fw.write_line(row.str());
+    for (std::size_t i = 0; i < students.size(); ++i)
+    {
+        acc += students[i].second;
+        writeStudentRow(report, students[i].first, students[i].second);
     }
 
     std::ostringstream footer;
     footer << std::fixed << std::setprecision(1)
            << "Average: " << (acc / static_cast<double>(students.size()));
-    fw.write_line(footer.str());
+    report.write_line(footer.str());
 
     std::cout << "Report written to report.txt" << std::endl;
     return 0;

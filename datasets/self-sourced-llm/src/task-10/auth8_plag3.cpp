@@ -1,90 +1,97 @@
 #include <vector>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// dont tell the prof pls
 
 class IntBST {
-    struct TreeNode {
-        int value;
-        TreeNode* left;
-        TreeNode* right;
-        explicit TreeNode(int v) : value(v), left(nullptr), right(nullptr) {}
+    struct Leaf {
+        int item;
+        Leaf* prior;
+        Leaf* after;
+        explicit Leaf(int it) : item(it), prior(nullptr), after(nullptr) {}
     };
 
-    TreeNode* ptr;
+    Leaf* crown_;
 
-    static void dispose(TreeNode* node) {
-        if (node == nullptr) return;
-        dispose(node->left);
-        dispose(node->right);
-        delete node;
+    static void teardown(Leaf* lf) {
+        if (!lf) return;
+        std::vector<Leaf*> chain;
+        std::vector<Leaf*> stack;
+        stack.push_back(lf);
+        while (!stack.empty()) {
+            Leaf* cur = stack.back();
+            stack.pop_back();
+            chain.push_back(cur);
+            if (cur->prior) stack.push_back(cur->prior);
+            if (cur->after) stack.push_back(cur->after);
+        }
+        for (std::size_t k = chain.size(); k-- > 0;)
+            delete chain[k];
     }
 
-    TreeNode* doInsert(TreeNode* node, int val) {
-        if (node == nullptr) return new TreeNode(val);
-        if (val < node->value) node->left = doInsert(node->left, val);
-        else if (val > node->value) node->right = doInsert(node->right, val);
-        return node;
+    Leaf* attach(Leaf* lf, int it) {
+        if (!lf) return new Leaf(it);
+        if (it < lf->item) lf->prior = attach(lf->prior, it);
+        else if (it > lf->item) lf->after = attach(lf->after, it);
+        return lf;
     }
 
-    bool doContains(const TreeNode* node, int val) const {
-        if (node == nullptr) return false;
-        if (val == node->value) return true;
-        return val < node->value
-            ? doContains(node->left, val)
-            : doContains(node->right, val);
+    bool seek(const Leaf* lf, int it) const {
+        if (!lf) return false;
+        if (it == lf->item) return true;
+        if (it < lf->item) return seek(lf->prior, it);
+        return seek(lf->after, it);
     }
 
-    void doInorder(const TreeNode* node, std::vector<int>& dest) const {
-        if (node == nullptr) return;
-        doInorder(node->left, dest);
-        dest.push_back(node->value);
-        doInorder(node->right, dest);
+    void flatten(const Leaf* lf, std::vector<int>& tray) const {
+        if (!lf) return;
+        flatten(lf->prior, tray);
+        tray.push_back(lf->item);
+        flatten(lf->after, tray);
     }
 
-    TreeNode* leftmostNode(TreeNode* node) const {
-        if (node == nullptr) return nullptr;
-        while (node->left != nullptr) node = node->left;
-        return node;
+    Leaf* floor(Leaf* lf) const {
+        if (lf == nullptr) return nullptr;
+        while (lf->prior != nullptr) lf = lf->prior;
+        return lf;
     }
 
 public:
-    IntBST() : ptr(nullptr) {}
-    ~IntBST() { dispose(ptr); }
+    IntBST() : crown_(nullptr) {}
+    ~IntBST() { teardown(crown_); }
 
-    void insert(int value) { ptr = doInsert(ptr, value); }
-    bool contains(int value) const { return doContains(ptr, value); }
-    void inorder(std::vector<int>& out) const { doInorder(ptr, out); }
+    void insert(int value) { crown_ = attach(crown_, value); }
+    bool contains(int value) const { return seek(crown_, value); }
+    void inorder(std::vector<int>& out) const { flatten(crown_, out); }
 
-    int& min() { return leftmostNode(ptr)->value; }
-    const int& min() const { return leftmostNode(ptr)->value; }
+    int& min() { return floor(crown_)->item; }
+    const int& min() const { return floor(crown_)->item; }
 
-    bool empty() const { return ptr == nullptr; }
+    bool empty() const { return crown_ == nullptr; }
 };
 
 int main() {
-    IntBST hold;
-    std::string word;
-
-    while (std::cin >> word) {
-        if (word == "DONE") break;
-        hold.insert(std::stoi(word));
+    IntBST grove;
+    std::string line;
+    while (std::cin >> line) {
+        if (line == "DONE") break;
+        grove.insert(std::stoi(line));
     }
 
-    while (std::cin >> word) {
-        if (word == "DONE") break;
-        if (word == "CONTAINS") {
+    while (std::cin >> line) {
+        if (line == "DONE") break;
+        if (line == "CONTAINS") {
             int target;
             std::cin >> target;
-            std::cout << (hold.contains(target) ? "YES" : "NO") << std::endl;
-        } else if (word == "MIN") {
-            if (hold.empty())
-                std::cout << "EMPTY\n";
+            std::cout << (grove.contains(target) ? "YES" : "NO") << std::endl;
+        } else if (line == "MIN") {
+            if (grove.empty())
+                std::cout << "EMPTY" << std::endl;
             else
-                std::cout << hold.min() << std::endl;
-        } else if (word == "PRINT") {
+                std::cout << grove.min() << std::endl;
+        } else if (line == "PRINT") {
             std::vector<int> sequence;
-            hold.inorder(sequence);
+            grove.inorder(sequence);
             for (std::size_t idx = 0; idx < sequence.size(); ++idx) {
                 if (idx > 0) std::cout << ' ';
                 std::cout << sequence[idx];

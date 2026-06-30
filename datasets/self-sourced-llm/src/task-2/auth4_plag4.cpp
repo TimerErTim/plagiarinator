@@ -1,7 +1,6 @@
+#include <string>
 #include <sstream>
 #include <iostream>
-#include <string>
-// quick submit
 
 template <typename T>
 class LinkedList {
@@ -13,25 +12,25 @@ private:
         T value;
         Node* next;
     };
-    Node* head;
+    Node* frontPtr;
     std::size_t n;
 
 public:
-    LinkedList() : head(nullptr), n(0) {}
+    LinkedList() : frontPtr(nullptr), n(0) {}
 
     ~LinkedList() {
-        while (head) {
-            Node* t = head;
-            head = head->next;
+        while (frontPtr) {
+            Node* t = frontPtr;
+            frontPtr = frontPtr->next;
             delete t;
         }
     }
 
     void push_back(const T& v) {
         Node* node = new Node{v, nullptr};
-        if (!head) head = node;
+        if (!frontPtr) frontPtr = node;
         else {
-            Node* p = head;
+            Node* p = frontPtr;
             while (p->next) p = p->next;
             p->next = node;
         }
@@ -51,9 +50,9 @@ public:
         bool operator!=(const Iterator& o) const { return cur != o.cur; }
     };
 
-    Iterator begin() { return Iterator(head); }
+    Iterator begin() { return Iterator(frontPtr); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(head); }
+    Iterator begin() const { return Iterator(frontPtr); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -86,13 +85,13 @@ int main() {
     fillFromLine(listA, lineA);
     fillFromLine(listB, lineB);
 
-    LinkedList<int> tmp = merge_sorted(listA, listB);
+    LinkedList<int> merged = merge_sorted(listA, listB);
     bool first = true;
-    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+    for (auto it = merged.begin(); it != merged.end(); ++it) {
         if (!first) std::cout << ' ';
         std::cout << *it;
         first = false;
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }

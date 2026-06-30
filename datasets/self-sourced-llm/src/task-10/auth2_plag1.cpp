@@ -1,7 +1,6 @@
-#include <iostream>
-#include <string>
 #include <vector>
-// cleaned up version
+#include <string>
+#include <iostream>
 
 using std::cin;
 using std::cout;
@@ -14,7 +13,7 @@ using size_t = std::size_t;
 class IntBST
 {
     struct Node { int v; Node* L; Node* R; Node(int x): v(x), L(0), R(0) {} };
-    Node* root;
+    Node* rootk;
 
     void freeTree(Node* n)
     {
@@ -42,44 +41,44 @@ class IntBST
     {
         if (!n) return;
         walk(n->L, out);
-        out.push_back(n->v);
+        out.emplace_back(n->v);
         walk(n->R, out);
     }
 
     Node* leftmost(Node* n) const { while (n && n->L) n = n->L; return n; }
 
 public:
-    IntBST(): root(0) {}
-    ~IntBST() { freeTree(root); }
+    IntBST(): rootk(0) {}
+    ~IntBST() { freeTree(rootk); }
 
-    void insert(int x) { root = ins(root, x); }
-    bool contains(int x) const { return has(root, x); }
-    void inorder(vector<int>& out) const { walk(root, out); }
+    void insert(int x) { rootk = ins(rootk, x); }
+    bool contains(int x) const { return has(rootk, x); }
+    void inorder(vector<int>& out) const { walk(rootk, out); }
 
-    int& min() { return leftmost(root)->v; }
-    const int& min() const { return leftmost(root)->v; }
-    bool empty() const { return root == 0; }
+    int& min() { return leftmost(rootk)->v; }
+    const int& min() const { return leftmost(rootk)->v; }
+    bool empty() const { return rootk == 0; }
 };
 
 int main()
 {
     IntBST t;
-    string s;
-    while (cin >> s) {
-        if (s == "DONE") break;
-        t.insert(stoi(s));
+    string tok;
+    while (cin >> tok) {
+        if (tok == "DONE") break;
+        t.insert(stoi(tok));
     }
-    while (cin >> s) {
-        if (s == "DONE") break;
-        if (s == "CONTAINS") {
+    while (cin >> tok) {
+        if (tok == "DONE") break;
+        if (tok == "CONTAINS") {
             int x; cin >> x;
             cout << (t.contains(x) ? "YES" : "NO") << endl;
-        } else if (s == "MIN") {
+        } else if (tok == "MIN") {
             if (t.empty()) cout << "EMPTY" << endl;
             else cout << t.min() << endl;
-        } else if (s == "PRINT") {
+        } else if (tok == "PRINT") {
             vector<int> v; t.inorder(v);
-            for (size_t i = 0; i < v.size(); ++i) {
+            for (size_t i = 0; i < v.size(); i++) {
                 if (i) cout << ' ';
                 cout << v[i];
             }

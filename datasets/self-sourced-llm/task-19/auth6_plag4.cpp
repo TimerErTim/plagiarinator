@@ -1,40 +1,39 @@
-#include <string>
 #include <iostream>
-#include <vector>
+#include <string>
 #include <utility>
-// quick submit
+#include <vector>
 
 class StringBuilder {
-    std::string word_;
+    std::string text_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : word_(std::move(o.word_)) {}
+    StringBuilder(StringBuilder&& o) noexcept : text_(std::move(o.text_)) {}
     StringBuilder& operator=(StringBuilder&& o) noexcept {
-        word_ = std::move(o.word_);
+        text_ = std::move(o.text_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) { word_ += s; return *this; }
-    StringBuilder& append(std::string&& s) { word_ += std::move(s); return *this; }
+    StringBuilder& append(const std::string& s) { text_ += s; return *this; }
+    StringBuilder& append(std::string&& s) { text_ += std::move(s); return *this; }
     StringBuilder& append_line(const std::string& s) { return append(s).append("\n"); }
-    const std::string& str() const { return word_; }
-    void clear() { word_.clear(); }
+    const std::string& str() const { return text_; }
+    void clear() { text_.clear(); }
 };
 
 int main() {
-    StringBuilder ref;
-    std::string word;
+    StringBuilder doc;
+    std::string tok;
 
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word != "SECTION") continue;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        if (tok != "SECTION") continue;
 
-        std::string hdr;
-        std::getline(std::cin, hdr);
-        hdr.erase(0, hdr.find_first_not_of(' '));
+        std::string title;
+        std::getline(std::cin, title);
+        title.erase(0, title.find_first_not_of(' '));
 
         std::vector<std::string> lines;
         std::string ln;
@@ -43,14 +42,14 @@ int main() {
             lines.push_back(ln);
         }
 
-        StringBuilder tmp;
-        tmp.append("# ").append(hdr).append_line("");
-        for (const auto& l : lines) tmp.append_line(l);
-        tmp.append_line("");
+        StringBuilder section;
+        section.append("# ").append(title).append_line("");
+        for (const auto& l : lines) section.append_line(l);
+        section.append_line("");
 
-        ref.append(std::move(tmp.str()));
+        doc.append(std::move(section.str()));
     }
 
-    std::cout << ref.str();
+    std::cout << doc.str();
     return 0;
 }

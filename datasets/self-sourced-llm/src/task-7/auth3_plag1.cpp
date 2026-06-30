@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <iostream>
+#include <vector>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <vector>
-// cleaned up version
+#include <iomanip>
+#include <iostream>
 
 class Vehicle {
 public:
@@ -66,24 +65,24 @@ int main() {
         parser >> mode;
         std::unique_ptr<Vehicle> vehicle = create_vehicle(mode, parser);
         if (!vehicle) {
-            std::cout << "ERROR" << std::endl;
+            std::cout << "ERROR\n";
             continue;
         }
         double km;
         parser >> km;
-        tripLog.push_back({std::move(vehicle), km});
+        tripLog.emplace_back(TripRecord{std::move(vehicle), km});
     }
 
     double total = 0.0;
-    for (std::size_t idx = 0; idx < tripLog.size(); ++idx) {
+    for (std::size_t idx = 0; idx < tripLog.size(); idx++) {
         double liters = tripLog[idx].vehicle->fuel_needed(tripLog[idx].distance);
         total += liters;
         std::cout << "Trip " << (idx + 1) << ": "
                   << tripLog[idx].vehicle->type()
                   << " needs " << std::fixed << std::setprecision(2)
-                  << liters << " liters" << std::endl;
+                  << liters << " liters\n";
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2)
-              << total << " liters" << std::endl;
+              << total << " liters\n";
     return 0;
 }

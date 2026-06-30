@@ -1,10 +1,9 @@
 #include <memory>
-#include <iostream>
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
-// quick submit
+#include <vector>
+#include <iostream>
 
 struct GraphNode {
     std::string label;
@@ -12,15 +11,15 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> mapv_;
 
     std::shared_ptr<GraphNode> lookupOrMake(const std::string& lbl) {
-        auto found = ref_.find(lbl);
-        if (found != ref_.end())
+        auto found = mapv_.find(lbl);
+        if (found != mapv_.end())
             return found->second;
         std::shared_ptr<GraphNode> fresh = std::make_shared<GraphNode>();
         fresh->label = lbl;
-        ref_.emplace(lbl, fresh);
+        mapv_.emplace(lbl, fresh);
         return fresh;
     }
 
@@ -50,30 +49,30 @@ public:
     }
 
     bool query(const std::string& src, const std::string& dst) const {
-        auto pos = ref_.find(src);
-        if (pos == ref_.end()) return false;
+        auto pos = mapv_.find(src);
+        if (pos == mapv_.end()) return false;
         std::unordered_set<std::string> marks;
         return walk(pos->second, dst, marks);
     }
 };
 
 int main() {
-    Graph ref;
+    Graph G;
     std::string op;
     while (std::cin >> op) {
         if (op == "END") break;
         else if (op == "ADD_NODE") {
             std::string n;
             std::cin >> n;
-            ref.addNode(n);
+            G.addNode(n);
         } else if (op == "ADD_EDGE") {
             std::string a, b;
             std::cin >> a >> b;
-            ref.addEdge(a, b);
+            G.addEdge(a, b);
         } else if (op == "QUERY") {
             std::string a, b;
             std::cin >> a >> b;
-            if (ref.query(a, b))
+            if (G.query(a, b))
                 std::cout << "REACHABLE\n";
             else
                 std::cout << "UNREACHABLE\n";

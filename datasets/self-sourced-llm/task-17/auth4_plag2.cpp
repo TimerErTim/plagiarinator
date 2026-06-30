@@ -1,22 +1,25 @@
-#include <vector>
-#include <type_traits>
-#include <string>
-#include <iostream>
 #include <algorithm>
-// adapted from classmate submission
+#include <iostream>
+#include <string>
+#include <type_traits>
+#include <vector>
 
-namespace util {
+namespace util
+{
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
+sort_values(std::vector<T>& data)
+{
     std::sort(data.begin(), data.end());
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& a, const T& b) {
+sort_values(std::vector<T>& data)
+{
+    std::sort(data.begin(), data.end(), [](const T& a, const T& b)
+    {
         if (a.size() < b.size()) return true;
         if (b.size() < a.size()) return false;
         return a < b;
@@ -25,18 +28,12 @@ sort_values(std::vector<T>& data) {
 
 }  // namespace util
 
-void emit_doubles(std::vector<double>& v) {
+template <typename T>
+void printSorted(std::vector<T>& v)
+{
     util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
-    }
-    std::cout << '\n';
-}
-
-void emit_strings(std::vector<std::string>& v) {
-    util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
+    for (std::size_t i = 0; i < v.size(); ++i)
+    {
         if (i) std::cout << ' ';
         std::cout << v[i];
     }
@@ -45,17 +42,20 @@ void emit_strings(std::vector<std::string>& v) {
 
 int main()
 {
-    std::string tag;
+    std::string mode;
     std::size_t n;
-    std::cin >> tag >> n;
-    if (tag == "NUM") {
+    std::cin >> mode >> n;
+    if (mode == "NUM")
+    {
         std::vector<double> buf(n);
         for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_doubles(buf);
-    } else {
+        printSorted(buf);
+    }
+    else
+    {
         std::vector<std::string> buf(n);
         for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_strings(buf);
+        printSorted(buf);
     }
     return 0;
 }

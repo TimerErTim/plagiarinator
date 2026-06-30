@@ -1,10 +1,9 @@
+#include <vector>
+#include <memory>
+#include <string>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 class Shape {
 public:
@@ -44,7 +43,7 @@ public:
 void print_shape(const Shape& s) {
     std::cout << std::fixed << std::setprecision(4)
               << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << ", perimeter=" << s.perimeter() << std::endl;
 }
 
 void accumulate(const Shape& s, double& ar, double& pr) {
@@ -60,7 +59,7 @@ int main() {
         else if (t == "TRI") { double s; std::cin >> s; v.emplace_back(std::make_unique<Triangle>(s)); }
     }
     double A=0,P=0;
-    for (auto& p : v) { print_shape(*p); accumulate(*p,A,P); }
+    for (std::size_t i = 0; i < v.size(); i++) { print_shape(*v[i]); accumulate(*v[i],A,P); }
     std::cout << std::fixed << std::setprecision(4)
               << "TOTAL area=" << A << std::endl << "TOTAL perimeter=" << P << std::endl;
     return 0;

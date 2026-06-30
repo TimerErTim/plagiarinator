@@ -1,11 +1,10 @@
+#include <sstream>
+#include <vector>
+#include <memory>
+#include <string>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <vector>
-// cleaned up version
 
 class Shape {
 public:
@@ -51,7 +50,7 @@ public:
 void print_shape(const Shape& shapeRef) {
     std::cout << std::fixed << std::setprecision(4)
               << shapeRef.name() << ": area=" << shapeRef.area()
-              << ", perimeter=" << shapeRef.perimeter() << std::endl;
+              << ", perimeter=" << shapeRef.perimeter() << '\n';
 }
 
 void accumulate(const Shape& shapeRef, double& areaSum, double& perimeterSum) {
@@ -64,28 +63,28 @@ int main() {
     input << std::cin.rdbuf();
 
     std::vector<std::unique_ptr<Shape>> shapes;
-    std::string token;
-    while (input >> token && token != "DONE") {
-        if (token == "CIRCLE") {
+    std::string command;
+    while (input >> command && command != "DONE") {
+        if (command == "CIRCLE") {
             double r; input >> r;
             shapes.emplace_back(std::make_unique<Circle>(r));
-        } else if (token == "RECT") {
+        } else if (command == "RECT") {
             double w, h; input >> w >> h;
             shapes.emplace_back(std::make_unique<Rectangle>(w, h));
-        } else if (token == "TRI") {
+        } else if (command == "TRI") {
             double s; input >> s;
             shapes.emplace_back(std::make_unique<Triangle>(s));
         }
     }
 
-    double areaSum = 0.0, periSum = 0.0;
-    for (const auto& ptr : shapes) {
-        print_shape(*ptr);
-        accumulate(*ptr, areaSum, periSum);
+    double totalArea = 0.0, totalPerimeter = 0.0;
+    for (std::size_t i = 0; i < shapes.size(); i++) {
+        print_shape(*shapes[i]);
+        accumulate(*shapes[i], totalArea, totalPerimeter);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << areaSum << std::endl
-              << "TOTAL perimeter=" << periSum << std::endl;
+              << "TOTAL area=" << totalArea << '\n'
+              << "TOTAL perimeter=" << totalPerimeter << '\n';
     return 0;
 }

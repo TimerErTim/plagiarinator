@@ -1,6 +1,6 @@
-#include <utility>
 #include <iostream>
-// TODO: refactor later
+#include <utility>
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
@@ -10,7 +10,7 @@ class Vector {
 
     void reallocate(std::size_t new_room) {
         T* tmp = new T[new_room];
-        for (std::size_t i = 0; i < length; ++i) tmp[i] = storage[i];
+        for (std::size_t i = length; i-- > 0;) tmp[i] = storage[i];
         delete[] storage;
         storage = tmp;
         room = new_room;
@@ -57,8 +57,8 @@ public:
     const T* data() const { return storage; }
 };
 
-bool seen(const Vector<int>& vec, int target) {
-    for (std::size_t i = 0; i < vec.size(); ++i)
+bool contains(const Vector<int>& vec, int target) {
+    for (std::size_t i = vec.size(); i-- > 0;)
         if (vec[i] == target) return true;
     return false;
 }
@@ -66,22 +66,22 @@ bool seen(const Vector<int>& vec, int target) {
 int main() {
     std::size_t n;
     std::cin >> n;
-    Vector<int> buf;
+    Vector<int> input;
     for (std::size_t i = 0; i < n; ++i) {
         int x;
         std::cin >> x;
-        buf.push_back(x);
+        input.push_back(x);
     }
 
     Vector<int> filtered;
-    for (std::size_t i = 0; i < buf.size(); ++i) {
-        if (!seen(filtered, buf[i]))
-            filtered.push_back(buf[i]);
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        if (!contains(filtered, input[i]))
+            filtered.push_back(input[i]);
     }
 
     long long total = 0, mult = 1;
     const long long MOD = 1'000'000'007LL;
-    for (std::size_t i = 0; i < filtered.size(); ++i) {
+    for (std::size_t i = filtered.size(); i-- > 0;) {
         total += filtered[i];
         mult = (mult * filtered[i]) % MOD;
     }

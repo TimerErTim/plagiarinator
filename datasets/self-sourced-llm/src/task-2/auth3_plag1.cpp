@@ -1,33 +1,32 @@
-#include <iostream>
 #include <sstream>
+#include <iostream>
 #include <string>
-// cleaned up version
 
 template <typename T>
 class LinkedList {
     struct Node {
         T data;
-        Node* link;
-        explicit Node(const T& v) : data(v), link(nullptr) {}
+        Node* succ;
+        explicit Node(const T& v) : data(v), succ(nullptr) {}
     };
 
-    Node* first;
-    std::size_t len;
+    Node* headCell;
+    std::size_t count;
 
-    Node* tailNode() const {
-        if (!first) return nullptr;
-        Node* p = first;
-        while (p->link) p = p->link;
+    Node* findTail() const {
+        if (!headCell) return nullptr;
+        Node* p = headCell;
+        while (p->succ) p = p->succ;
         return p;
     }
 
 public:
-    LinkedList() : first(nullptr), len(0) {}
+    LinkedList() : headCell(nullptr), count(0) {}
 
     ~LinkedList() {
-        Node* walk = first;
+        Node* walk = headCell;
         while (walk) {
-            Node* nxt = walk->link;
+            Node* nxt = walk->succ;
             delete walk;
             walk = nxt;
         }
@@ -35,23 +34,26 @@ public:
 
     void push_back(const T& item) {
         Node* fresh = new Node(item);
-        if (!first) first = fresh;
-        else tailNode()->link = fresh;
-        ++len;
+        if (!headCell) headCell = fresh;
+        else findTail()->succ = fresh;
+        count++;
     }
 
-    std::size_t size() const { return len; }
+    void emplace_back(const T& item) { push_back(item); }
+
+    std::size_t size() const { return count; }
 
     class Iterator {
-        Node* ptr;
+        Node* iter;
     public:
-        Iterator(Node* n, bool) : ptr(n) {}
-        const T& operator*() const { return ptr->data; }
-        Iterator& operator++() { ptr = ptr->link; return *this; }
-        bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
+        Iterator(Node* n, bool) : iter(n) {}
+        const T& operator*() const { return iter->data; }
+        Iterator& operator++() { iter = iter->succ; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+        bool operator!=(const Iterator& other) const { return iter != other.iter; }
     };
 
-    Iterator begin() const { return Iterator(first, true); }
+    Iterator begin() const { return Iterator(headCell, true); }
     Iterator end() const { return Iterator(nullptr, true); }
 };
 
@@ -61,15 +63,15 @@ LinkedList<T> merge_sorted(const LinkedList<T>& xs, const LinkedList<T>& ys) {
     auto ix = xs.begin(), iy = ys.begin();
     while (ix != xs.end() && iy != ys.end()) {
         if (*ix <= *iy) {
-            merged.push_back(*ix);
+            merged.emplace_back(*ix);
             ++ix;
         } else {
             merged.push_back(*iy);
             ++iy;
         }
     }
-    for (; ix != xs.end(); ++ix) merged.push_back(*ix);
-    for (; iy != ys.end(); ++iy) merged.push_back(*iy);
+    for (; ix != xs.end(); ++ix) merged.emplace_back(*ix);
+    for (; iy != ys.end(); iy++) merged.push_back(*iy);
     return merged;
 }
 
@@ -80,7 +82,7 @@ LinkedList<int> loadList(std::istream& in) {
     std::istringstream parser(row);
     int num;
     while (parser >> num)
-        lst.push_back(num);
+        lst.emplace_back(num);
     return lst;
 }
 

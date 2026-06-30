@@ -1,41 +1,35 @@
-#include <vector>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <functional>
-// adapted from classmate submission
-
-using std::cin;
-using std::cout;
-using std::endl;
-using std::fixed;
-using std::function;
-using std::move;
-using std::pair;
-using std::setprecision;
-using std::string;
-using std::vector;
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
 
 class Sensor
 {
     double val;
-    vector<pair<string, function<void(double)>>> observers;
+    std::vector<std::pair<std::string, std::function<void(double)>>> observers;
+
+    void emit(double celsius)
+    {
+        for (auto& ob : observers)
+        {
+            std::cout << std::fixed << std::setprecision(1)
+                      << "[" << ob.first << "] temp=" << celsius << std::endl;
+            if (ob.second)
+                ob.second(celsius);
+        }
+    }
 
 public:
-    void subscribe(const string& name, function<void(double)> cb)
+    void subscribe(const std::string& name, std::function<void(double)> cb)
     {
-        observers.emplace_back(name, move(cb));
+        observers.emplace_back(name, std::move(cb));
     }
 
     void set_value(double celsius)
     {
         val = celsius;
-        for (auto& ob : observers)
-{
-            cout << fixed << setprecision(1)
-                 << "[" << ob.first << "] temp=" << val << endl;
-            if (ob.second) ob.second(val);
-        }
+        emit(val);
     }
 
     double value() const { return val; }
@@ -44,16 +38,20 @@ public:
 int main()
 {
     Sensor s;
-    string op;
-    while (cin >> op)
-{
-        if (op == "END") break;
-        if (op == "SUB")
-{
-            string n; cin >> n;
+    std::string cmd;
+    while (std::cin >> cmd)
+    {
+        if (cmd == "END") break;
+        if (cmd == "SUB")
+        {
+            std::string n;
+            std::cin >> n;
             s.subscribe(n, [](double) {});
-        } else if (op == "SET") {
-            double t; cin >> t;
+        }
+        else if (cmd == "SET")
+        {
+            double t;
+            std::cin >> t;
             s.set_value(t);
         }
     }

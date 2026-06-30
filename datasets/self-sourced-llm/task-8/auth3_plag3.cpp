@@ -1,63 +1,57 @@
-#include <vector>
 #include <iostream>
-// TODO: refactor later
+#include <vector>
+// same idea as tutorial solution, renamed a bit
 
 template <typename T>
 class Matrix {
-    std::size_t rowCount_;
-    std::size_t colCount_;
-    std::vector<T> ref;
+    std::size_t height, width;
+    std::vector<T> cells;
 
-    static bool compatibleMultiply(std::size_t aCols, std::size_t bRows) {
-        return aCols == bRows;
+    static bool canMul(std::size_t leftCols, std::size_t rightRows) {
+        return leftCols == rightRows;
     }
 
 public:
     Matrix(std::size_t rows, std::size_t cols)
-        : rowCount_(rows), colCount_(cols), ref(rows * cols, T{}) {}
+        : height(rows), width(cols), cells(rows * cols, T()) {}
 
-    T& operator()(std::size_t r, std::size_t c) {
-        return ref[r * colCount_ + c];
+    T& operator()(std::size_t r, std::size_t c) { return cells[r * width + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return cells[r * width + c]; }
+
+    std::size_t rows() const { return height; }
+    std::size_t cols() const { return width; }
+
+    Matrix operator+(const Matrix& peer) const {
+        Matrix tmp(height, width);
+        for (std::size_t i = cells.size(); i-- > 0;)
+            tmp.cells[i] = cells[i] + peer.cells[i];
+        return tmp;
     }
 
-    const T& operator()(std::size_t r, std::size_t c) const {
-        return ref[r * colCount_ + c];
-    }
-
-    std::size_t rows() const { return rowCount_; }
-    std::size_t cols() const { return colCount_; }
-
-    Matrix operator+(const Matrix& rhs) const {
-        Matrix result(rowCount_, colCount_);
-        for (std::size_t idx = 0; idx < ref.size(); ++idx)
-            result.ref[idx] = ref[idx] + rhs.ref[idx];
-        return result;
-    }
-
-    Matrix operator*(const Matrix& rhs) const {
-        if (!compatibleMultiply(colCount_, rhs.rowCount_))
-            return Matrix(0, 0); // signal via empty - handled in main
-        Matrix product(rowCount_, rhs.colCount_);
-        for (std::size_t i = 0; i < rowCount_; ++i) {
-            for (std::size_t j = 0; j < rhs.colCount_; ++j) {
-                T acc = T{};
-                for (std::size_t k = 0; k < colCount_; ++k)
-                    acc += (*this)(i, k) * rhs(k, j);
-                product(i, j) = acc;
+    Matrix operator*(const Matrix& peer) const {
+        if (!canMul(width, peer.height))
+            return Matrix(0, 0);
+        Matrix tmp(height, peer.width);
+        for (std::size_t i = 0; i < height; ++i) {
+            for (std::size_t j = 0; j < peer.width; ++j) {
+                T total = T();
+                for (std::size_t k = width; k-- > 0;)
+                    total += (*this)(i, k) * peer(k, j);
+                tmp(i, j) = total;
             }
         }
-        return product;
+        return tmp;
     }
 
-    bool valid() const { return rowCount_ > 0 || colCount_ > 0 || ref.empty(); }
+    bool valid() const { return height > 0 || width > 0 || cells.empty(); }
 
     friend std::ostream& operator<<(std::ostream& out, const Matrix& mat) {
-        for (std::size_t i = 0; i < mat.rowCount_; ++i) {
-            for (std::size_t j = 0; j < mat.colCount_; ++j) {
+        for (std::size_t i = 0; i < mat.height; ++i) {
+            for (std::size_t j = 0; j < mat.width; ++j) {
                 if (j > 0) out << ' ';
                 out << mat(i, j);
             }
-            out << '\n';
+            out << std::endl;
         }
         return out;
     }
@@ -75,13 +69,12 @@ Matrix<T> loadMatrix(std::istream& in) {
 }
 
 int main() {
-    Matrix<int> A = loadMatrix<int>(std::cin);
-    Matrix<int> B = loadMatrix<int>(std::cin);
-    if (A.cols() != B.rows()) {
+    Matrix<int> lhs = loadMatrix<int>(std::cin);
+    Matrix<int> rhs = loadMatrix<int>(std::cin);
+    if (lhs.cols() != rhs.rows()) {
         std::cout << "ERROR\n";
         return 0;
     }
-    Matrix<int> C = A * B + A;
-    std::cout << C;
+    std::cout << lhs * rhs + lhs;
     return 0;
 }

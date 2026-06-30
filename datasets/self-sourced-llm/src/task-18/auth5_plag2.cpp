@@ -1,11 +1,11 @@
-#include <string>
-#include <memory>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
 
 class Parser;
 
-struct State {
+struct State
+{
     virtual ~State() = default;
     virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
 };
@@ -14,68 +14,96 @@ struct HeaderState;
 struct BodyState;
 struct DoneState;
 
-class Parser {
+class Parser
+{
 public:
     std::unique_ptr<State> state;
     int info = 0, warn = 0, error = 0, rejected = 0;
 
-    static bool decode(const std::string& line, std::string& level) {
+    static bool decode(const std::string& line, std::string& level)
+    {
         auto rb = line.find(']');
         if (line.empty() || line[0] != '[' || rb == std::string::npos) return false;
         level = line.substr(1, rb - 1);
         return level == "INFO" || level == "WARN" || level == "ERROR";
     }
 
-    void mark(const std::string& level) {
+    void mark(const std::string& level)
+    {
         if (level == "INFO") ++info;
         else if (level == "WARN") ++warn;
         else ++error;
     }
 };
 
-struct DoneState : State {
-    std::unique_ptr<State> handle(Parser&, const std::string&) override {
+struct DoneState : State
+{
+    std::unique_ptr<State> handle(Parser&, const std::string&) override
+    {
         return std::unique_ptr<State>(new DoneState());
     }
 };
 
-struct BodyState : State {
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override {
-        if (line == "END") return std::unique_ptr<State>(new DoneState());
-        std::string lvl;
-        if (Parser::decode(line, lvl)) {
-            ctx.mark(lvl);
-            return std::unique_ptr<State>(new BodyState());
-        }
-        ++ctx.rejected;
-        return std::unique_ptr<State>(new BodyState());
-    }
+struct BodyState : State
+{
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-struct HeaderState : State {
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override {
-        if (line == "END") return std::unique_ptr<State>(new DoneState());
-        std::string lvl;
-        if (Parser::decode(line, lvl)) {
-            ctx.mark(lvl);
-            return std::unique_ptr<State>(new BodyState());
-        }
-        ++ctx.rejected;
-        return std::unique_ptr<State>(new HeaderState());
-    }
+struct HeaderState : State
+{
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
+
+static std::unique_ptr<State> make_done()
+{
+    return std::unique_ptr<State>(new DoneState());
+}
+
+static std::unique_ptr<State> make_body()
+{
+    return std::unique_ptr<State>(new BodyState());
+}
+
+static std::unique_ptr<State> make_header()
+{
+    return std::unique_ptr<State>(new HeaderState());
+}
+
+static std::unique_ptr<State> handle_line(Parser& ctx, const std::string& line, bool in_body)
+{
+    if (line == "END") return make_done();
+    std::string lvl;
+    if (Parser::decode(line, lvl))
+    {
+        ctx.mark(lvl);
+        return make_body();
+    }
+    ++ctx.rejected;
+    if (in_body) return make_body();
+    return make_header();
+}
+
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line)
+{
+    return handle_line(ctx, line, true);
+}
+
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line)
+{
+    return handle_line(ctx, line, false);
+}
 
 int main()
 {
-    Parser machine;
-    machine.state = std::make_unique<HeaderState>();
-    std::string input;
-    while (std::getline(std::cin, input))
-        machine.state = machine.state->handle(machine, input);
+    Parser ctx;
+    ctx.state = std::make_unique<HeaderState>();
+    std::string row;
+    while (std::getline(std::cin, row))
+        ctx.state = ctx.state->handle(ctx, row);
 
-    std::cout << "INFO: " << machine.info << '\n';
-    std::cout << "WARN: " << machine.warn << '\n';
-    std::cout << "ERROR: " << machine.error << '\n';
-    std::cout << "REJECTED: " << machine.rejected << '\n';
+    std::cout << "INFO: " << ctx.info << '\n';
+    std::cout << "WARN: " << ctx.warn << '\n';
+    std::cout << "ERROR: " << ctx.error << '\n';
+    std::cout << "REJECTED: " << ctx.rejected << '\n';
     return 0;
 }

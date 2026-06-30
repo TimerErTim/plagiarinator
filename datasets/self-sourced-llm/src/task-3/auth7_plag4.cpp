@@ -1,10 +1,9 @@
 #include <memory>
-#include <iostream>
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
-// quick submit
+#include <vector>
+#include <iostream>
 
 struct GraphNode {
     std::string label;
@@ -12,15 +11,15 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> vertsv_;
 
     std::shared_ptr<GraphNode> nodeFor(const std::string& tag) {
-        if (ref_.find(tag) == ref_.end()) {
+        if (vertsv_.find(tag) == vertsv_.end()) {
             auto sp = std::make_shared<GraphNode>();
             sp->label = tag;
-            ref_[tag] = sp;
+            vertsv_[tag] = sp;
         }
-        return ref_[tag];
+        return vertsv_[tag];
     }
 
     static bool dfs(const std::shared_ptr<GraphNode>& v,
@@ -40,8 +39,8 @@ public:
         nodeFor(x)->edges.push_back(nodeFor(y));
     }
     bool query(const std::string& x, const std::string& y) const {
-        auto p = ref_.find(x);
-        if (p == ref_.end()) return false;
+        auto p = vertsv_.find(x);
+        if (p == vertsv_.end()) return false;
         std::unordered_set<std::string> vis;
         return dfs(p->second, y, vis);
     }

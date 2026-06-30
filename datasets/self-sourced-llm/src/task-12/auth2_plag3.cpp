@@ -1,10 +1,10 @@
 #include <vector>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
 #include <variant>
-// TODO: refactor later
+#include <string>
+#include <stdexcept>
+#include <sstream>
+#include <iostream>
+// borrowed from roommate's homework
 
 struct Number { int value; };
 struct Add { int a, b; };
@@ -14,7 +14,7 @@ struct Div { int a, b; };
 
 using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
-int run_eval(const Expr& node) {
+int evaluate(const Expr& node) {
     return std::visit(
         [](auto&& n) -> int {
             using T = std::decay_t<decltype(n)>;
@@ -35,37 +35,37 @@ bool is_op(const std::string& s) {
 }
 
 void run_postfix(const std::string& text) {
-    std::vector<Expr> stk;
-    std::istringstream in(text);
-    std::string piece;
-    while (in >> piece) {
-        if (is_op(piece)) {
-            if (stk.size() < 2) return;
-            Expr rhs = stk.back(); stk.pop_back();
-            Expr lhs = stk.back(); stk.pop_back();
-            int rv = run_eval(rhs);
-            int lv = run_eval(lhs);
-            char op = piece[0];
-            if (op == '+') stk.emplace_back(Add{lv, rv});
-            else if (op == '-') stk.emplace_back(Sub{lv, rv});
-            else if (op == '*') stk.emplace_back(Mul{lv, rv});
-            else stk.emplace_back(Div{lv, rv});
+    std::vector<Expr> pile;
+    std::istringstream rd(text);
+    std::string item;
+    while (rd >> item) {
+        if (is_op(item)) {
+            if (pile.size() < 2) return;
+            Expr rhs = pile.back(); pile.pop_back();
+            Expr lhs = pile.back(); pile.pop_back();
+            int rv = evaluate(rhs);
+            int lv = evaluate(lhs);
+            char op = item[0];
+            if (op == '+') pile.emplace_back(Add{lv, rv});
+            else if (op == '-') pile.emplace_back(Sub{lv, rv});
+            else if (op == '*') pile.emplace_back(Mul{lv, rv});
+            else pile.emplace_back(Div{lv, rv});
         } else {
-            stk.emplace_back(Number{std::stoi(piece)});
+            pile.emplace_back(Number{std::stoi(item)});
         }
     }
-    if (stk.empty()) return;
+    if (pile.empty()) return;
     try {
-        std::cout << run_eval(stk.back()) << '\n';
+        std::cout << evaluate(pile.back()) << std::endl;
     } catch (...) {
         std::cout << "ERROR\n";
     }
 }
 
 int main() {
-    for (std::string buf; std::getline(std::cin, buf);) {
-        if (buf.empty()) break;
-        run_postfix(buf);
+    for (std::string row; std::getline(std::cin, row);) {
+        if (row.empty()) break;
+        run_postfix(row);
     }
     return 0;
 }

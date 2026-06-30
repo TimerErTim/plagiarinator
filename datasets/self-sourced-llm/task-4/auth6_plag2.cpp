@@ -1,49 +1,55 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 // adapted from classmate submission
 
-class FileWriter {
-    std::ofstream stream_;
-    std::string fname_;
+class FileWriter
+{
+    std::ofstream outStream;
+    std::string filePath;
 
 public:
     explicit FileWriter(const std::string& path)
-        : fname_(path), stream_(path) {}
+        : filePath(path), outStream(path) {}
 
-    ~FileWriter() {
-        if (stream_.is_open())
-            stream_.close();
+    ~FileWriter()
+    {
+        if (outStream.is_open())
+            outStream.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& moved) noexcept
-        : stream_(std::move(moved.stream_)),
-          fname_(std::move(moved.fname_)) {}
+        : outStream(std::move(moved.outStream)),
+          filePath(std::move(moved.filePath)) {}
 
-    FileWriter& operator=(FileWriter&& moved) noexcept {
+    FileWriter& operator=(FileWriter&& moved) noexcept
+    {
         if (this != &moved)
-{
-            if (stream_.is_open()) stream_.close();
-            stream_ = std::move(moved.stream_);
-            fname_ = std::move(moved.fname_);
+        {
+            if (outStream.is_open()) outStream.close();
+            outStream = std::move(moved.outStream);
+            filePath = std::move(moved.filePath);
         }
         return *this;
     }
 
-    void write_line(const std::string& content) {
-        stream_ << content << std::endl;
+    void write_line(const std::string& content)
+    {
+        outStream << content << std::endl;
     }
 };
 
-namespace grading {
-    char forScore(int score) {
+namespace grading
+{
+    char forScore(int score)
+    {
         if (score >= 90) return 'A';
         if (score >= 80) return 'B';
         if (score >= 70) return 'C';
@@ -52,35 +58,38 @@ namespace grading {
     }
 }
 
+static void writeReportBody(FileWriter& w, const std::vector<std::pair<std::string,int>>& roster)
+{
+    double runningTotal = 0.0;
+    for (std::size_t i = 0; i < roster.size(); ++i)
+    {
+        runningTotal += roster[i].second;
+        std::ostringstream lineBuilder;
+        lineBuilder << roster[i].first << ": " << roster[i].second
+                    << " [" << grading::forScore(roster[i].second) << "]";
+        w.write_line(lineBuilder.str());
+    }
+    std::ostringstream averageLine;
+    averageLine << std::fixed << std::setprecision(1)
+                << "Average: " << runningTotal / roster.size();
+    w.write_line(averageLine.str());
+}
+
 int main()
 {
-    struct Student { std::string name; int score; };
-    std::vector<Student> roster;
+    std::vector<std::pair<std::string,int>> roster;
     std::string inputLine;
-    while (std::getline(std::cin, inputLine)) {
+    while (std::getline(std::cin, inputLine))
+    {
         std::size_t delim = inputLine.find(',');
         roster.push_back({inputLine.substr(0, delim),
                           std::stoi(inputLine.substr(delim + 1))});
     }
 
-    FileWriter fw("report.txt");
-    fw.write_line("Student Report");
-    fw.write_line("--------------");
-
-    double runningTotal = 0.0;
-    for (const Student& s : roster)
-{
-        runningTotal += s.score;
-        std::ostringstream lineBuilder;
-        lineBuilder << s.name << ": " << s.score
-                    << " [" << grading::forScore(s.score) << "]";
-        fw.write_line(lineBuilder.str());
-    }
-
-    std::ostringstream averageLine;
-    averageLine << std::fixed << std::setprecision(1)
-                << "Average: " << runningTotal / roster.size();
-    fw.write_line(averageLine.str());
+    FileWriter writer("report.txt");
+    writer.write_line("Student Report");
+    writer.write_line("--------------");
+    writeReportBody(writer, roster);
 
     std::cout << "Report written to report.txt" << std::endl;
     return 0;

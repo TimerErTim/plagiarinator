@@ -1,10 +1,9 @@
 #include <memory>
-#include <iostream>
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
-// quick submit
+#include <vector>
+#include <iostream>
 
 struct GraphNode {
     std::string label;
@@ -12,14 +11,14 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> nodesv_;
 
     std::shared_ptr<GraphNode> getOrCreate(const std::string& name) {
-        auto it = ref_.find(name);
-        if (it != ref_.end()) return it->second;
+        auto it = nodesv_.find(name);
+        if (it != nodesv_.end()) return it->second;
         auto node = std::make_shared<GraphNode>();
         node->label = name;
-        ref_[name] = node;
+        nodesv_[name] = node;
         return node;
     }
 
@@ -44,8 +43,8 @@ public:
     }
 
     bool query(const std::string& from, const std::string& to) const {
-        auto it = ref_.find(from);
-        if (it == ref_.end()) return false;
+        auto it = nodesv_.find(from);
+        if (it == nodesv_.end()) return false;
         std::unordered_set<std::string> visited;
         return dfsReach(it->second, to, visited);
     }
@@ -53,21 +52,21 @@ public:
 
 int main() {
     Graph g;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "ADD_NODE") {
+    std::string cmd_v;
+    while (std::cin >> cmd_v) {
+        if (cmd_v == "END") break;
+        if (cmd_v == "ADD_NODE") {
             std::string name;
             std::cin >> name;
             g.addNode(name);
-        } else if (elem == "ADD_EDGE") {
+        } else if (cmd_v == "ADD_EDGE") {
             std::string u, v;
             std::cin >> u >> v;
             g.addEdge(u, v);
-        } else if (elem == "QUERY") {
+        } else if (cmd_v == "QUERY") {
             std::string u, v;
             std::cin >> u >> v;
-            std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

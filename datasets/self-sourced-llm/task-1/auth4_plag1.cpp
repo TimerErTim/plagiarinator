@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <cstring>
+#include <cctype>
+#include <algorithm>
 
 class StringBuffer {
 private:
@@ -60,25 +59,22 @@ public:
 };
 
 int main() {
-    std::vector<StringBuffer> lines;
-    char buf[256];
-    while (std::cin.getline(buf, 256)) {
-        lines.emplace_back(buf);
-    }
+    std::vector<StringBuffer> students;
+    char buffer[256];
+    while (std::cin.getline(buffer, 256))
+        students.emplace_back(buffer);
 
-    for (auto& tag : lines) {
-        tag.trim();
-    }
+    for (auto& name : students)
+        name.trim();
 
-    lines.erase(
-        std::remove_if(lines.begin(), lines.end(),
-            [](const StringBuffer& elem) { return elem.size() == 0; }),
-        lines.end());
+    students.erase(
+        std::remove_if(students.begin(), students.end(),
+            [](const StringBuffer& sb) { return sb.size() == 0; }),
+        students.end());
 
-    std::sort(lines.begin(), lines.end());
+    std::sort(students.begin(), students.end());
 
-    for (const StringBuffer& tag : lines) {
-        std::cout << tag.c_str() << std::endl;
-    }
+    for (const StringBuffer& name : students)
+        std::cout << name.c_str() << std::endl;
     return 0;
 }

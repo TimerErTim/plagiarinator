@@ -1,9 +1,9 @@
-#include <sstream>
 #include <iostream>
-#include <variant>
+#include <sstream>
 #include <string>
+#include <variant>
 #include <vector>
-// quick submit
+#include <stdexcept>
 
 struct Number { int value; };
 struct Add { std::size_t l, r; };
@@ -62,22 +62,22 @@ public:
 };
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str.empty()) break;
-        PostfixEngine eng;
-        std::istringstream ss(str);
+    std::string input;
+    while (std::getline(std::cin, input)) {
+        if (input.empty()) break;
+        PostfixEngine engine;
+        std::istringstream ss(input);
         std::string t;
         while (ss >> t) {
-            if (t == "+" || t == "-" || t == "*" || t == "/") eng.apply(t[0]);
-            else eng.push_num(std::stoi(t));
+            if (t == "+" || t == "-" || t == "*" || t == "/") engine.apply(t[0]);
+            else engine.push_num(std::stoi(t));
         }
         try {
-            std::cout << eng.eval_root() << '\n';
+            std::cout << engine.eval_root() << '\n';
         } catch (...) {
             std::cout << "ERROR\n";
         }
-        eng.reset();
+        engine.reset();
     }
     return 0;
 }

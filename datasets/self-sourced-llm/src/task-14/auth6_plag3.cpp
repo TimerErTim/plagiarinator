@@ -1,6 +1,6 @@
-#include <utility>
 #include <iostream>
-// TODO: refactor later
+#include <utility>
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
@@ -48,7 +48,7 @@ private:
         if (sz_ < cap_) return;
         std::size_t ncap = cap_ ? cap_ * 2 : 4;
         T* nptr = new T[ncap];
-        for (std::size_t i = 0; i < sz_; ++i) nptr[i] = ptr_[i];
+        for (std::size_t i = sz_; i-- > 0;) nptr[i] = ptr_[i];
         delete[] ptr_;
         ptr_ = nptr;
         cap_ = ncap;
@@ -69,14 +69,14 @@ int main() {
     Vector<int> uniq;
     for (std::size_t i = 0; i < src.size(); ++i) {
         bool hit = false;
-        for (std::size_t j = 0; j < uniq.size(); ++j)
+        for (std::size_t j = uniq.size(); j-- > 0;)
             if (uniq[j] == src[i]) { hit = true; break; }
         if (!hit) uniq.push_back(src[i]);
     }
 
     long long s = 0, p = 1;
     const long long M = 1000000007LL;
-    for (std::size_t i = 0; i < uniq.size(); ++i) {
+    for (std::size_t i = uniq.size(); i-- > 0;) {
         s += uniq[i];
         p = (p * uniq[i]) % M;
     }

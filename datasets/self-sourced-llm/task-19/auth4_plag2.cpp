@@ -1,9 +1,9 @@
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
-class StringBuilder {
+class StringBuilder
+{
 public:
     StringBuilder() = default;
     StringBuilder(StringBuilder&& other) noexcept;
@@ -14,63 +14,79 @@ public:
     StringBuilder& append(const std::string& s);
     StringBuilder& append(std::string&& s);
     StringBuilder& append_line(const std::string& s);
-    const std::string& str() const { return table_; }
-    void clear() { table_.clear(); }
+    const std::string& str() const { return data_; }
+    void clear() { data_.clear(); }
 
 private:
-    std::string table_;
+    std::string data_;
 };
 
-StringBuilder::StringBuilder(StringBuilder&& other) noexcept : table_(std::move(other.table_)) {
-    other.table_.clear();
+StringBuilder::StringBuilder(StringBuilder&& other) noexcept : data_(std::move(other.data_))
+{
+    other.data_.clear();
 }
 
-StringBuilder& StringBuilder::operator=(StringBuilder&& other) noexcept {
-    table_ = std::move(other.table_);
-    other.table_.clear();
+StringBuilder& StringBuilder::operator=(StringBuilder&& other) noexcept
+{
+    data_ = std::move(other.data_);
+    other.data_.clear();
     return *this;
 }
 
-StringBuilder& StringBuilder::append(const std::string& s) {
-    table_ += s;
+StringBuilder& StringBuilder::append(const std::string& s)
+{
+    data_ += s;
     return *this;
 }
 
-StringBuilder& StringBuilder::append(std::string&& s) {
-    table_ += std::move(s);
+StringBuilder& StringBuilder::append(std::string&& s)
+{
+    data_ += std::move(s);
     return *this;
 }
 
-StringBuilder& StringBuilder::append_line(const std::string& s) {
-    table_ += s;
-    table_ += '\n';
+StringBuilder& StringBuilder::append_line(const std::string& s)
+{
+    data_ += s;
+    data_ += '\n';
     return *this;
+}
+
+static void strip_leading(std::string& name)
+{
+    while (!name.empty() && name[0] == ' ') name.erase(0, 1);
+}
+
+static void parse_section(StringBuilder& output, std::istream& in)
+{
+    std::string name;
+    std::getline(in, name);
+    strip_leading(name);
+
+    StringBuilder chunk;
+    chunk.append("# ").append(name).append("\n");
+
+    std::string line;
+    while (std::getline(in, line) && !line.empty())
+        chunk.append_line(line);
+    chunk.append("\n");
+
+    output.append(std::move(chunk.str()));
 }
 
 int main()
 {
-    StringBuilder document;
+    StringBuilder output;
     std::string op;
 
-    while (std::cin >> op) {
+    while (std::cin >> op)
+    {
         if (op == "END") break;
         if (op != "SECTION") continue;
 
-        std::string name;
-        std::getline(std::cin, name);
-        while (!name.empty() && name[0] == ' ') name.erase(0, 1);
-
-        StringBuilder chunk;
-        chunk.append("# ").append(name).append("\n");
-
-        std::string input;
-        while (std::getline(std::cin, input) && !input.empty())
-            chunk.append_line(input);
-        chunk.append("\n");
-
-        document.append(std::move(chunk.str()));
+        parse_section(output, std::cin);
     }
 
-    std::cout << document.str();
+    std::cout << output.str();
     return 0;
 }

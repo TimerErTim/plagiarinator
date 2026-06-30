@@ -1,8 +1,7 @@
-#include <unordered_map>
-#include <string>
-#include <memory>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -10,30 +9,39 @@ struct Image {
 };
 
 class ImageCache {
-    std::unordered_map<std::string, std::weak_ptr<Image>> store_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> slot_map_;
 
-public:
-    std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        if (auto existing = store_[key].lock())
+    std::shared_ptr<Image> lookup_or_make(const std::string& key, int pixels)
+    {
+        if (auto existing = slot_map_[key].lock())
             return existing;
         auto img = std::make_shared<Image>(Image{key, pixels});
-        store_[key] = img;
+        slot_map_[key] = img;
         return img;
     }
 
-    std::size_t size() const {
+public:
+    std::shared_ptr<Image> load(const std::string& key, int pixels)
+    {
+        return lookup_or_make(key, pixels);
+    }
+
+    std::size_t size() const
+    {
         std::size_t alive = 0;
-        for (const auto& kv : store_)
+        for (const auto& kv : slot_map_)
             if (!kv.second.expired()) ++alive;
         return alive;
     }
 
-    void drop_all() { store_.clear(); }
+    void drop_all() { slot_map_.clear(); }
 
-    bool query_pixels(const std::string& key, int& out) const {
-        auto it = store_.find(key);
-        if (it == store_.end()) return false;
-        if (auto sp = it->second.lock()) {
+    bool query_pixels(const std::string& key, int& out) const
+    {
+        auto it = slot_map_.find(key);
+        if (it == slot_map_.end()) return false;
+        if (auto sp = it->second.lock())
+        {
             out = sp->pixel_count;
             return true;
         }
@@ -43,28 +51,34 @@ public:
 
 int main()
 {
-    ImageCache store;
-    std::string op;
-    while (std::cin >> op) {
-        if (op == "END") break;
-        if (op == "LOAD") {
-            std::string k;
-            int p;
-            std::cin >> k >> p;
+    ImageCache cache;
+    std::string cmd;
+    while (std::cin >> cmd)
+    {
+        if (cmd == "END") break;
+        if (cmd == "LOAD")
+        {
+            std::string key;
+            int px;
+            std::cin >> key >> px;
             {
-                auto ptr = store.load(k, p);
-                std::cout << "loaded " << ptr->name << " pixels=" << ptr->pixel_count << '\n';
+                auto img = cache.load(key, px);
+                std::cout << "loaded " << img->name << " pixels=" << img->pixel_count << '\n';
             }
-        } else if (op == "QUERY") {
-            std::string k;
-            std::cin >> k;
-            int p = 0;
-            if (store.query_pixels(k, p))
-                std::cout << "pixels=" << p << '\n';
+        }
+        else if (cmd == "QUERY")
+        {
+            std::string key;
+            std::cin >> key;
+            int px = 0;
+            if (cache.query_pixels(key, px))
+                std::cout << "pixels=" << px << '\n';
             else
                 std::cout << "EXPIRED\n";
-        } else if (op == "DROP_ALL") {
-            store.drop_all();
+        }
+        else if (cmd == "DROP_ALL")
+        {
+            cache.drop_all();
         }
     }
     return 0;

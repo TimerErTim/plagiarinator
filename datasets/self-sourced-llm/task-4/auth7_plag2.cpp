@@ -1,51 +1,63 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 // adapted from classmate submission
 
-class FileWriter {
-    std::ofstream stream_;
-    std::string path_;
+class FileWriter
+{
+    std::ofstream f_;
+    std::string p_;
 
 public:
-    explicit FileWriter(const std::string& p) : path_(p) { stream_.open(p); }
-    ~FileWriter() { if (stream_) stream_.close(); }
+    explicit FileWriter(const std::string& p) : p_(p) { f_.open(p); }
+    ~FileWriter() { if (f_) f_.close(); }
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
-    FileWriter(FileWriter&& x) noexcept : stream_(std::move(x.stream_)), path_(std::move(x.path_)) {}
-    FileWriter& operator=(FileWriter&& x) noexcept {
+    FileWriter(FileWriter&& x) noexcept : f_(std::move(x.f_)), p_(std::move(x.p_)) {}
+    FileWriter& operator=(FileWriter&& x) noexcept
+    {
         if (this != &x)
-{
-            if (stream_) stream_.close();
-            stream_ = std::move(x.stream_);
-            path_ = std::move(x.path_);
+        {
+            if (f_) f_.close();
+            f_ = std::move(x.f_);
+            p_ = std::move(x.p_);
         }
         return *this;
     }
-    void write_line(const std::string& l) { stream_ << l << '\n'; }
+    void write_line(const std::string& l) { f_ << l << '\n'; }
 };
+
+static char gradeChar(int score)
+{
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 70) return 'C';
+    if (score >= 60) return 'D';
+    return 'F';
+}
 
 int main()
 {
     std::vector<std::pair<std::string,int>> recs;
-    for (std::string s; std::getline(std::cin, s);) {
+    std::string s;
+    while (std::getline(std::cin, s))
+    {
         auto k = s.find(',');
-        recs.emplace_back(s.substr(0,k), std::stoi(s.substr(k+1)));
+        recs.push_back({s.substr(0,k), std::stoi(s.substr(k+1))});
     }
-    FileWriter fw = FileWriter("report.txt");
+    FileWriter fw("report.txt");
     fw.write_line("Student Report");
     fw.write_line("--------------");
     double tot = 0;
-    for (auto& r : recs)
-{
-        tot += r.second;
-        char g = r.second >= 90 ? 'A' : r.second >= 80 ? 'B'
-               : r.second >= 70 ? 'C' : r.second >= 60 ? 'D' : 'F';
-        fw.write_line(r.first + ": " + std::to_string(r.second) + " [" + g + "]");
+    for (std::size_t i = 0; i < recs.size(); ++i)
+    {
+        tot += recs[i].second;
+        fw.write_line(recs[i].first + ": " + std::to_string(recs[i].second)
+                      + " [" + gradeChar(recs[i].second) + "]");
     }
     std::ostringstream a;
     a << std::fixed << std::setprecision(1) << "Average: " << tot / recs.size();

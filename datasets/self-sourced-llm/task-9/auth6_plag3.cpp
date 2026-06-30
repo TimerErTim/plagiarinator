@@ -1,18 +1,18 @@
 #include <vector>
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
-#include <string>
+#include <iostream>
+#include <iomanip>
+#include <functional>
 #include <utility>
-// TODO: refactor later
+#include <string>
+// reused code from last semester project
 
-class Sensor {
-    double celsiusVal;
-    std::vector<std::pair<std::string, std::function<void(double)>>> callbacks;
+class EventSource {
+    double activeCelsius_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> listenerQueue_;
 
     void dispatch(double value) const {
-        for (const auto& pair : callbacks) {
+        for (const auto& pair : listenerQueue_) {
             std::cout << std::fixed << std::setprecision(1)
                       << "[" << pair.first << "] temp=" << value << std::endl;
             if (pair.second)
@@ -22,33 +22,33 @@ class Sensor {
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        callbacks.emplace_back(name, std::move(callback));
+        listenerQueue_.emplace_back(name, std::move(callback));
     }
 
     void set_value(double celsius) {
-        celsiusVal = celsius;
-        dispatch(celsiusVal);
+        activeCelsius_ = celsius;
+        dispatch(activeCelsius_);
     }
 
-    double value() const { return celsiusVal; }
+    double value() const { return activeCelsius_; }
 };
 
 int main() {
-    Sensor dev;
+    EventSource source;
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    std::string ln;
-    while (input >> ln) {
-        if (ln == "END") break;
-        if (ln == "SUB") {
+    std::string token;
+    while (input >> token) {
+        if (token == "END") break;
+        if (token == "SUB") {
             std::string name;
             input >> name;
-            dev.subscribe(name, [](double) {});
-        } else if (ln == "SET") {
+            source.subscribe(name, [](double) {});
+        } else if (token == "SET") {
             double temp;
             input >> temp;
-            dev.set_value(temp);
+            source.set_value(temp);
         }
     }
     return 0;

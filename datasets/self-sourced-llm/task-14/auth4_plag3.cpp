@@ -1,6 +1,7 @@
-#include <iostream>
 #include <algorithm>
-// TODO: refactor later
+#include <iostream>
+#include <utility>
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
@@ -10,7 +11,7 @@ class Vector {
     void reserve_more() {
         std::size_t new_cap = cap ? cap * 2 : 4;
         T* bigger = new T[new_cap];
-        std::copy(heap, heap + n, bigger);
+        for (std::size_t i = n; i-- > 0;) bigger[i] = heap[i];
         delete[] heap;
         heap = bigger;
         cap = new_cap;
@@ -55,10 +56,10 @@ public:
 };
 
 int main() {
-    std::size_t val;
-    std::cin >> val;
+    std::size_t k;
+    std::cin >> k;
     Vector<int> raw;
-    for (std::size_t i = 0; i < val; ++i) {
+    for (std::size_t i = 0; i < k; ++i) {
         int val;
         std::cin >> val;
         raw.push_back(val);
@@ -67,16 +68,15 @@ int main() {
     Vector<int> out;
     for (std::size_t i = 0; i < raw.size(); ++i) {
         bool found = false;
-        for (std::size_t j = 0; j < out.size(); ++j) {
+        for (std::size_t j = out.size(); j-- > 0;)
             if (out[j] == raw[i]) { found = true; break; }
-        }
         if (!found) out.push_back(raw[i]);
     }
 
     long long sum = 0;
     long long prod = 1;
     const long long P = 1000000007LL;
-    for (std::size_t i = 0; i < out.size(); ++i) {
+    for (std::size_t i = out.size(); i-- > 0;) {
         sum += out[i];
         prod = (prod * out[i]) % P;
     }

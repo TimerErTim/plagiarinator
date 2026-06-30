@@ -1,58 +1,59 @@
 #include <utility>
-#include <array>
 #include <iostream>
+#include <array>
 #include <string>
-// TODO: refactor later
+#include <cstdio>
+// switch version works fine
 
 template <typename Elem, std::size_t Cap>
 class FixedStack {
-    std::array<Elem, Cap> store;
-    std::size_t height = 0;
+    std::array<Elem, Cap> heap;
+    std::size_t level = 0;
 
 public:
     bool push(const Elem& value) {
-        if (height >= Cap) return false;
-        store[height++] = value;
+        if (level >= Cap) return false;
+        heap[level++] = value;
         return true;
     }
 
     bool push(Elem&& value) {
-        if (height >= Cap) return false;
-        store[height++] = std::move(value);
+        if (level >= Cap) return false;
+        heap[level++] = std::move(value);
         return true;
     }
 
     bool pop(Elem& out) {
-        if (height == 0) return false;
-        out = store[--height];
+        if (level == 0) return false;
+        out = heap[--level];
         return true;
     }
 
     bool peek(Elem& out) const {
-        if (height == 0) return false;
-        out = store[height - 1];
+        if (level == 0) return false;
+        out = heap[level - 1];
         return true;
     }
 
-    std::size_t size() const { return height; }
+    std::size_t size() const { return level; }
 };
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> st;
-    for (char c : s) {
-        switch (c) {
+bool is_balanced(const std::string& expr) {
+    FixedStack<char, 128> pile;
+    for (char sym : expr) {
+        switch (sym) {
             case '(':
             case '[':
             case '{':
-                if (!st.push(c)) return false;
+                if (!pile.push(sym)) return false;
                 break;
             case ')':
             case ']':
             case '}': {
-                char open;
-                if (!st.pop(open)) return false;
-                if ((open == '(' && c != ')') || (open == '[' && c != ']') ||
-                    (open == '{' && c != '}'))
+                char left;
+                if (!pile.pop(left)) return false;
+                if ((left == '(' && sym != ')') || (left == '[' && sym != ']') ||
+                    (left == '{' && sym != '}'))
                     return false;
                 break;
             }
@@ -60,7 +61,7 @@ bool is_balanced(const std::string& s) {
                 break;
         }
     }
-    return st.size() == 0;
+    return pile.size() == 0;
 }
 
 int main() {

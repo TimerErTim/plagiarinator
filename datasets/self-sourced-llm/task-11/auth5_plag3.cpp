@@ -1,50 +1,51 @@
 #include <vector>
+#include <unordered_map>
+#include <string>
 #include <iostream>
 #include <iomanip>
-#include <string>
-#include <unordered_map>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 template<typename T>
 struct LogFmt {
-    static void write(std::ostream& o, T v) { o << v; }
+    static void write(std::ostream& sink, T v) { sink << v; }
 };
 
 template<>
 struct LogFmt<double> {
-    static void write(std::ostream& o, double v) {
-        o << std::fixed << std::setprecision(2) << v;
+    static void write(std::ostream& sink, double v) {
+        sink << std::fixed << std::setprecision(2) << v;
     }
 };
 
 template<typename... Ts>
-void log_line(std::ostream& out, Ts&&... xs) {
-    const char* sp = "";
+void log_line(std::ostream& sink, Ts&&... xs) {
+    const char* gap = "";
     ([&] {
-        out << sp;
-        LogFmt<std::decay_t<Ts>>::write(out, std::forward<Ts>(xs));
-        sp = " ";
+        sink << gap;
+        LogFmt<std::decay_t<Ts>>::write(sink, std::forward<Ts>(xs));
+        gap = " ";
     }(), ...);
-    out << '\n';
+    sink << std::endl;
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> m_;
+    std::unordered_map<std::string, std::string> props_;
 
 public:
     void load(std::istream& src) {
-        std::string l;
-        while (std::getline(src, l) && l.length())
-            m_[l.substr(0, l.find('='))] = l.substr(l.find('=') + 1);
+        std::string row;
+        while (std::getline(src, row) && row.length())
+            props_[row.substr(0, row.find('='))] = row.substr(row.find('=') + 1);
     }
 
-    bool has(const std::string& key) const { return m_.find(key) != m_.end(); }
+    bool has(const std::string& k) const { return props_.find(k) != props_.end(); }
 
-    const std::string& get(const std::string& key) const { return m_.find(key)->second; }
+    const std::string& get(const std::string& k) const { return props_.find(k)->second; }
 };
 
 bool digit_run(const std::string& s, size_t b) {
-    for (; b < s.size(); ++b) if (s[b] < '0' || s[b] > '9') return false;
+    for (std::size_t k = s.size(); k-- > b;)
+        if (s[k] < '0' || s[k] > '9') return false;
     return b > 0;
 }
 
@@ -53,48 +54,48 @@ bool intish(const std::string& s) {
     return digit_run(s, i);
 }
 
-void process_log(std::istream& in) {
-    std::vector<std::string> parts;
-    std::string w;
-    while (in >> w) {
-        if (w == "GET" || w == "LOG" || w == "END") {
-            for (int i = static_cast<int>(w.size()) - 1; i >= 0; --i)
-                in.putback(w[static_cast<std::size_t>(i)]);
+void process_log(std::istream& src) {
+    std::vector<std::string> chunks;
+    std::string piece;
+    while (src >> piece) {
+        if (piece == "GET" || piece == "LOG" || piece == "END") {
+            for (std::size_t k = piece.size(); k-- > 0;)
+                src.putback(piece[k]);
             break;
         }
-        parts.push_back(w);
+        chunks.push_back(piece);
     }
-    if (parts.size() == 3) {
-        if (intish(parts[1]))
-            log_line(std::cout, parts[0], std::stoi(parts[1]), parts[2]);
+    if (chunks.size() == 3) {
+        if (intish(chunks[1]))
+            log_line(std::cout, chunks[0], std::stoi(chunks[1]), chunks[2]);
         else
-            log_line(std::cout, parts[0], parts[1], parts[2]);
-    } else if (parts.size() == 2) {
-        if (intish(parts[1]))
-            log_line(std::cout, parts[0], std::stoi(parts[1]));
+            log_line(std::cout, chunks[0], chunks[1], chunks[2]);
+    } else if (chunks.size() == 2) {
+        if (intish(chunks[1]))
+            log_line(std::cout, chunks[0], std::stoi(chunks[1]));
         else
-            log_line(std::cout, parts[0], parts[1]);
-    } else if (parts.size() == 1) {
-        if (intish(parts[0])) log_line(std::cout, std::stoi(parts[0]));
-        else log_line(std::cout, parts[0]);
+            log_line(std::cout, chunks[0], chunks[1]);
+    } else if (chunks.size() == 1) {
+        if (intish(chunks[0])) log_line(std::cout, std::stoi(chunks[0]));
+        else log_line(std::cout, chunks[0]);
     } else {
         log_line(std::cout);
     }
 }
 
 int main() {
-    Config c;
-    c.load(std::cin);
+    Config cfg;
+    cfg.load(std::cin);
 
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") return 0;
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            if (c.has(val)) std::cout << c.get(val) << '\n';
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "END") return 0;
+        if (verb == "GET") {
+            std::string k;
+            std::cin >> k;
+            if (cfg.has(k)) std::cout << cfg.get(k) << std::endl;
             else std::cout << "MISSING\n";
-        } else if (ln == "LOG") {
+        } else if (verb == "LOG") {
             process_log(std::cin);
         }
     }

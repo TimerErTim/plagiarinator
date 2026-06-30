@@ -1,110 +1,110 @@
 #include <vector>
 #include <functional>
+#include <unordered_map>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
 #include <string>
-#include <unordered_map>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 class Config {
-    std::unordered_map<std::string, std::string> kv;
+    std::unordered_map<std::string, std::string> props_;
 
 public:
-    void readUntilBlank(std::istream& in) {
-        std::string s;
-        while (std::getline(in, s) && !s.empty()) {
-            std::size_t i = s.find('=');
-            kv[s.substr(0, i)] = s.substr(i + 1);
+    void readUntilBlank(std::istream& src) {
+        std::string row;
+        while (std::getline(src, row) && !row.empty()) {
+            std::size_t eq = row.find('=');
+            props_[row.substr(0, eq)] = row.substr(eq + 1);
         }
     }
 
-    bool has(const std::string& key) const { return kv.count(key); }
+    bool has(const std::string& k) const { return props_.count(k); }
 
-    const std::string& get(const std::string& key) const { return kv.at(key); }
+    const std::string& get(const std::string& k) const { return props_.at(k); }
 };
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    auto emit = [&](auto&& v) {
+void log_line(std::ostream& sink, Args&&... args) {
+    auto put = [&](auto&& v) {
         using V = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<V, double>)
-            out << std::fixed << std::setprecision(2) << v;
+            sink << std::fixed << std::setprecision(2) << v;
         else
-            out << std::forward<decltype(v)>(v);
+            sink << std::forward<decltype(v)>(v);
     };
-    std::size_t n = 0;
-    ((emit(std::forward<Args>(args)), out << (++n < sizeof...(Args) ? " " : "")), ...);
-    out << '\n';
+    std::size_t cnt = 0;
+    ((put(std::forward<Args>(args)), sink << (++cnt < sizeof...(Args) ? " " : "")), ...);
+    sink << std::endl;
 }
 
-bool isSignedInteger(const std::string& text) {
+bool isSignedInteger(const std::string& txt) {
     std::size_t idx = 0;
-    if (!text.empty() && (text[0] == '+' || text[0] == '-')) idx = 1;
-    if (idx >= text.size()) return false;
-    for (; idx < text.size(); ++idx)
-        if (text[idx] < '0' || text[idx] > '9') return false;
+    if (!txt.empty() && (txt[0] == '+' || txt[0] == '-')) idx = 1;
+    if (idx >= txt.size()) return false;
+    for (std::size_t k = txt.size(); k-- > idx;)
+        if (txt[k] < '0' || txt[k] > '9') return false;
     return true;
 }
 
 void dispatchLog(const std::vector<std::string>& tokens) {
-    std::vector<std::function<void(std::ostream&)>> printers;
+    std::vector<std::function<void(std::ostream&)>> fns;
     for (const auto& t : tokens) {
         if (isSignedInteger(t)) {
             int v = std::stoi(t);
-            printers.push_back([v](std::ostream& o) { o << v; });
+            fns.push_back([v](std::ostream& o) { o << v; });
         } else {
-            printers.push_back([t](std::ostream& o) { o << t; });
+            fns.push_back([t](std::ostream& o) { o << t; });
         }
     }
-    for (std::size_t i = 0; i < printers.size(); ++i) {
-        if (i) std::cout << ' ';
-        printers[i](std::cout);
+    for (std::size_t n = fns.size(); n-- > 0;) {
+        if (n + 1 < fns.size()) std::cout << ' ';
+        fns[n](std::cout);
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 int main() {
-    Config box;
-    box.readUntilBlank(std::cin);
+    Config cfg;
+    cfg.readUntilBlank(std::cin);
 
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            if (box.has(val)) log_line(std::cout, box.get(val));
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "GET") {
+            std::string k;
+            std::cin >> k;
+            if (cfg.has(k)) log_line(std::cout, cfg.get(k));
             else log_line(std::cout, "MISSING");
-        } else if (ln == "LOG") {
-            std::vector<std::string> args;
-            std::string chunk;
-            while (std::cin >> chunk) {
-                if (chunk == "GET" || chunk == "LOG" || chunk == "END") {
+        } else if (cmd == "LOG") {
+            std::vector<std::string> bits;
+            std::string piece;
+            while (std::cin >> piece) {
+                if (piece == "GET" || piece == "LOG" || piece == "END") {
                     std::cin.unget();
-                    for (std::size_t j = 0; j < chunk.size(); ++j)
-                        std::cin.putback(chunk[chunk.size() - 1 - j]);
+                    for (std::size_t j = piece.size(); j-- > 0;)
+                        std::cin.putback(piece[j]);
                     break;
                 }
-                args.push_back(chunk);
+                bits.push_back(piece);
             }
-            if (args.size() <= 3) {
-                if (args.size() == 3) {
-                    if (isSignedInteger(args[1]))
-                        log_line(std::cout, args[0], std::stoi(args[1]), args[2]);
+            if (bits.size() <= 3) {
+                if (bits.size() == 3) {
+                    if (isSignedInteger(bits[1]))
+                        log_line(std::cout, bits[0], std::stoi(bits[1]), bits[2]);
                     else
-                        log_line(std::cout, args[0], args[1], args[2]);
-                } else if (args.size() == 2) {
-                    if (isSignedInteger(args[1]))
-                        log_line(std::cout, args[0], std::stoi(args[1]));
+                        log_line(std::cout, bits[0], bits[1], bits[2]);
+                } else if (bits.size() == 2) {
+                    if (isSignedInteger(bits[1]))
+                        log_line(std::cout, bits[0], std::stoi(bits[1]));
                     else
-                        log_line(std::cout, args[0], args[1]);
-                } else if (args.size() == 1) {
-                    if (isSignedInteger(args[0])) log_line(std::cout, std::stoi(args[0]));
-                    else log_line(std::cout, args[0]);
+                        log_line(std::cout, bits[0], bits[1]);
+                } else if (bits.size() == 1) {
+                    if (isSignedInteger(bits[0])) log_line(std::cout, std::stoi(bits[0]));
+                    else log_line(std::cout, bits[0]);
                 } else log_line(std::cout);
             } else {
-                dispatchLog(args);
+                dispatchLog(bits);
             }
         }
     }

@@ -1,13 +1,14 @@
-#include <unordered_map>
-#include <string>
-#include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <iomanip>
+#include <string>
+#include <unordered_map>
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
+void log_line(std::ostream& out, Args&&... args)
+{
     int idx = 0;
-    auto put = [&](auto&& item) {
+    auto put = [&](auto&& item)
+    {
         if (idx++) out << ' ';
         using T = std::decay_t<decltype(item)>;
         if constexpr (std::is_same_v<T, double>)
@@ -19,72 +20,79 @@ void log_line(std::ostream& out, Args&&... args) {
     out << '\n';
 }
 
-class Config {
-    std::unordered_map<std::string, std::string> entries_;
+class Config
+{
+    std::unordered_map<std::string, std::string> store_;
 
 public:
-    Config(std::istream& in) {
+    Config(std::istream& in)
+    {
         std::string row;
-        while (std::getline(in, row) && row.size() > 0) {
+        while (std::getline(in, row) && row.size() > 0)
+        {
             std::size_t eq = row.find('=');
-            entries_.insert({row.substr(0, eq), row.substr(eq + 1)});
+            store_.insert({row.substr(0, eq), row.substr(eq + 1)});
         }
     }
 
-    bool has(const std::string& key) const { return entries_.count(key) > 0; }
+    bool has(const std::string& key) const { return store_.count(key) > 0; }
 
-    const std::string& get(const std::string& key) const { return entries_.at(key); }
+    const std::string& get(const std::string& key) const { return store_.at(key); }
 };
 
-static bool parse_int_token(const std::string& tok) {
+static bool parse_int_token(const std::string& tok)
+{
     if (tok.empty()) return false;
     std::size_t start = 0;
-    if (tok[0] == '+' || tok[0] == '-') {
+    if (tok[0] == '+' || tok[0] == '-')
+    {
         if (tok.size() == 1) return false;
         start = 1;
     }
-    for (std::size_t i = start; i < tok.size(); ++i)
-        if (tok[i] < '0' || tok[i] > '9') return false;
+    for (; start < tok.size(); ++start)
+        if (tok[start] < '0' || tok[start] > '9') return false;
     return true;
 }
 
-int main()
-
+static void run_log(std::istream& in)
 {
-    Config settings(std::cin);
+    std::string a, b, c;
+    in >> a;
+    if (!(in >> b))
+    {
+        if (parse_int_token(a)) log_line(std::cout, std::stoi(a));
+        else log_line(std::cout, a);
+        return;
+    }
+    if (!(in >> c))
+    {
+        if (parse_int_token(b)) log_line(std::cout, a, std::stoi(b));
+        else log_line(std::cout, a, b);
+        in.clear();
+        return;
+    }
+    if (parse_int_token(b)) log_line(std::cout, a, std::stoi(b), c);
+    else log_line(std::cout, a, b, c);
+}
+
+int main()
+{
+    Config cfg(std::cin);
     std::string op;
 
-    while (std::cin >> op) 
-{
+    while (std::cin >> op)
+    {
         if (op == "END") break;
-
-        if (op == "GET") 
-{
+        if (op == "GET")
+        {
             std::string k;
             std::cin >> k;
-            std::cout << (settings.has(k) ? settings.get(k) : std::string("MISSING")) << '\n';
-            continue;
+            std::cout << (cfg.has(k) ? cfg.get(k) : std::string("MISSING")) << '\n';
         }
-
-        if (op != "LOG") continue;
-
-        std::string a, b, c;
-        std::cin >> a;
-        if (!(std::cin >> b)) 
-{
-            if (parse_int_token(a)) log_line(std::cout, std::stoi(a));
-            else log_line(std::cout, a);
-            continue;
+        else if (op == "LOG")
+        {
+            run_log(std::cin);
         }
-        if (!(std::cin >> c)) 
-{
-            if (parse_int_token(b)) log_line(std::cout, a, std::stoi(b));
-            else log_line(std::cout, a, b);
-            std::cin.clear();
-            continue;
-        }
-        if (parse_int_token(b)) log_line(std::cout, a, std::stoi(b), c);
-        else log_line(std::cout, a, b, c);
     }
     return 0;
 }

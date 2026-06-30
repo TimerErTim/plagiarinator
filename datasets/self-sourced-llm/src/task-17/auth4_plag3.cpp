@@ -1,60 +1,72 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+// found online
 
-namespace util {
+namespace pack
+{
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end());
+template <typename Unit>
+typename std::enable_if<std::is_arithmetic<Unit>::value, void>::type
+sort_values(std::vector<Unit>& tray)
+{
+    std::sort(tray.begin(), tray.end());
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& a, const T& b) {
-        if (a.size() < b.size()) return true;
-        if (b.size() < a.size()) return false;
-        return a < b;
+template <typename Unit>
+typename std::enable_if<!std::is_arithmetic<Unit>::value, void>::type
+sort_values(std::vector<Unit>& tray)
+{
+    std::sort(tray.begin(), tray.end(), [](const Unit& u, const Unit& v)
+    {
+        if (u.size() < v.size()) return true;
+        if (v.size() < u.size()) return false;
+        return u < v;
     });
 }
 
-}  // namespace util
+}  // namespace pack
 
-void emit_doubles(std::vector<double>& v) {
-    util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+void flushDoubles(std::vector<double>& tray)
+{
+    pack::sort_values(tray);
+    for (std::size_t offset = 0; offset < tray.size(); ++offset)
+    {
+        if (offset) std::cout << ' ';
+        std::cout << tray[offset];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
-void emit_strings(std::vector<std::string>& v) {
-    util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+void flushStrings(std::vector<std::string>& tray)
+{
+    pack::sort_values(tray);
+    for (std::size_t offset = 0; offset < tray.size(); ++offset)
+    {
+        if (offset) std::cout << ' ';
+        std::cout << tray[offset];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
-int main() {
-    std::string typ;
-    std::size_t n;
-    std::cin >> typ >> n;
-    if (typ == "NUM") {
-        std::vector<double> buf(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_doubles(buf);
-    } else {
-        std::vector<std::string> buf(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_strings(buf);
+int main()
+{
+    std::string gate;
+    std::size_t cap;
+    std::cin >> gate >> cap;
+    if (gate == "NUM")
+    {
+        std::vector<double> tray(cap);
+        for (std::size_t offset = 0; offset < cap; ++offset) std::cin >> tray[offset];
+        flushDoubles(tray);
+    }
+    else
+    {
+        std::vector<std::string> tray(cap);
+        for (std::size_t offset = 0; offset < cap; ++offset) std::cin >> tray[offset];
+        flushStrings(tray);
     }
     return 0;
 }

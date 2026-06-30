@@ -1,22 +1,24 @@
-#include <utility>
-#include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <utility>
 
 template <typename T>
-class LinkedList {
-    struct Node {
+class LinkedList
+{
+    struct Node
+    {
         T val;
         Node* next;
     };
 
-    Node* hd_;
-    std::size_t cnt_;
+    Node* headPtr;
+    std::size_t itemCount;
 
-    static void destroyChain(Node* n) {
+    static void destroyChain(Node* n)
+    {
         while (n)
-{
+        {
             Node* save = n->next;
             delete n;
             n = save;
@@ -24,25 +26,27 @@ class LinkedList {
     }
 
 public:
-    LinkedList() : hd_(nullptr), cnt_(0) {}
-    ~LinkedList() { destroyChain(hd_); }
+    LinkedList() : headPtr(nullptr), itemCount(0) {}
+    ~LinkedList() { destroyChain(headPtr); }
 
-    void push_back(const T& value) {
+    void push_back(const T& value)
+    {
         Node* node = new Node{value, nullptr};
-        if (!hd_)
-{
-            hd_ = node;
-        } else {
-            Node* tail = hd_;
+        if (!headPtr)
+            headPtr = node;
+        else
+        {
+            Node* tail = headPtr;
             while (tail->next) tail = tail->next;
             tail->next = node;
         }
-        cnt_++;
+        itemCount++;
     }
 
-    std::size_t size() const { return cnt_; }
+    std::size_t size() const { return itemCount; }
 
-    class Iterator {
+    class Iterator
+    {
         Node* current;
     public:
         Iterator(Node* n) : current(n) {}
@@ -52,24 +56,28 @@ public:
         bool operator!=(const Iterator& rhs) const { return current != rhs.current; }
     };
 
-    Iterator begin() { return Iterator(hd_); }
+    Iterator begin() { return Iterator(headPtr); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(hd_); }
+    Iterator begin() const { return Iterator(headPtr); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
+LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs)
+{
     LinkedList<T> output;
     auto leftIt = lhs.begin();
     auto rightIt = rhs.begin();
 
-    while (leftIt != lhs.end() && rightIt != rhs.end()) {
+    while (leftIt != lhs.end() && rightIt != rhs.end())
+    {
         if (*leftIt <= *rightIt)
-{
+        {
             output.push_back(*leftIt);
             ++leftIt;
-        } else {
+        }
+        else
+        {
             output.push_back(*rightIt);
             ++rightIt;
         }
@@ -81,28 +89,28 @@ LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
     return output;
 }
 
-static LinkedList<int> parseLine(std::istream& in) {
-    LinkedList<int> list;
-    std::string text;
-    if (!std::getline(in, text))
-        return list;
-    std::istringstream stream(text);
-    int number;
-    while (stream >> number)
-        list.push_back(number);
-    return list;
-}
-
 int main()
 {
-    LinkedList<int> seqLeft = parseLine(std::cin);
-    LinkedList<int> seqRight = parseLine(std::cin);
-    LinkedList<int> out = merge_sorted(seqLeft, seqRight);
+    LinkedList<int> listOne, listTwo;
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        std::string text;
+        std::getline(std::cin, text);
+        std::istringstream stream(text);
+        int number;
+        LinkedList<int>& target = pass ? listTwo : listOne;
+        while (stream >> number)
+            target.push_back(number);
+    }
 
-    std::size_t idx = 0;
-    for (auto it = out.begin(); it != out.end(); ++it, ++idx) {
-        if (idx > 0) std::cout << ' ';
+    LinkedList<int> merged = merge_sorted(listOne, listTwo);
+
+    bool first = true;
+    for (auto it = merged.begin(); it != merged.end(); ++it)
+    {
+        if (!first) std::cout << ' ';
         std::cout << *it;
+        first = false;
     }
     std::cout << '\n';
     return 0;

@@ -1,10 +1,9 @@
+#include <unordered_set>
+#include <vector>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
-// cleaned up version
 
 struct GraphNode {
     std::string label;
@@ -12,15 +11,15 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> verts_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> vertsx_;
 
     std::shared_ptr<GraphNode> nodeFor(const std::string& tag) {
-        if (verts_.find(tag) == verts_.end()) {
+        if (vertsx_.find(tag) == vertsx_.end()) {
             auto sp = std::make_shared<GraphNode>();
             sp->label = tag;
-            verts_[tag] = sp;
+            vertsx_[tag] = sp;
         }
-        return verts_[tag];
+        return vertsx_[tag];
     }
 
     static bool dfs(const std::shared_ptr<GraphNode>& v,
@@ -29,19 +28,19 @@ class Graph {
         if (!v || vis.count(v->label)) return false;
         if (v->label == tgt) return true;
         vis.insert(v->label);
-        for (auto& e : v->edges)
-            if (dfs(e, tgt, vis)) return true;
+        for (std::size_t i = 0; i < v->edges.size(); ++i)
+            if (dfs(v->edges[i], tgt, vis)) return true;
         return false;
     }
 
 public:
     void addNode(const std::string& tag) { nodeFor(tag); }
     void addEdge(const std::string& x, const std::string& y) {
-        nodeFor(x)->edges.push_back(nodeFor(y));
+        nodeFor(x)->edges.emplace_back(nodeFor(y));
     }
     bool query(const std::string& x, const std::string& y) const {
-        auto p = verts_.find(x);
-        if (p == verts_.end()) return false;
+        auto p = vertsx_.find(x);
+        if (p == vertsx_.end()) return false;
         std::unordered_set<std::string> vis;
         return dfs(p->second, y, vis);
     }

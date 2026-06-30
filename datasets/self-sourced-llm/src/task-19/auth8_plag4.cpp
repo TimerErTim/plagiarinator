@@ -1,62 +1,61 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
-    std::string word_;
+    std::string buffer_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& src) noexcept : word_(std::move(src.word_)) {}
+    StringBuilder(StringBuilder&& src) noexcept : buffer_(std::move(src.buffer_)) {}
     StringBuilder& operator=(StringBuilder&& src) noexcept {
-        word_ = std::move(src.word_);
-        src.word_.clear();
+        buffer_ = std::move(src.buffer_);
+        src.buffer_.clear();
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s) {
-        word_.append(s);
+        buffer_.append(s);
         return *this;
     }
 
     StringBuilder& append(std::string&& s) {
-        word_.append(std::move(s));
+        buffer_.append(std::move(s));
         return *this;
     }
 
     StringBuilder& append_line(const std::string& s) {
-        word_.append(s);
-        word_.append(1, '\n');
+        buffer_.append(s);
+        buffer_.append(1, '\n');
         return *this;
     }
 
-    const std::string& str() const { return word_; }
-    void clear() { word_.clear(); }
+    const std::string& str() const { return buffer_; }
+    void clear() { buffer_.clear(); }
 };
 
 int main() {
     StringBuilder final_doc;
-    std::string elem;
+    std::string tok;
 
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem != "SECTION") continue;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        if (tok != "SECTION") continue;
 
-        std::string heading;
-        std::getline(std::cin, heading);
-        while (!heading.empty() && heading.front() == ' ') heading.erase(0, 1);
+        std::string title;
+        std::getline(std::cin, title);
+        while (!title.empty() && title.front() == ' ') title.erase(0, 1);
 
         std::string assembled;
         assembled += "# ";
-        assembled += heading;
+        assembled += title;
         assembled += "\n";
 
-        for (std::string str; std::getline(std::cin, str);) {
-            if (str.empty()) break;
-            assembled += str;
+        for (std::string row; std::getline(std::cin, row);) {
+            if (row.empty()) break;
+            assembled += row;
             assembled += '\n';
         }
         assembled += '\n';

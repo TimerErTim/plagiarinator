@@ -1,10 +1,9 @@
-#include <functional>
 #include <algorithm>
-#include <string>
+#include <functional>
 #include <iostream>
-#include <vector>
+#include <string>
 #include <type_traits>
-// quick submit
+#include <vector>
 
 namespace util {
 
@@ -33,22 +32,24 @@ int main() {
     std::cin >> tag >> qty;
 
     if (tag == "NUM") {
-        std::vector<double> str(static_cast<std::size_t>(qty));
-        for (int i = 0; i < qty; ++i) std::cin >> str[static_cast<std::size_t>(i)];
-        util::sort_values(str);
+        std::vector<double> row(static_cast<std::size_t>(qty));
+        for (int i = 0; i < qty; ++i) std::cin >> row[static_cast<std::size_t>(i)];
+        util::sort_values(row);
         for (int i = 0; i < qty; ++i) {
             if (i) std::cout << ' ';
-            std::cout << str[static_cast<std::size_t>(i)];
+            std::cout << row[static_cast<std::size_t>(i)];
         }
     } else {
-        std::vector<std::string> str(static_cast<std::size_t>(qty));
-        for (int i = 0; i < qty; ++i) std::cin >> str[static_cast<std::size_t>(i)];
-        util::sort_values(str);
+        std::vector<std::string> row(static_cast<std::size_t>(qty));
+        for (int i = 0; i < qty; ++i) std::cin >> row[static_cast<std::size_t>(i)];
+        util::sort_values(row);
         for (int i = 0; i < qty; ++i) {
             if (i) std::cout << ' ';
-            std::cout << str[static_cast<std::size_t>(i)];
+            std::cout << row[static_cast<std::size_t>(i)];
         }
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }
+
+#include <utility>

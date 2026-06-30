@@ -1,7 +1,6 @@
-#include <iostream>
-#include <string>
 #include <vector>
-// cleaned up version
+#include <string>
+#include <iostream>
 
 class IntBST {
     struct Node {
@@ -11,7 +10,7 @@ class IntBST {
         explicit Node(int k) : key(k), left(nullptr), right(nullptr) {}
     };
 
-    Node* rootNode_;
+    Node* rootk_;
 
     static void deleteTree(Node* node) {
         if (node == nullptr) return;
@@ -37,7 +36,7 @@ class IntBST {
     void collectInorder(const Node* node, std::vector<int>& output) const {
         if (node == nullptr) return;
         collectInorder(node->left, output);
-        output.push_back(node->key);
+        output.emplace_back(node->key);
         collectInorder(node->right, output);
     }
 
@@ -48,58 +47,58 @@ class IntBST {
     }
 
 public:
-    IntBST() : rootNode_(nullptr) {}
-    ~IntBST() { deleteTree(rootNode_); }
+    IntBST() : rootk_(nullptr) {}
+    ~IntBST() { deleteTree(rootk_); }
 
     void insert(int value) {
-        rootNode_ = insertRecursive(rootNode_, value);
+        rootk_ = insertRecursive(rootk_, value);
     }
 
     bool contains(int value) const {
-        return searchRecursive(rootNode_, value);
+        return searchRecursive(rootk_, value);
     }
 
     void inorder(std::vector<int>& out) const {
-        collectInorder(rootNode_, out);
+        collectInorder(rootk_, out);
     }
 
     int& min() {
-        return findMinimum(rootNode_)->key;
+        return findMinimum(rootk_)->key;
     }
 
     const int& min() const {
-        return findMinimum(rootNode_)->key;
+        return findMinimum(rootk_)->key;
     }
 
-    bool empty() const { return rootNode_ == nullptr; }
+    bool empty() const { return rootk_ == nullptr; }
 };
 
 int main() {
     IntBST bst;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        bst.insert(std::stoi(elem));
+    std::string item;
+    while (std::cin >> item) {
+        if (item == "DONE") break;
+        bst.insert(std::stoi(item));
     }
 
-    std::string token;
-    while (std::cin >> token) {
-        if (token == "DONE") break;
-        if (token == "CONTAINS") {
-            int x;
-            std::cin >> x;
-            std::cout << (bst.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (token == "MIN") {
+    std::string command;
+    while (std::cin >> command) {
+        if (command == "DONE") break;
+        if (command == "CONTAINS") {
+            int query;
+            std::cin >> query;
+            std::cout << (bst.contains(query) ? "YES" : "NO") << std::endl;
+        } else if (command == "MIN") {
             if (bst.empty())
                 std::cout << "EMPTY" << std::endl;
             else
                 std::cout << bst.min() << std::endl;
-        } else if (token == "PRINT") {
-            std::vector<int> out;
-            bst.inorder(out);
-            for (std::size_t i = 0; i < out.size(); ++i) {
+        } else if (command == "PRINT") {
+            std::vector<int> sorted;
+            bst.inorder(sorted);
+            for (std::size_t i = 0; i < sorted.size(); i++) {
                 if (i > 0) std::cout << ' ';
-                std::cout << out[i];
+                std::cout << sorted[i];
             }
             std::cout << std::endl;
         }

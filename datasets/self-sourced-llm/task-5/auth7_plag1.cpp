@@ -7,18 +7,18 @@
 
 template <typename Key, typename Value>
 class LRUCache {
-    std::size_t sz_;
-    std::list<std::pair<Key, Value>> q_;
+    std::size_t cap;
+    std::list<std::pair<Key, Value>> lst;
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> ref_;
 
 public:
-    LRUCache(std::size_t s) : sz_(s) {}
+    LRUCache(std::size_t s) : cap(s) {}
 
     bool get(const Key& k, Value& v) {
         auto f = ref_.find(k);
         if (f == ref_.end()) return false;
         v = f->second->second;
-        q_.splice(q_.begin(), q_, f->second);
+        lst.splice(lst.begin(), lst, f->second);
         return true;
     }
 
@@ -26,15 +26,15 @@ public:
         auto f = ref_.find(k);
         if (f != ref_.end()) {
             f->second->second = v;
-            q_.splice(q_.begin(), q_, f->second);
+            lst.splice(lst.begin(), lst, f->second);
             return;
         }
-        while (q_.size() >= sz_) {
-            ref_.erase(q_.back().first);
-            q_.pop_back();
+        while (lst.size() >= cap) {
+            ref_.erase(lst.back().first);
+            lst.pop_back();
         }
-        q_.push_front({k, v});
-        ref_[k] = q_.begin();
+        lst.push_front({k, v});
+        ref_[k] = lst.begin();
     }
 };
 
@@ -42,8 +42,8 @@ int main() {
     std::stringstream in;
     in << std::cin.rdbuf();
     std::size_t cap;
-    std::string w;
-    in >> w >> cap;
+    std::string header;
+    in >> header >> cap;
     LRUCache<std::string, int> cache(cap);
     std::string buf;
     while (in >> buf) {

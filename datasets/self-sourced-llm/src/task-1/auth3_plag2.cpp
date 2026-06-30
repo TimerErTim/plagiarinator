@@ -1,73 +1,77 @@
-#include <vector>
-#include <iostream>
-#include <cstring>
-#include <cctype>
 #include <algorithm>
-// adapted from classmate submission
+#include <cctype>
+#include <cstring>
+#include <iostream>
+#include <vector>
 
-// Heap-backed string for name normalization
 class StringBuffer {
-    char* txt_;
-    std::size_t sz_;
+    char* str_;
+    std::size_t n_;
 
     static bool isSpace(char c) {
         return std::isspace(static_cast<unsigned char>(c)) != 0;
     }
 
-public:
-    StringBuffer(const char* src) : txt_(nullptr), sz_(0) {
-        sz_ = std::strlen(src);
-        txt_ = new char[sz_ + 1];
-        std::memcpy(txt_, src, sz_ + 1);
+    static void shiftLeft(char* p, std::size_t from, std::size_t to)
+    {
+        for (std::size_t k = 0; k < to; ++k)
+            p[k] = p[from + k];
     }
 
-    ~StringBuffer() { delete[] txt_; }
+public:
+    StringBuffer(const char* src) : str_(nullptr), n_(0) {
+        n_ = std::strlen(src);
+        str_ = new char[n_ + 1];
+        std::memcpy(str_, src, n_ + 1);
+    }
+
+    ~StringBuffer() { delete[] str_; }
 
     StringBuffer(const StringBuffer& that) {
-        sz_ = that.sz_;
-        txt_ = new char[sz_ + 1];
-        std::memcpy(txt_, that.txt_, sz_ + 1);
+        n_ = that.n_;
+        str_ = new char[n_ + 1];
+        std::memcpy(str_, that.str_, n_ + 1);
     }
 
     StringBuffer& operator=(const StringBuffer& that) {
-        if (this != &that)
-{
-            char* fresh = new char[that.sz_ + 1];
-            std::memcpy(fresh, that.txt_, that.sz_ + 1);
-            delete[] txt_;
-            txt_ = fresh;
-            sz_ = that.sz_;
+        if (this != &that) {
+            char* fresh = new char[that.n_ + 1];
+            std::memcpy(fresh, that.str_, that.n_ + 1);
+            delete[] str_;
+            str_ = fresh;
+            n_ = that.n_;
         }
         return *this;
     }
 
-    void trim() {
-        std::size_t i = 0, j = sz_;
-        while (i < j && isSpace(txt_[i])) ++i;
-        while (j > i && isSpace(txt_[j - 1])) --j;
-        std::size_t k = 0;
-        for (; i < j; ++i, ++k) txt_[k] = txt_[i];
-        txt_[k] = '\0';
-        sz_ = k;
+    void trim()
+    {
+        std::size_t i = 0, j = n_;
+        while (i < j && isSpace(str_[i])) ++i;
+        while (j > i && isSpace(str_[j - 1])) --j;
+        shiftLeft(str_, i, j - i);
+        str_[j - i] = '\0';
+        n_ = j - i;
     }
 
-    const char* c_str() const { return txt_; }
-    std::size_t size() const { return sz_; }
+    const char* c_str() const { return str_; }
+    std::size_t size() const { return n_; }
 
     bool operator<(const StringBuffer& rhs) const {
-        return std::strcmp(txt_, rhs.txt_) < 0;
+        return std::strcmp(str_, rhs.str_) < 0;
     }
 };
 
 static bool isBlank(const StringBuffer& s) { return s.size() == 0; }
 
-int main()
-{
+int main() {
     std::vector<StringBuffer> batch;
     for (std::string ln; std::getline(std::cin, ln); )
         batch.push_back(StringBuffer(ln.c_str()));
 
-    for (StringBuffer& item : batch) item.trim();
+    for (std::size_t idx = 0; idx < batch.size(); ++idx)
+        batch[idx].trim();
+
     batch.erase(std::remove_if(batch.begin(), batch.end(), isBlank), batch.end());
     std::sort(batch.begin(), batch.end());
 

@@ -1,9 +1,8 @@
-#include <iostream>
 #include <algorithm>
-#include <type_traits>
+#include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
-// quick submit
 
 namespace util {
 
@@ -31,7 +30,7 @@ void emit_doubles(std::vector<double>& v) {
         if (i) std::cout << ' ';
         std::cout << v[i];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 void emit_strings(std::vector<std::string>& v) {
@@ -40,7 +39,7 @@ void emit_strings(std::vector<std::string>& v) {
         if (i) std::cout << ' ';
         std::cout << v[i];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 int main() {

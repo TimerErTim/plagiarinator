@@ -1,11 +1,10 @@
-#include <cctype>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unordered_map>
 #include <vector>
-// cleaned up version
+#include <unordered_map>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+#include <cctype>
 
 namespace logging {
 
@@ -27,7 +26,7 @@ void print_tail(std::ostream& os, Head&& h, Tail&&... tail) {
 template <typename... Args>
 void log_line(std::ostream& out, Args&&... args) {
     logging::print_tail(out, std::forward<Args>(args)...);
-    out << '\n';
+    out << std::endl;
 }
 
 class Config {
@@ -36,41 +35,41 @@ public:
         std::string row;
         while (std::getline(in, row) && !row.empty()) {
             std::size_t sep = row.find('=');
-            elems_[row.substr(0, sep)] = row.substr(sep + 1);
+            data_[row.substr(0, sep)] = row.substr(sep + 1);
         }
     }
 
-    bool has(const std::string& key) const { return elems_.count(key) != 0; }
+    bool has(const std::string& key) const { return data_.count(key) != 0; }
 
-    const std::string& get(const std::string& key) const { return elems_.at(key); }
+    const std::string& get(const std::string& key) const { return data_.at(key); }
 
 private:
-    std::unordered_map<std::string, std::string> elems_;
+    std::unordered_map<std::string, std::string> data_;
 };
 
-static bool is_number(const std::string& s) {
+static bool is_int_literal(const std::string& s) {
     if (s.empty()) return false;
     std::size_t pos = 0;
     if (s[pos] == '-' || s[pos] == '+') ++pos;
     if (pos == s.size()) return false;
-    for (; pos < s.size(); ++pos)
+    for (; pos < s.size(); pos++)
         if (!std::isdigit(static_cast<unsigned char>(s[pos]))) return false;
     return true;
 }
 
-static void run_log_cmd(const std::vector<std::string>& words) {
+static void handle_log_command(const std::vector<std::string>& words) {
     if (words.size() == 3) {
-        if (is_number(words[1]))
+        if (is_int_literal(words[1]))
             log_line(std::cout, words[0], std::stoi(words[1]), words[2]);
         else
             log_line(std::cout, words[0], words[1], words[2]);
     } else if (words.size() == 2) {
-        if (is_number(words[1]))
+        if (is_int_literal(words[1]))
             log_line(std::cout, words[0], std::stoi(words[1]));
         else
             log_line(std::cout, words[0], words[1]);
     } else if (words.size() == 1) {
-        if (is_number(words[0])) log_line(std::cout, std::stoi(words[0]));
+        if (is_int_literal(words[0])) log_line(std::cout, std::stoi(words[0]));
         else log_line(std::cout, words[0]);
     } else if (words.empty()) {
         log_line(std::cout);
@@ -78,25 +77,24 @@ static void run_log_cmd(const std::vector<std::string>& words) {
 }
 
 int main() {
-    Config conf;
-    conf.parse(std::cin);
+    Config cfg;
+    cfg.parse(std::cin);
 
-    std::string piece;
-    while (std::getline(std::cin, piece)) {
-        if (piece == "END") break;
-        if (piece == "GET") {
-            std::string id;
-            std::getline(std::cin, id);
-            id.erase(0, id.find_first_not_of(" \t"));
-            std::cout << (conf.has(id) ? conf.get(id) : std::string("MISSING")) << '\n';
-        } else if (piece == "LOG") {
+    std::string cmd;
+    while (std::getline(std::cin, cmd)) {
+        if (cmd == "END") break;
+        if (cmd == "GET") {
+            std::string key;
+            std::getline(std::cin, key);
+            key.erase(0, key.find_first_not_of(" \t"));
+            std::cout << (cfg.has(key) ? cfg.get(key) : std::string("MISSING")) << std::endl;
+        } else if (cmd == "LOG") {
             std::string chunk;
             std::getline(std::cin, chunk);
-            std::istringstream s(chunk);
+            std::istringstream line(chunk);
             std::vector<std::string> words;
-            for (std::string piece; s >> piece; words.push_back(piece)) {
-            }
-            run_log_cmd(words);
+            for (std::string w; line >> w; words.emplace_back(w)) {}
+            handle_log_command(words);
         }
     }
     return 0;

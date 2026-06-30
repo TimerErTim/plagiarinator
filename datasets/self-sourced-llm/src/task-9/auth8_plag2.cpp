@@ -1,58 +1,59 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <functional>
-// adapted from classmate submission
-
-namespace monitoring {
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+// cleaned up version
 
 class Sensor {
-    double temp_;
-    std::vector<std::pair<std::string, std::function<void(double)>>> callbacks_;
+    double reading_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> subs_;
 
-    void broadcast() {
-        for (const auto& item : callbacks_)
-{
+    void notifyAll(double value) const
+    {
+        for (const auto& sub : subs_)
+        {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << item.first << "] temp=" << temp_ << '\n';
-            if (item.second)
-                item.second(temp_);
+                      << "[" << sub.first << "] temp=" << value << '\n';
+            if (sub.second)
+                sub.second(value);
         }
     }
 
 public:
-    void subscribe(const std::string& name, std::function<void(double)> callback) {
-        callbacks_.emplace_back(name, std::move(callback));
+    void subscribe(const std::string& name, std::function<void(double)> callback)
+    {
+        subs_.emplace_back(name, std::move(callback));
     }
 
-    void set_value(double celsius) {
-        temp_ = celsius;
-        broadcast();
+    void set_value(double celsius)
+    {
+        reading_ = celsius;
+        notifyAll(reading_);
     }
 
-    double value() const { return temp_; }
+    double value() const { return reading_; }
 };
-
-} // namespace monitoring
 
 int main()
 {
-    monitoring::Sensor s;
-    std::string verb;
-    while (std::cin >> verb)
-{
-        if (verb == "END") break;
-        if (verb == "SUB")
-{
-            std::string kind;
-            std::cin >> kind;
-            s.subscribe(kind, [](double) {});
-        } else if (verb == "SET") {
-            double degrees;
-            std::cin >> degrees;
-            s.set_value(degrees);
+    Sensor sensor;
+    std::string token;
+    while (std::cin >> token)
+    {
+        if (token == "END") break;
+        if (token == "SUB")
+        {
+            std::string name;
+            std::cin >> name;
+            sensor.subscribe(name, [](double) {});
+        }
+        else if (token == "SET")
+        {
+            double v;
+            std::cin >> v;
+            sensor.set_value(v);
         }
     }
     return 0;

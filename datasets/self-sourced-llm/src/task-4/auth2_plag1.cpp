@@ -1,9 +1,9 @@
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 // cleaned up version
 
 using std::cin;
@@ -22,34 +22,34 @@ using std::vector;
 
 class FileWriter
 {
-    ofstream stream;
-    string filename;
+    ofstream fileStream;
+    string outPath;
 
 public:
-    explicit FileWriter(const string& path): filename(path)
+    explicit FileWriter(const string& path): outPath(path)
     {
-        stream.open(filename);
+        fileStream.open(outPath);
     }
 
-    ~FileWriter() { if (stream.is_open()) stream.close(); }
+    ~FileWriter() { if (fileStream.is_open()) fileStream.close(); }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& src) noexcept
-        : stream(std::move(src.stream)), filename(std::move(src.filename)) {}
+        : fileStream(std::move(src.fileStream)), outPath(std::move(src.outPath)) {}
 
     FileWriter& operator=(FileWriter&& src) noexcept
     {
         if (this != &src) {
-            if (stream.is_open()) stream.close();
-            stream = std::move(src.stream);
-            filename = std::move(src.filename);
+            if (fileStream.is_open()) fileStream.close();
+            fileStream = std::move(src.fileStream);
+            outPath = std::move(src.outPath);
         }
         return *this;
     }
 
-    void write_line(const string& text) { stream << text << '\n'; }
+    void write_line(const string& text) { fileStream << text << endl; }
 };
 
 char letterGrade(int s)
@@ -63,24 +63,24 @@ char letterGrade(int s)
 
 int main()
 {
-    vector<pair<string,int>> lines;
+    vector<pair<string,int>> entries;
     string row;
     while (getline(cin, row)) {
         auto pos = row.find(',');
         if (pos == string::npos) continue;
-        lines.emplace_back(row.substr(0, pos), stoi(row.substr(pos + 1)));
+        entries.emplace_back(row.substr(0, pos), stoi(row.substr(pos + 1)));
     }
 
     FileWriter fw("report.txt");
     fw.write_line("Student Report");
     fw.write_line("--------------");
     double total = 0;
-    for (auto& p : lines) {
+    for (auto& p : entries) {
         total += p.second;
         fw.write_line(p.first + ": " + to_string(p.second) + " [" + letterGrade(p.second) + "]");
     }
     ostringstream avgLine;
-    avgLine << fixed << setprecision(1) << "Average: " << total / lines.size();
+    avgLine << fixed << setprecision(1) << "Average: " << total / entries.size();
     fw.write_line(avgLine.str());
 
     cout << "Report written to report.txt" << endl;

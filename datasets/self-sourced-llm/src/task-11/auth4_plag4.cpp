@@ -1,11 +1,10 @@
-#include <iostream>
 #include <cctype>
-#include <sstream>
+#include <iostream>
 #include <iomanip>
-#include <unordered_map>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
-// quick submit
 
 namespace logging {
 
@@ -78,24 +77,23 @@ static void handle_log_command(const std::vector<std::string>& words) {
 }
 
 int main() {
-    Config ref;
-    ref.parse(std::cin);
+    Config settings;
+    settings.parse(std::cin);
 
-    std::string word;
-    while (std::getline(std::cin, word)) {
-        if (word == "END") break;
-        if (word == "GET") {
-            std::string tag;
-            std::getline(std::cin, tag);
-            tag.erase(0, tag.find_first_not_of(" \t"));
-            std::cout << (ref.has(tag) ? ref.get(tag) : std::string("MISSING")) << '\n';
-        } else if (word == "LOG") {
-            std::string bit;
-            std::getline(std::cin, bit);
-            std::istringstream str(bit);
+    std::string cmd;
+    while (std::getline(std::cin, cmd)) {
+        if (cmd == "END") break;
+        if (cmd == "GET") {
+            std::string key;
+            std::getline(std::cin, key);
+            key.erase(0, key.find_first_not_of(" \t"));
+            std::cout << (settings.has(key) ? settings.get(key) : std::string("MISSING")) << '\n';
+        } else if (cmd == "LOG") {
+            std::string chunk;
+            std::getline(std::cin, chunk);
+            std::istringstream line(chunk);
             std::vector<std::string> words;
-            for (std::string w; str >> w; words.push_back(w)) {
-            }
+            for (std::string w; line >> w; words.push_back(w)) {}
             handle_log_command(words);
         }
     }

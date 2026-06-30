@@ -1,70 +1,78 @@
 #include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// quick submit before deadline
 
-class StringBuilder {
+class StringBuilder
+{
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& other) noexcept;
-    StringBuilder& operator=(StringBuilder&& other) noexcept;
+    StringBuilder(StringBuilder&& rhs) noexcept;
+    StringBuilder& operator=(StringBuilder&& rhs) noexcept;
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s);
     StringBuilder& append(std::string&& s);
     StringBuilder& append_line(const std::string& s);
-    const std::string& str() const { return pool_; }
-    void clear() { pool_.clear(); }
+    const std::string& str() const { return bytes_; }
+    void clear() { bytes_.clear(); }
 
 private:
-    std::string pool_;
+    std::string bytes_;
 };
 
-StringBuilder::StringBuilder(StringBuilder&& other) noexcept : pool_(std::move(other.pool_)) {
-    other.pool_.clear();
+StringBuilder::StringBuilder(StringBuilder&& rhs) noexcept : bytes_(std::move(rhs.bytes_))
+{
+    rhs.bytes_.clear();
 }
 
-StringBuilder& StringBuilder::operator=(StringBuilder&& other) noexcept {
-    pool_ = std::move(other.pool_);
-    other.pool_.clear();
+StringBuilder& StringBuilder::operator=(StringBuilder&& rhs) noexcept
+{
+    bytes_ = std::move(rhs.bytes_);
+    rhs.bytes_.clear();
     return *this;
 }
 
-StringBuilder& StringBuilder::append(const std::string& s) {
-    pool_ += s;
+StringBuilder& StringBuilder::append(const std::string& s)
+{
+    bytes_ += s;
     return *this;
 }
 
-StringBuilder& StringBuilder::append(std::string&& s) {
-    pool_ += std::move(s);
+StringBuilder& StringBuilder::append(std::string&& s)
+{
+    bytes_ += std::move(s);
     return *this;
 }
 
-StringBuilder& StringBuilder::append_line(const std::string& s) {
-    pool_ += s;
-    pool_ += '\n';
+StringBuilder& StringBuilder::append_line(const std::string& s)
+{
+    bytes_ += s;
+    bytes_ += '\n';
     return *this;
 }
 
-int main() {
+int main()
+{
     StringBuilder output;
-    std::string ln;
+    std::string cmd_token;
 
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln != "SECTION") continue;
+    while (std::cin >> cmd_token)
+    {
+        if (cmd_token == "END") break;
+        if (cmd_token != "SECTION") continue;
 
-        std::string name;
-        std::getline(std::cin, name);
-        while (!name.empty() && name[0] == ' ') name.erase(0, 1);
+        std::string caption;
+        std::getline(std::cin, caption);
+        while (!caption.empty() && caption[0] == ' ') caption.erase(0, 1);
 
         StringBuilder chunk;
-        chunk.append("# ").append(name).append("\n");
+        chunk.append("# ").append(caption).append("\n");
 
-        std::string buf;
-        while (std::getline(std::cin, buf) && !buf.empty())
-            chunk.append_line(buf);
+        std::string row;
+        while (std::getline(std::cin, row) && !row.empty())
+            chunk.append_line(row);
         chunk.append("\n");
 
         output.append(std::move(chunk.str()));

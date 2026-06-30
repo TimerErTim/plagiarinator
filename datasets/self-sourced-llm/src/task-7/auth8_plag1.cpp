@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <iostream>
+#include <vector>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <vector>
-// cleaned up version
+#include <iostream>
+#include <iomanip>
 
 class Vehicle {
 public:
@@ -58,33 +57,33 @@ int main() {
     input << std::cin.rdbuf();
 
     std::vector<std::unique_ptr<Vehicle>> fleet;
-    std::vector<double> kms;
-    std::string s;
-    while (std::getline(input, s)) {
-        if (s.empty()) continue;
-        std::istringstream rowStream(s);
-        std::string mode;
-        rowStream >> mode;
-        auto vehicle = create_vehicle(mode, rowStream);
+    std::vector<double> distances;
+    std::string row;
+    while (std::getline(input, row)) {
+        if (row.empty()) continue;
+        std::istringstream rowStream(row);
+        std::string kind;
+        rowStream >> kind;
+        auto vehicle = create_vehicle(kind, rowStream);
         if (!vehicle) {
-            std::cout << "ERROR" << std::endl;
+            std::cout << "ERROR\n";
             continue;
         }
         double km;
         rowStream >> km;
-        fleet.push_back(std::move(vehicle));
-        kms.push_back(km);
+        fleet.emplace_back(std::move(vehicle));
+        distances.push_back(km);
     }
 
-    double total = 0.0;
-    for (std::size_t n = 0; n < fleet.size(); ++n) {
-        double liters = fleet[n]->fuel_needed(kms[n]);
-        total += liters;
+    double runningTotal = 0.0;
+    for (std::size_t n = 0; n < fleet.size(); n++) {
+        double liters = fleet[n]->fuel_needed(distances[n]);
+        runningTotal += liters;
         std::cout << "Trip " << n + 1 << ": " << fleet[n]->type()
                   << " needs " << std::fixed << std::setprecision(2)
-                  << liters << " liters" << std::endl;
+                  << liters << " liters\n";
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2)
-              << total << " liters" << std::endl;
+              << runningTotal << " liters\n";
     return 0;
 }

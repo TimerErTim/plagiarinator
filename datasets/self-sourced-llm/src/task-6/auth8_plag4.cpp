@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <cmath>
 #include <memory>
+#include <cmath>
 #include <iostream>
-#include <vector>
+#include <iomanip>
 #include <string>
-// quick submit
+#include <vector>
 
 class Shape {
 public:
@@ -17,37 +16,37 @@ public:
 namespace shapes {
 
 class Circle : public Shape {
-    double word_;
+    double radius_;
 public:
-    explicit Circle(double word) : word_(word) {}
+    explicit Circle(double radius) : radius_(radius) {}
     double area() const override {
         static constexpr double pi = 3.141592653589793;
-        return pi * word_ * word_;
+        return pi * radius_ * radius_;
     }
     double perimeter() const override {
         static constexpr double pi = 3.141592653589793;
-        return 2.0 * pi * word_;
+        return 2.0 * pi * radius_;
     }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double elemW_, elemH_;
+    double w_, h_;
 public:
-    Rectangle(double w, double h) : elemW_(w), elemH_(h) {}
-    double area() const override { return elemW_ * elemH_; }
-    double perimeter() const override { return 2.0 * (elemW_ + elemH_); }
+    Rectangle(double w, double h) : w_(w), h_(h) {}
+    double area() const override { return w_ * h_; }
+    double perimeter() const override { return 2.0 * (w_ + h_); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double tmp_;
+    double side_;
 public:
-    explicit Triangle(double tmp) : tmp_(tmp) {}
+    explicit Triangle(double side) : side_(side) {}
     double area() const override {
-        return std::sqrt(3.0) / 4.0 * tmp_ * tmp_;
+        return std::sqrt(3.0) / 4.0 * side_ * side_;
     }
-    double perimeter() const override { return 3.0 * tmp_; }
+    double perimeter() const override { return 3.0 * side_; }
     std::string name() const override { return "Triangle"; }
 };
 
@@ -66,15 +65,15 @@ void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
 
 int main() {
     std::vector<std::unique_ptr<Shape>> figures;
-    std::string opt;
-    while (std::cin >> opt && opt != "DONE") {
-        if (opt == "CIRCLE") {
+    std::string tag;
+    while (std::cin >> tag && tag != "DONE") {
+        if (tag == "CIRCLE") {
             double r; std::cin >> r;
             figures.push_back(std::make_unique<shapes::Circle>(r));
-        } else if (opt == "RECT") {
+        } else if (tag == "RECT") {
             double w, h; std::cin >> w >> h;
             figures.push_back(std::make_unique<shapes::Rectangle>(w, h));
-        } else if (opt == "TRI") {
+        } else if (tag == "TRI") {
             double s; std::cin >> s;
             figures.push_back(std::make_unique<shapes::Triangle>(s));
         }

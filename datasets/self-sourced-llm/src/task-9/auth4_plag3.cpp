@@ -1,42 +1,42 @@
 #include <vector>
 #include <functional>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <string>
-// TODO: refactor later
+// found this online and modified it a bit
 
-class Sensor {
-    double temp;
-    std::vector<std::pair<std::string, std::function<void(double)>>> list;
+class HeatMonitor {
+    double celsius_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> slots_;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> fn) {
-        list.push_back({name, fn});
+        slots_.push_back({name, fn});
     }
 
     void set_value(double celsius) {
-        temp = celsius;
-        for (auto& p : list) {
+        celsius_ = celsius;
+        for (auto& slot : slots_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << p.first << "] temp=" << temp << '\n';
-            p.second(temp);
+                      << "[" << slot.first << "] temp=" << celsius_ << '\n';
+            slot.second(celsius_);
         }
     }
 
-    double value() const { return temp; }
+    double value() const { return celsius_; }
 };
 
 int main() {
-    Sensor s;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "SUB") {
+    HeatMonitor monitor;
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op == "SUB") {
             std::string n; std::cin >> n;
-            s.subscribe(n, [](double) {});
-        } else if (ln == "SET") {
+            monitor.subscribe(n, [](double) {});
+        } else if (op == "SET") {
             double v; std::cin >> v;
-            s.set_value(v);
+            monitor.set_value(v);
         }
     }
     return 0;

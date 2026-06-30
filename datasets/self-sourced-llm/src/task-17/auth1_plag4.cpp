@@ -1,9 +1,8 @@
-#include <iostream>
-#include <algorithm>
-#include <type_traits>
-#include <string>
 #include <vector>
-// quick submit
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <type_traits>
 
 namespace util {
 
@@ -38,7 +37,7 @@ int main() {
             if (i) std::cout << ' ';
             std::cout << nums[i];
         }
-        std::cout << '\n';
+        std::cout << std::endl;
     } else {
         std::vector<std::string> words(n);
         for (std::size_t i = 0; i < n; ++i) std::cin >> words[i];
@@ -47,7 +46,7 @@ int main() {
             if (i) std::cout << ' ';
             std::cout << words[i];
         }
-        std::cout << '\n';
+        std::cout << std::endl;
     }
     return 0;
 }

@@ -1,13 +1,11 @@
-#include <functional>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
+#include <functional>
 #include <string>
 #include <vector>
-// cleaned up version
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::fixed;
 using std::function;
 using std::move;
@@ -24,15 +22,16 @@ class Sensor
 public:
     void subscribe(const string& name, function<void(double)> cb)
     {
-        observers.emplace_back(name, move(cb));
+        observers.push_back({name, move(cb)});
     }
 
     void set_value(double celsius)
     {
         val = celsius;
-        for (auto& ob : observers) {
+        for (std::size_t i = 0; i < observers.size(); i++) {
+            auto& ob = observers[i];
             cout << fixed << setprecision(1)
-                 << "[" << ob.first << "] temp=" << val << endl;
+                 << "[" << ob.first << "] temp=" << val << '\n';
             if (ob.second) ob.second(val);
         }
     }
@@ -43,13 +42,13 @@ public:
 int main()
 {
     Sensor s;
-    string token;
-    while (cin >> token) {
-        if (token == "END") break;
-        if (token == "SUB") {
+    string cmd;
+    while (cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "SUB") {
             string n; cin >> n;
             s.subscribe(n, [](double) {});
-        } else if (token == "SET") {
+        } else if (cmd == "SET") {
             double t; cin >> t;
             s.set_value(t);
         }

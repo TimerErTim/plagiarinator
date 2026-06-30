@@ -1,5 +1,5 @@
 #include <iostream>
-// adapted from classmate submission
+#include <utility>
 
 template <typename Elem>
 class Vector {
@@ -54,35 +54,40 @@ public:
     const Elem* data() const { return base_; }
 };
 
-int main()
-
+static void read_all(Vector<int>& all, std::size_t n)
 {
-    std::size_t n;
-    std::cin >> n;
-    Vector<int> all;
-    for (std::size_t i = 0; i < n; ++i) 
-{
+    for (std::size_t i = 0; i < n; ++i) {
         int x;
         std::cin >> x;
         all.push_back(x);
     }
+}
 
-    Vector<int> kept;
-    for (std::size_t i = 0; i < all.size(); ++i) 
+static void dedupe_first(const Vector<int>& all, Vector<int>& kept)
 {
+    for (std::size_t i = 0; i < all.size(); ++i) {
         bool duplicate = false;
-        for (std::size_t j = 0; j < kept.size(); ++j) 
-{
+        for (std::size_t j = 0; j < kept.size(); ++j) {
             if (kept[j] == all[i]) { duplicate = true; break; }
         }
         if (!duplicate) kept.push_back(all[i]);
     }
+}
+
+int main()
+{
+    std::size_t n;
+    std::cin >> n;
+    Vector<int> all;
+    read_all(all, n);
+
+    Vector<int> kept;
+    dedupe_first(all, kept);
 
     long long sum_val = 0;
     long long prod_val = 1;
     const long long MOD = 1000000007LL;
-    for (std::size_t i = 0; i < kept.size(); ++i) 
-{
+    for (std::size_t i = 0; i < kept.size(); ++i) {
         sum_val += kept[i];
         prod_val = (prod_val * kept[i]) % MOD;
     }

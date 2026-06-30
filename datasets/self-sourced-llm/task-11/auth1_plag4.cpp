@@ -1,20 +1,19 @@
-#include <iomanip>
 #include <iostream>
-#include <string>
+#include <iomanip>
 #include <sstream>
-#include <utility>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
-// quick submit
 
 template <typename... Args>
 void log_line(std::ostream& out, Args&&... args) {
     ((out << std::forward<Args>(args) << " "), ...);
-    out << "\n";
+    out << '\n';
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> data_;
+    std::unordered_map<std::string, std::string> entries_;
 
 public:
     void read(std::istream& in) {
@@ -22,16 +21,16 @@ public:
         while (std::getline(in, line) && !line.empty()) {
             auto pos = line.find('=');
             if (pos != std::string::npos)
-                data_[line.substr(0, pos)] = line.substr(pos + 1);
+                entries_[line.substr(0, pos)] = line.substr(pos + 1);
         }
     }
 
     bool has(const std::string& key) const {
-        return data_.find(key) != data_.end();
+        return entries_.find(key) != entries_.end();
     }
 
     const std::string& get(const std::string& key) const {
-        return data_.at(key);
+        return entries_.at(key);
     }
 };
 
@@ -76,7 +75,7 @@ static void emit_log(std::ostream& out, const std::vector<LogArg>& args) {
                      a2.is_int ? std::to_string(a2.iv) : a2.sv);
         }
     } else if (args.empty()) {
-        out << "\n";
+        out << '\n';
     } else {
         for (std::size_t i = 0; i < args.size(); ++i) {
             if (i) out << ' ';
@@ -88,28 +87,28 @@ static void emit_log(std::ostream& out, const std::vector<LogArg>& args) {
 }
 
 int main() {
-    Config ref;
-    ref.read(std::cin);
+    Config settings;
+    settings.read(std::cin);
 
-    std::string word;
-    while (std::cin >> word && word != "END") {
-        if (word == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            std::cout << (ref.has(tag) ? ref.get(tag) : std::string("MISSING")) << "\n";
-        } else if (word == "LOG") {
-            std::vector<std::string> tokens;
-            std::string bit;
-            while (std::cin >> bit) {
-                if (bit == "GET" || bit == "LOG" || bit == "END") {
-                    for (auto it = bit.rbegin(); it != bit.rend(); ++it)
+    std::string op;
+    while (std::cin >> op && op != "END") {
+        if (op == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (settings.has(k) ? settings.get(k) : std::string("MISSING")) << '\n';
+        } else if (op == "LOG") {
+            std::vector<std::string> words;
+            std::string w;
+            while (std::cin >> w) {
+                if (w == "GET" || w == "LOG" || w == "END") {
+                    for (auto it = w.rbegin(); it != w.rend(); ++it)
                         std::cin.putback(*it);
                     break;
                 }
-                tokens.push_back(bit);
+                words.push_back(w);
             }
             std::vector<LogArg> parsed;
-            for (const auto& t : tokens) parsed.push_back(parse_log_arg(t));
+            for (const auto& t : words) parsed.push_back(parse_log_arg(t));
             emit_log(std::cout, parsed);
         }
     }

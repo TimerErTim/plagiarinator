@@ -1,64 +1,63 @@
+#include <variant>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Leaf>
+class LineMaker {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Leaf*>(this)->format();
     }
 };
 
-static std::string fmt1(double v, const char* prefix, const char* suffix) {
+static std::string buildStr(double v, const char* prefix, const char* suffix) {
     std::ostringstream o;
     o << std::fixed << std::setprecision(1) << prefix << v << suffix;
     return o.str();
 }
 
-struct Distance : Printable<Distance> {
+struct DistLine : LineMaker<DistLine> {
     double v{};
-    explicit Distance(double x) : v(x) {}
-    std::string format() const { return fmt1(v, "Distance: ", " m"); }
+    explicit DistLine(double x) : v(x) {}
+    std::string format() const { return buildStr(v, "Distance: ", " m"); }
 };
 
-struct Mass : Printable<Mass> {
+struct MassLine : LineMaker<MassLine> {
     double v{};
-    explicit Mass(double x) : v(x) {}
-    std::string format() const { return fmt1(v, "Mass: ", " kg"); }
+    explicit MassLine(double x) : v(x) {}
+    std::string format() const { return buildStr(v, "Mass: ", " kg"); }
 };
 
-struct Temperature : Printable<Temperature> {
+struct TempLine : LineMaker<TempLine> {
     double v{};
-    explicit Temperature(double x) : v(x) {}
-    std::string format() const { return fmt1(v, "Temp: ", " C"); }
+    explicit TempLine(double x) : v(x) {}
+    std::string format() const { return buildStr(v, "Temp: ", " C"); }
 };
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void show_metric(const LineMaker<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
 int main() {
-    using Item = std::variant<Distance, Mass, Temperature>;
-    std::vector<Item> rows;
+    using Item = std::variant<DistLine, MassLine, TempLine>;
+    std::vector<Item> items;
 
     std::string t;
     while (std::cin >> t) {
         if (t == "END") break;
         double n;
         std::cin >> n;
-        if (t == "DIST") rows.push_back(Distance(n));
-        else if (t == "MASS") rows.push_back(Mass(n));
-        else if (t == "TEMP") rows.push_back(Temperature(n));
+        if (t == "DIST") items.push_back(DistLine(n));
+        else if (t == "MASS") items.push_back(MassLine(n));
+        else if (t == "TEMP") items.push_back(TempLine(n));
     }
 
-    for (const Item& it : rows) {
-        std::visit([](const auto& m) { print_metric(m); }, it);
-    }
+    for (std::size_t left = items.size(); left-- > 0;)
+        std::visit([](const auto& m) { show_metric(m); }, items[items.size() - 1 - left]);
     return 0;
 }

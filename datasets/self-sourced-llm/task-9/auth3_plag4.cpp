@@ -1,22 +1,21 @@
-#include <iomanip>
-#include <functional>
-#include <string>
-#include <iostream>
-#include <vector>
 #include <utility>
-// quick submit
+#include <vector>
+#include <functional>
+#include <iostream>
+#include <iomanip>
+#include <string>
 
 class Sensor {
-    double word_;
+    double currentValue_;
     std::vector<std::pair<std::string, std::function<void(double)>>> subscribers_;
 
     void notifyAll() {
         for (const auto& entry : subscribers_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << entry.first << "] temp=" << word_
+                      << "[" << entry.first << "] temp=" << currentValue_
                       << std::endl;
             if (entry.second)
-                entry.second(word_);
+                entry.second(currentValue_);
         }
     }
 
@@ -26,26 +25,26 @@ public:
     }
 
     void set_value(double celsius) {
-        word_ = celsius;
+        currentValue_ = celsius;
         notifyAll();
     }
 
-    double value() const { return word_; }
+    double value() const { return currentValue_; }
 };
 
 int main() {
-    Sensor temperatureSensor;
+    Sensor tempProbe;
     std::string command;
     while (std::cin >> command) {
         if (command == "END") break;
         if (command == "SUB") {
             std::string observerName;
             std::cin >> observerName;
-            temperatureSensor.subscribe(observerName, [](double) {});
+            tempProbe.subscribe(observerName, [](double) {});
         } else if (command == "SET") {
             double reading;
             std::cin >> reading;
-            temperatureSensor.set_value(reading);
+            tempProbe.set_value(reading);
         }
     }
     return 0;

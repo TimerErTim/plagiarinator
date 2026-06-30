@@ -1,45 +1,45 @@
 #include <vector>
 #include <functional>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <utility>
-// TODO: refactor later
+// borrowed this from someone's homework lol
 
-class Sensor {
-    double body;
-    std::vector<std::pair<std::string, std::function<void(double)>>> pool;
+class ThermometerDevice {
+    double storedCelsius_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> hookList_;
 
 public:
-    void subscribe(const std::string& name, std::function<void(double)> callback) {
-        pool.emplace_back(name, std::move(callback));
+    void subscribe(const std::string& label, std::function<void(double)> handler) {
+        hookList_.emplace_back(label, std::move(handler));
     }
 
     void set_value(double celsius) {
-        body = celsius;
-        for (const auto& sub : pool) {
+        storedCelsius_ = celsius;
+        for (const auto& hook : hookList_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << sub.first << "] temp=" << body << '\n';
-            if (sub.second) sub.second(body);
+                      << "[" << hook.first << "] temp=" << storedCelsius_ << '\n';
+            if (hook.second) hook.second(storedCelsius_);
         }
     }
 
-    double value() const { return body; }
+    double value() const { return storedCelsius_; }
 };
 
 int main() {
-    Sensor dev;
-    std::string line;
-    while (std::cin >> line) {
-        if (line == "END") break;
-        if (line == "SUB") {
-            std::string name;
-            std::cin >> name;
-            dev.subscribe(name, [](double) {});
-        } else if (line == "SET") {
-            double v;
-            std::cin >> v;
-            dev.set_value(v);
+    ThermometerDevice probe;
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "SUB") {
+            std::string tag;
+            std::cin >> tag;
+            probe.subscribe(tag, [](double) {});
+        } else if (verb == "SET") {
+            double amount;
+            std::cin >> amount;
+            probe.set_value(amount);
         }
     }
     return 0;

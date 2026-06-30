@@ -1,8 +1,7 @@
-#include <memory>
 #include <iostream>
-#include <unordered_map>
+#include <memory>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -35,7 +34,7 @@ public:
 
     void drop_all() { data_.clear(); }
 
-    void print_query(const std::string& key) const {
+    void show_query(const std::string& key) const {
         auto it = data_.find(key);
         if (it == data_.end()) {
             std::cout << "EXPIRED\n";
@@ -48,22 +47,22 @@ public:
 };
 
 int main() {
-    ImageCache ref;
-    std::string str;
-    while (std::cin >> str) {
-        if (str == "END") break;
-        if (str == "LOAD") {
-            std::string tag;
+    ImageCache cache;
+    std::string line;
+    while (std::cin >> line) {
+        if (line == "END") break;
+        if (line == "LOAD") {
+            std::string k;
             int p;
-            std::cin >> tag >> p;
-            std::shared_ptr<Image> tmp = ref.load(tag, p);
+            std::cin >> k >> p;
+            std::shared_ptr<Image> tmp = cache.load(k, p);
             std::cout << "loaded " << tmp->name << " pixels=" << tmp->pixel_count << '\n';
-        } else if (str == "QUERY") {
-            std::string tag;
-            std::cin >> tag;
-            ref.print_query(tag);
-        } else if (str == "DROP_ALL") {
-            ref.drop_all();
+        } else if (line == "QUERY") {
+            std::string k;
+            std::cin >> k;
+            cache.show_query(k);
+        } else if (line == "DROP_ALL") {
+            cache.drop_all();
         }
     }
     return 0;

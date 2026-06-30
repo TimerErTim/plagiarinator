@@ -1,9 +1,9 @@
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
-class StringBuilder {
+class StringBuilder
+{
     std::string data;
 
 public:
@@ -11,7 +11,8 @@ public:
 
     StringBuilder(StringBuilder&& other) noexcept : data(std::move(other.data)) {}
 
-    StringBuilder& operator=(StringBuilder&& other) noexcept {
+    StringBuilder& operator=(StringBuilder&& other) noexcept
+    {
         if (this != &other) data = std::move(other.data);
         return *this;
     }
@@ -19,17 +20,20 @@ public:
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) {
+    StringBuilder& append(const std::string& s)
+    {
         data += s;
         return *this;
     }
 
-    StringBuilder& append(std::string&& s) {
+    StringBuilder& append(std::string&& s)
+    {
         data += std::move(s);
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& s) {
+    StringBuilder& append_line(const std::string& s)
+    {
         data += s;
         data += '\n';
         return *this;
@@ -40,31 +44,44 @@ public:
     void clear() { data.clear(); }
 };
 
+static void trim_leading(std::string& s)
+{
+    s.erase(0, s.find_first_not_of(' '));
+}
+
+static StringBuilder make_section(std::istream& in)
+{
+    std::string title;
+    std::getline(in, title);
+    trim_leading(title);
+
+    StringBuilder section;
+    section.append("# ").append(title).append_line("");
+
+    std::string line;
+    while (std::getline(in, line))
+    {
+        if (line.empty()) break;
+        section.append_line(line);
+    }
+    section.append_line("");
+    return section;
+}
+
 int main()
 {
-    StringBuilder document;
-    std::string op;
+    StringBuilder doc;
+    std::string token;
 
-    while (std::cin >> op) {
-        if (op == "END") break;
-        if (op != "SECTION") continue;
+    while (std::cin >> token)
+    {
+        if (token == "END") break;
+        if (token != "SECTION") continue;
 
-        std::string name;
-        std::getline(std::cin, name);
-        name.erase(0, name.find_first_not_of(' '));
-
-        StringBuilder block;
-        block.append("# ").append(name).append_line("");
-
-        std::string input;
-        while (std::getline(std::cin, input)) {
-            if (input.empty()) break;
-            block.append_line(input);
-        }
-        block.append_line("");
-        document.append(std::move(block.str()));
+        StringBuilder section = make_section(std::cin);
+        doc.append(std::move(section.str()));
     }
 
-    std::cout << document.str();
+    std::cout << doc.str();
     return 0;
 }

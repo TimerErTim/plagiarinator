@@ -1,24 +1,27 @@
-#include <unordered_map>
-#include <iostream>
 #include <list>
+#include <iostream>
+#include <unordered_map>
 #include <string>
-// from lab partner
+// borrowed from roommate's homework
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     struct Item { Key k; Value v; };
     std::size_t box;
     std::list<Item> pool;
     std::unordered_map<Key, typename std::list<Item>::iterator> ref;
 
-    void bump(typename std::list<Item>::iterator it) {
+    void bump(typename std::list<Item>::iterator it)
+    {
         pool.splice(pool.begin(), pool, it);
     }
 
 public:
     explicit LRUCache(std::size_t limit) : box(limit) {}
 
-    bool get(const Key& key, Value& out) {
+    bool get(const Key& key, Value& out)
+    {
         auto w = ref.find(key);
         if (w == ref.end()) return false;
         out = w->second->v;
@@ -26,7 +29,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& val) {
+    void put(const Key& key, const Value& val)
+    {
         auto w = ref.find(key);
         if (w != ref.end()) {
             w->second->v = val;
@@ -42,18 +46,21 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     std::string tag;
     std::size_t cap;
     std::cin >> tag >> cap;
     LRUCache<std::string, int> obj{cap};
-    for (std::string op; std::cin >> op;) {
+    for (std::string op; std::cin >> op;)
+    {
         if (op == "END") break;
-        if (op == "GET") {
+        if (op == "GET")
+        {
             std::string k; std::cin >> k;
             int v;
-            if (obj.get(k, v)) std::cout << "HIT " << v << "\n";
-            else std::cout << "MISS\n";
+            if (obj.get(k, v)) std::cout << "HIT " << v << std::endl;
+            else std::cout << "MISS" << std::endl;
         } else if (op == "PUT") {
             std::string k; int v; std::cin >> k >> v;
             obj.put(k, v);

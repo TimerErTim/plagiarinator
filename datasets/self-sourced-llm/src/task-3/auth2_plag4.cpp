@@ -1,11 +1,10 @@
-#include <memory>
-#include <iostream>
-#include <string>
 #include <queue>
-#include <unordered_set>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-// quick submit
+#include <iostream>
+#include <memory>
 
 using std::cin;
 using std::cout;
@@ -19,35 +18,31 @@ using std::unordered_set;
 using std::vector;
 
 struct GraphNode {
-    std::string label;
-    std::vector<std::shared_ptr<GraphNode>> edges;
+    string label;
+    vector<shared_ptr<GraphNode>> edges;
 };
 
-class Graph
-{
-    unordered_map<string, shared_ptr<GraphNode>> ref_;
+class Graph {
+    unordered_map<string, shared_ptr<GraphNode>> registry;
 
-    shared_ptr<GraphNode> ensure(const string& id)
-    {
-        if (ref_.count(id)) return ref_[id];
+    shared_ptr<GraphNode> ensure(const string& id) {
+        if (registry.count(id)) return registry[id];
         auto n = make_shared<GraphNode>();
         n->label = id;
-        ref_[id] = n;
+        registry[id] = n;
         return n;
     }
 
 public:
     void addNode(const string& id) { ensure(id); }
 
-    void addEdge(const string& a, const string& b)
-    {
+    void addEdge(const string& a, const string& b) {
         ensure(a)->edges.push_back(ensure(b));
     }
 
-    bool query(const string& src, const string& dst) const
-    {
-        auto it = ref_.find(src);
-        if (it == ref_.end()) return false;
+    bool query(const string& src, const string& dst) const {
+        auto it = registry.find(src);
+        if (it == registry.end()) return false;
         queue<shared_ptr<GraphNode>> q;
         unordered_set<string> seen;
         q.push(it->second);
@@ -66,21 +61,20 @@ public:
     }
 };
 
-int main()
-{
-    Graph ref;
-    string elem;
-    while (cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "ADD_NODE") {
+int main() {
+    Graph G;
+    string token;
+    while (cin >> token) {
+        if (token == "END") break;
+        if (token == "ADD_NODE") {
             string n; cin >> n;
-            ref.addNode(n);
-        } else if (elem == "ADD_EDGE") {
+            G.addNode(n);
+        } else if (token == "ADD_EDGE") {
             string u, v; cin >> u >> v;
-            ref.addEdge(u, v);
-        } else if (elem == "QUERY") {
+            G.addEdge(u, v);
+        } else if (token == "QUERY") {
             string u, v; cin >> u >> v;
-            cout << (ref.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            cout << (G.query(u, v) ? "REACHABLE" : "UNREACHABLE") << endl;
         }
     }
     return 0;

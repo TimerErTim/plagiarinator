@@ -1,106 +1,105 @@
 #include <vector>
+#include <utility>
+#include <unordered_map>
+#include <string>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <utility>
-// TODO: refactor later
+// borrowed from roommate's homework
 
-struct StreamLogger {
-    std::ostream& out;
-    bool first = true;
+struct LinePrinter {
+    std::ostream& sink;
+    bool gap = false;
 
     template <typename T>
-    void emit(T&& v) {
-        if (!first) out << ' ';
-        first = false;
+    void put(T&& v) {
+        if (gap) sink << ' ';
+        gap = true;
         using D = std::decay_t<T>;
         if constexpr (std::is_same_v<D, double>)
-            out << std::fixed << std::setprecision(2) << v;
+            sink << std::fixed << std::setprecision(2) << v;
         else
-            out << std::forward<T>(v);
+            sink << std::forward<T>(v);
     }
 
-    void newline() { out << '\n'; }
+    void finish() { sink << std::endl; }
 };
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    StreamLogger helper{out};
-    (helper.emit(std::forward<Args>(args)), ...);
-    helper.newline();
+void log_line(std::ostream& sink, Args&&... args) {
+    LinePrinter lp{sink};
+    (lp.put(std::forward<Args>(args)), ...);
+    lp.finish();
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> pool_;
+    std::unordered_map<std::string, std::string> tbl_;
 
 public:
-    void read_section(std::istream& in) {
-        std::string line;
-        while (std::getline(in, line) && !line.empty()) {
-            auto eq = line.find('=');
-            pool_.emplace(line.substr(0, eq), line.substr(eq + 1));
+    void read_section(std::istream& src) {
+        std::string row;
+        while (std::getline(src, row) && !row.empty()) {
+            auto eq = row.find('=');
+            tbl_.emplace(row.substr(0, eq), row.substr(eq + 1));
         }
     }
 
-    bool has(const std::string& key) const { return pool_.find(key) != pool_.end(); }
+    bool has(const std::string& k) const { return tbl_.find(k) != tbl_.end(); }
 
-    const std::string& get(const std::string& key) const { return pool_.at(key); }
+    const std::string& get(const std::string& k) const { return tbl_.at(k); }
 };
 
-bool looks_like_int(const std::string& s) {
+bool digitish(const std::string& s) {
     if (s.empty()) return false;
-    std::size_t i = (s[0] == '-' || s[0] == '+') ? 1 : 0;
-    if (i >= s.size()) return false;
-    for (; i < s.size(); ++i)
-        if (s[i] < '0' || s[i] > '9') return false;
+    std::size_t p = (s[0] == '-' || s[0] == '+') ? 1 : 0;
+    if (p >= s.size()) return false;
+    for (std::size_t k = s.size(); k-- > p;)
+        if (s[k] < '0' || s[k] > '9') return false;
     return true;
 }
 
-void log_values(std::ostream& out, const std::vector<std::string>& raw) {
-    if (raw.empty()) { out << '\n'; return; }
+void log_values(std::ostream& sink, const std::vector<std::string>& raw) {
+    if (raw.empty()) { sink << std::endl; return; }
     if (raw.size() == 1) {
-        if (looks_like_int(raw[0])) log_line(out, std::stoi(raw[0]));
-        else log_line(out, raw[0]);
+        if (digitish(raw[0])) log_line(sink, std::stoi(raw[0]));
+        else log_line(sink, raw[0]);
     } else if (raw.size() == 2) {
-        if (looks_like_int(raw[1])) log_line(out, raw[0], std::stoi(raw[1]));
-        else log_line(out, raw[0], raw[1]);
+        if (digitish(raw[1])) log_line(sink, raw[0], std::stoi(raw[1]));
+        else log_line(sink, raw[0], raw[1]);
     } else if (raw.size() == 3) {
-        if (looks_like_int(raw[1]))
-            log_line(out, raw[0], std::stoi(raw[1]), raw[2]);
-        else
-            log_line(out, raw[0], raw[1], raw[2]);
+        if (digitish(raw[1])) log_line(sink, raw[0], std::stoi(raw[1]), raw[2]);
+        else log_line(sink, raw[0], raw[1], raw[2]);
     } else {
-        StreamLogger lg{out};
-        for (const auto& t : raw) {
-            if (looks_like_int(t)) lg.emit(std::stoi(t));
-            else lg.emit(t);
+        LinePrinter lp{sink};
+        for (std::size_t n = raw.size(); n-- > 0;) {
+            if (digitish(raw[n])) lp.put(std::stoi(raw[n]));
+            else lp.put(raw[n]);
         }
-        lg.newline();
+        lp.finish();
     }
 }
 
 int main() {
-    Config box;
-    box.read_section(std::cin);
+    Config cfg;
+    cfg.read_section(std::cin);
 
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            std::cout << (box.has(val) ? box.get(val) : std::string("MISSING")) << '\n';
-        } else if (ln == "LOG") {
+    std::string tok;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        if (tok == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (cfg.has(k) ? cfg.get(k) : std::string("MISSING")) << std::endl;
+        } else if (tok == "LOG") {
             std::vector<std::string> raw;
-            std::string t;
-            while (std::cin >> t) {
-                if (t == "GET" || t == "LOG" || t == "END") {
-                    for (auto r = t.rbegin(); r != t.rend(); ++r) std::cin.putback(*r);
+            std::string piece;
+            while (std::cin >> piece) {
+                if (piece == "GET" || piece == "LOG" || piece == "END") {
+                    for (std::size_t k = piece.size(); k-- > 0;)
+                        std::cin.putback(piece[k]);
                     break;
                 }
-                raw.push_back(t);
+                raw.push_back(piece);
             }
             log_values(std::cout, raw);
         }

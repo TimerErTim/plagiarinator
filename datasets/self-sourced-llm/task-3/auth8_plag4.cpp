@@ -1,12 +1,11 @@
-#include <memory>
-#include <iostream>
-#include <sstream>
 #include <queue>
-#include <unordered_map>
+#include <sstream>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
-// quick submit
+#include <vector>
+#include <iostream>
+#include <memory>
 
 struct GraphNode {
     std::string label;
@@ -14,14 +13,14 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> indexv_;
 
     std::shared_ptr<GraphNode> resolve(const std::string& name) {
-        auto it = ref_.find(name);
-        if (it != ref_.end()) return it->second;
+        auto it = indexv_.find(name);
+        if (it != indexv_.end()) return it->second;
         std::shared_ptr<GraphNode> node = std::make_shared<GraphNode>();
         node->label = name;
-        ref_.emplace(name, node);
+        indexv_.emplace(name, node);
         return node;
     }
 
@@ -33,8 +32,8 @@ public:
     }
 
     bool query(const std::string& from, const std::string& to) const {
-        auto start = ref_.find(from);
-        if (start == ref_.end()) return false;
+        auto start = indexv_.find(from);
+        if (start == indexv_.end()) return false;
 
         std::queue<std::shared_ptr<GraphNode>> q;
         std::unordered_set<std::string> seen;
@@ -55,25 +54,25 @@ public:
 };
 
 int main() {
-    Graph ref;
+    Graph G;
     std::stringstream input;
     input << std::cin.rdbuf();
-    std::string word;
-    while (std::getline(input, word)) {
-        if (word.empty()) continue;
-        std::istringstream ls(word);
-        std::string elem;
-        ls >> elem;
-        if (elem == "END") break;
-        if (elem == "ADD_NODE") {
+    std::string line;
+    while (std::getline(input, line)) {
+        if (line.empty()) continue;
+        std::istringstream ls(line);
+        std::string cmd;
+        ls >> cmd;
+        if (cmd == "END") break;
+        if (cmd == "ADD_NODE") {
             std::string n; ls >> n;
-            ref.addNode(n);
-        } else if (elem == "ADD_EDGE") {
+            G.addNode(n);
+        } else if (cmd == "ADD_EDGE") {
             std::string u, v; ls >> u >> v;
-            ref.addEdge(u, v);
-        } else if (elem == "QUERY") {
+            G.addEdge(u, v);
+        } else if (cmd == "QUERY") {
             std::string u, v; ls >> u >> v;
-            std::cout << (ref.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (G.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

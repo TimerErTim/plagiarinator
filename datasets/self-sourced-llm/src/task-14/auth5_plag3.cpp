@@ -1,57 +1,58 @@
+#include <utility>
 #include <iostream>
-// TODO: refactor later
+// tweaked from lab partner code
 
 namespace ds {
 
 template <typename T>
 class Vector {
-    T* arr;
+    T* buf;
     std::size_t used, alloc;
 
     void expand() {
         std::size_t next = alloc ? alloc * 2 : 4;
         T* neo = new T[next];
-        for (std::size_t i = 0; i < used; ++i) neo[i] = arr[i];
-        delete[] arr;
-        arr = neo;
+        for (std::size_t i = used; i-- > 0;) neo[i] = buf[i];
+        delete[] buf;
+        buf = neo;
         alloc = next;
     }
 
 public:
-    Vector() : arr(nullptr), used(0), alloc(0) {}
-    ~Vector() { delete[] arr; }
+    Vector() : buf(nullptr), used(0), alloc(0) {}
+    ~Vector() { delete[] buf; }
 
     Vector(const Vector& o) : used(o.used), alloc(o.alloc) {
-        arr = new T[alloc];
-        for (std::size_t i = 0; i < used; ++i) arr[i] = o.arr[i];
+        buf = new T[alloc];
+        for (std::size_t i = 0; i < used; ++i) buf[i] = o.buf[i];
     }
 
     Vector& operator=(const Vector& o) {
         if (&o == this) return *this;
-        delete[] arr;
+        delete[] buf;
         used = o.used;
         alloc = o.alloc;
-        arr = new T[alloc];
-        for (std::size_t i = 0; i < used; ++i) arr[i] = o.arr[i];
+        buf = new T[alloc];
+        for (std::size_t i = 0; i < used; ++i) buf[i] = o.buf[i];
         return *this;
     }
 
     void push_back(const T& v) {
         if (used == alloc) expand();
-        arr[used++] = v;
+        buf[used++] = v;
     }
 
     void push_back(T&& v) {
         if (used == alloc) expand();
-        arr[used++] = std::move(v);
+        buf[used++] = std::move(v);
     }
 
-    T& operator[](std::size_t i) { return arr[i]; }
-    const T& operator[](std::size_t i) const { return arr[i]; }
+    T& operator[](std::size_t i) { return buf[i]; }
+    const T& operator[](std::size_t i) const { return buf[i]; }
 
     std::size_t size() const { return used; }
-    T* data() { return arr; }
-    const T* data() const { return arr; }
+    T* data() { return buf; }
+    const T* data() const { return buf; }
 };
 
 }  // namespace ds
@@ -72,15 +73,14 @@ int main() {
     for (std::size_t i = 0; i < values.size(); ++i) {
         const int& ref = values[i];
         bool already = false;
-        for (std::size_t j = 0; j < distinct.size(); ++j) {
+        for (std::size_t j = distinct.size(); j-- > 0;)
             if (distinct[j] == ref) { already = true; break; }
-        }
         if (!already) distinct.push_back(ref);
     }
 
     long long sum = 0, prod = 1;
     constexpr long long MOD = 1000000007;
-    for (std::size_t i = 0; i < distinct.size(); ++i) {
+    for (std::size_t i = distinct.size(); i-- > 0;) {
         sum += distinct[i];
         prod = (prod * distinct[i]) % MOD;
     }

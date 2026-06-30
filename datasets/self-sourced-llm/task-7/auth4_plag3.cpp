@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// copied from stackoverflow answer
 
 class Vehicle {
 public:
@@ -12,66 +12,66 @@ public:
     virtual std::string type() const = 0;
 };
 
-class Car : public Vehicle {
-    double l100;
+class RoadCar : public Vehicle {
+    double per100;
 public:
-    Car(double x) : l100(x) {}
-    double fuel_needed(double d) const override { return l100 * d / 100.0; }
+    RoadCar(double x) : per100(x) {}
+    double fuel_needed(double d) const override { return per100 * d / 100.0; }
     std::string type() const override { return "CAR"; }
 };
 
-class Truck : public Vehicle {
-    double lkm;
+class FreightTruck : public Vehicle {
+    double perKm;
 public:
-    Truck(double x) : lkm(x) {}
-    double fuel_needed(double d) const override { return lkm * d; }
+    FreightTruck(double x) : perKm(x) {}
+    double fuel_needed(double d) const override { return perKm * d; }
     std::string type() const override { return "TRUCK"; }
 };
 
-class Bike : public Vehicle {
+class PushBike : public Vehicle {
 public:
     double fuel_needed(double) const override { return 0.0; }
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config) {
-    if (kind == "CAR") {
-        double v; config >> v;
-        return std::unique_ptr<Vehicle>(new Car(v));
+std::unique_ptr<Vehicle> spawnUnit(const std::string& tag, std::istream& cfg) {
+    if (tag == "CAR") {
+        double v; cfg >> v;
+        return std::unique_ptr<Vehicle>(new RoadCar(v));
     }
-    if (kind == "TRUCK") {
-        double v; config >> v;
-        return std::unique_ptr<Vehicle>(new Truck(v));
+    if (tag == "TRUCK") {
+        double v; cfg >> v;
+        return std::unique_ptr<Vehicle>(new FreightTruck(v));
     }
-    if (kind == "BIKE")
-        return std::unique_ptr<Vehicle>(new Bike());
+    if (tag == "BIKE")
+        return std::unique_ptr<Vehicle>(new PushBike());
     return nullptr;
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> pool;
-    std::vector<double> kms;
-    std::string typ;
-    while (std::cin >> typ) {
-        auto v = create_vehicle(typ, std::cin);
-        if (!v) {
+    std::vector<std::unique_ptr<Vehicle>> unitList;
+    std::vector<double> legDist;
+    std::string tag;
+    while (std::cin >> tag) {
+        auto unit = spawnUnit(tag, std::cin);
+        if (!unit) {
             std::string junk; std::getline(std::cin, junk);
             std::cout << "ERROR\n";
             continue;
         }
         double d; std::cin >> d;
-        pool.push_back(std::move(v));
-        kms.push_back(d);
+        unitList.push_back(std::move(unit));
+        legDist.push_back(d);
     }
 
-    double tot = 0;
-    for (size_t i = 0; i < pool.size(); ++i) {
-        double f = pool[i]->fuel_needed(kms[i]);
-        tot += f;
-        std::cout << "Trip " << i + 1 << ": " << pool[i]->type()
+    double fuelSum = 0;
+    for (size_t slot = 0; slot < unitList.size(); ++slot) {
+        double f = unitList[slot]->fuel_needed(legDist[slot]);
+        fuelSum += f;
+        std::cout << "Trip " << slot + 1 << ": " << unitList[slot]->type()
                   << " needs " << std::fixed << std::setprecision(2) << f
                   << " liters\n";
     }
-    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << tot << " liters\n";
+    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << fuelSum << " liters\n";
     return 0;
 }

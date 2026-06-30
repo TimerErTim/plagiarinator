@@ -1,40 +1,40 @@
 #include <utility>
+#include <string>
 #include <array>
 #include <iostream>
-#include <string>
-// TODO: refactor later
+// namespace wrapper from tutorial
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> backing;
-    std::size_t count{0};
+    std::array<T, N> mem;
+    std::size_t n{0};
 
 public:
     bool push(const T& value) {
-        if (count >= N) return false;
-        backing[count++] = value;
+        if (n >= N) return false;
+        mem[n++] = value;
         return true;
     }
 
     bool push(T&& value) {
-        if (count >= N) return false;
-        backing[count++] = std::move(value);
+        if (n >= N) return false;
+        mem[n++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
-        if (count == 0) return false;
-        out = backing[--count];
+        if (n == 0) return false;
+        out = mem[--n];
         return true;
     }
 
     bool peek(T& out) const {
-        if (count == 0) return false;
-        out = backing[count - 1];
+        if (n == 0) return false;
+        out = mem[n - 1];
         return true;
     }
 
-    std::size_t size() const { return count; }
+    std::size_t size() const { return n; }
 };
 
 namespace balance {
@@ -48,25 +48,25 @@ bool closing_matches(char open, char close) {
 
 }  // namespace balance
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> brackets;
-    for (unsigned char raw : s) {
+bool is_balanced(const std::string& text) {
+    FixedStack<char, 128> stk;
+    for (unsigned char raw : text) {
         char c = static_cast<char>(raw);
         if (c == '(' || c == '[' || c == '{') {
-            if (!brackets.push(c)) return false;
+            if (!stk.push(c)) return false;
         } else if (c == ')' || c == ']' || c == '}') {
             char top;
-            if (!brackets.pop(top)) return false;
+            if (!stk.pop(top)) return false;
             if (!balance::closing_matches(top, c)) return false;
         }
     }
-    return brackets.size() == 0;
+    return stk.size() == 0;
 }
 
 int main() {
-    for (std::string buf; std::getline(std::cin, buf);) {
-        if (buf == "END") break;
-        std::cout << (is_balanced(buf) ? "OK" : "FAIL") << '\n';
+    for (std::string line; std::getline(std::cin, line);) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

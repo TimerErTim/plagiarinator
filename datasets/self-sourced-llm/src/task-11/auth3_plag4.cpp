@@ -1,11 +1,10 @@
-#include <iomanip>
 #include <iostream>
-#include <string>
+#include <iomanip>
 #include <sstream>
-#include <utility>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
-// quick submit
 
 struct StreamLogger {
     std::ostream& out;
@@ -33,20 +32,20 @@ void log_line(std::ostream& out, Args&&... args) {
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> data_;
+    std::unordered_map<std::string, std::string> table_;
 
 public:
     void read_section(std::istream& in) {
         std::string line;
         while (std::getline(in, line) && !line.empty()) {
             auto eq = line.find('=');
-            data_.emplace(line.substr(0, eq), line.substr(eq + 1));
+            table_.emplace(line.substr(0, eq), line.substr(eq + 1));
         }
     }
 
-    bool has(const std::string& key) const { return data_.find(key) != data_.end(); }
+    bool has(const std::string& key) const { return table_.find(key) != table_.end(); }
 
-    const std::string& get(const std::string& key) const { return data_.at(key); }
+    const std::string& get(const std::string& key) const { return table_.at(key); }
 };
 
 bool looks_like_int(const std::string& s) {
@@ -82,17 +81,17 @@ void log_values(std::ostream& out, const std::vector<std::string>& raw) {
 }
 
 int main() {
-    Config ref;
-    ref.read_section(std::cin);
+    Config settings;
+    settings.read_section(std::cin);
 
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            std::cout << (ref.has(tag) ? ref.get(tag) : std::string("MISSING")) << '\n';
-        } else if (elem == "LOG") {
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "GET") {
+            std::string key;
+            std::cin >> key;
+            std::cout << (settings.has(key) ? settings.get(key) : std::string("MISSING")) << '\n';
+        } else if (token == "LOG") {
             std::vector<std::string> raw;
             std::string t;
             while (std::cin >> t) {

@@ -1,12 +1,11 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> word_;
+    std::array<T, N> buf_;
     std::size_t len_ = 0;
 
     bool full() const { return len_ >= N; }
@@ -14,25 +13,25 @@ class FixedStack {
 public:
     bool push(const T& value) {
         if (full()) return false;
-        word_[len_++] = value;
+        buf_[len_++] = value;
         return true;
     }
 
     bool push(T&& value) {
         if (full()) return false;
-        word_[len_++] = std::move(value);
+        buf_[len_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
         if (len_ == 0) return false;
-        out = word_[--len_];
+        out = buf_[--len_];
         return true;
     }
 
     bool peek(T& out) const {
         if (len_ == 0) return false;
-        out = word_[len_ - 1];
+        out = buf_[len_ - 1];
         return true;
     }
 
@@ -61,14 +60,14 @@ bool is_balanced(const std::string& s) {
             if (!stack.pop(prev) || !pairs(prev, ch)) return false;
         }
     }
-    return stack.size() == 0;
+    return !stack.size();
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str == "END") break;
-        std::cout << (is_balanced(str) ? "OK" : "FAIL") << '\n';
+    std::string row;
+    while (std::getline(std::cin, row)) {
+        if (row == "END") break;
+        std::cout << (is_balanced(row) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

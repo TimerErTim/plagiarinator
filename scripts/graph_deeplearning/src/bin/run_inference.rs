@@ -6,8 +6,8 @@ use graph_deeplearning::load_trained_model;
 pub fn main() {
     use std::env;
 
-    type InferenceBackend = burn::backend::ndarray::NdArray;
-    let device = burn::backend::ndarray::NdArrayDevice::default();
+    type InferenceBackend = burn::backend::Flex;
+    let device = burn::backend::flex::FlexDevice::default();
 
     let args: Vec<String> = env::args().collect();
 

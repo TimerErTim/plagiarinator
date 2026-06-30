@@ -1,7 +1,6 @@
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
-// quick submit
 
 class Parser;
 
@@ -81,9 +80,9 @@ int main() {
     while (std::getline(std::cin, s))
         p.state = p.state->handle(p, s);
 
-    std::cout << "INFO: " << p.info_n << '\n';
-    std::cout << "WARN: " << p.warn_n << '\n';
-    std::cout << "ERROR: " << p.error_n << '\n';
-    std::cout << "REJECTED: " << p.bad_n << '\n';
+    std::cout << "INFO: " << p.info_n << std::endl;
+    std::cout << "WARN: " << p.warn_n << std::endl;
+    std::cout << "ERROR: " << p.error_n << std::endl;
+    std::cout << "REJECTED: " << p.bad_n << std::endl;
     return 0;
 }

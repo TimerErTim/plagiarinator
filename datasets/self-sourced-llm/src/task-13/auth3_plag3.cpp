@@ -1,83 +1,84 @@
-#include <vector>
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <thread>
-// TODO: refactor later
+#include <vector>
+#include <algorithm>
+// borrowed from roommate's homework
 
-template <typename T>
-class BlockingQueue {
-    mutable std::mutex lock_;
-    std::condition_variable space_;
-    std::condition_variable pool_;
-    std::queue<T> body_;
-    const std::size_t limit_;
+template <typename ValType>
+class BoundedChannel {
+    mutable std::mutex mtxGate_;
+    std::condition_variable roomFree_;
+    std::condition_variable itemReady_;
+    std::queue<ValType> stash_;
+    const std::size_t ceiling_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : limit_(capacity) {}
+    explicit BoundedChannel(std::size_t ceiling) : ceiling_(ceiling) {}
 
-    void push(T value) {
-        std::unique_lock<std::mutex> guard(lock_);
-        space_.wait(guard, [this] { return body_.size() < limit_; });
-        body_.emplace(std::move(value));
-        pool_.notify_one();
+    void push(ValType payload) {
+        std::unique_lock<std::mutex> hold(mtxGate_);
+        roomFree_.wait(hold, [this] { return stash_.size() < ceiling_; });
+        stash_.emplace(std::move(payload));
+        itemReady_.notify_one();
     }
 
-    T pop() {
-        std::unique_lock<std::mutex> guard(lock_);
-        pool_.wait(guard, [this] { return !body_.empty(); });
-        T item = std::move(body_.front());
-        body_.pop();
-        space_.notify_one();
-        return item;
+    ValType pop() {
+        std::unique_lock<std::mutex> hold(mtxGate_);
+        itemReady_.wait(hold, [this] { return !stash_.empty(); });
+        ValType out = std::move(stash_.front());
+        stash_.pop();
+        roomFree_.notify_one();
+        return out;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> guard(lock_);
-        return body_.size();
+        std::lock_guard<std::mutex> hold(mtxGate_);
+        return stash_.size();
     }
 };
 
 int main() {
     std::size_t prod = 1, cons = 1, total = 0;
-    std::string ln;
-    std::cin >> ln >> prod >> ln >> cons >> ln >> total;
+    std::string token;
+    std::cin >> token >> prod >> token >> cons >> token >> total;
 
-    BlockingQueue<int> channel(std::max<std::size_t>(1, total));
-    std::atomic<std::size_t> seen{0};
-    std::vector<std::thread> gang;
+    BoundedChannel<int> lane(std::max<std::size_t>(1, total));
+    std::atomic<std::size_t> tally{0};
+    std::vector<std::thread> squad;
 
-    std::size_t chunk = total / prod;
-    std::size_t leftover = total % prod;
-    int offset = 0;
+    std::size_t slice = total / prod;
+    std::size_t spare = total % prod;
+    int head = 0;
 
     for (std::size_t p = 0; p < prod; ++p) {
-        std::size_t load = chunk + (p < leftover ? 1 : 0);
-        int base = offset;
-        offset += static_cast<int>(load);
-        gang.emplace_back([&, load, base]() {
-            for (std::size_t i = 0; i < load; ++i)
-                channel.push(base + static_cast<int>(i));
+        std::size_t batch = slice + (p < spare ? 1 : 0);
+        int origin = head;
+        head += static_cast<int>(batch);
+        squad.emplace_back([&, batch, origin]() {
+            for (std::size_t step = batch; step-- > 0;)
+                lane.push(origin + static_cast<int>(step));
         });
     }
 
     for (std::size_t c = 0; c < cons; ++c) {
-        gang.emplace_back([&]() {
+        squad.emplace_back([&]() {
             while (true) {
-                int x = channel.pop();
+                int x = lane.pop();
                 if (x < 0) break;
                 std::cout << "got " << x << '\n';
-                if (seen.fetch_add(1) + 1 == total) {
-                    for (std::size_t val = 0; val < cons; ++val)
-                        channel.push(-1);
+                if (tally.fetch_add(1) + 1 == total) {
+                    for (std::size_t stop = cons; stop-- > 0;)
+                        lane.push(-1);
                 }
             }
         });
     }
 
-    for (auto& member : gang) member.join();
+    for (auto& member : squad) member.join();
     std::cout << "DONE\n";
     return 0;
 }

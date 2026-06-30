@@ -1,65 +1,77 @@
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-// from lab partner
+#include <vector>
+// borrowed from roommate's homework
 
-struct GraphNode {
-    std::string label;
+struct GraphNode
+{
+    std::string tag;
     std::vector<std::shared_ptr<GraphNode>> edges;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> pool;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> store_;
 
 public:
-    void addNode(const std::string& name) {
-        if (!pool.count(name)) {
+    void addNode(const std::string& name)
+    {
+        if (!store_.count(name))
+        {
             auto n = std::make_shared<GraphNode>();
-            n->label = name;
-            pool[name] = n;
+            n->tag = name;
+            store_[name] = n;
         }
     }
 
-    void addEdge(const std::string& u, const std::string& v) {
+    void addEdge(const std::string& u, const std::string& v)
+    {
         addNode(u);
         addNode(v);
-        pool[u]->edges.push_back(pool[v]);
+        store_[u]->edges.push_back(store_[v]);
     }
 
-    bool query(const std::string& from, const std::string& to) const {
-        if (!pool.count(from)) return false;
-        return search(pool.at(from), to, {});
+    bool query(const std::string& from, const std::string& to) const
+    {
+        if (!store_.count(from)) return false;
+        return search(store_.at(from), to, {});
     }
 
 private:
     bool search(const std::shared_ptr<GraphNode>& node,
                 const std::string& target,
-                std::unordered_set<std::string> seen) const {
-        if (!node || seen.count(node->label)) return false;
-        if (node->label == target) return true;
-        seen.insert(node->label);
-        for (const auto& e : node->edges)
-            if (search(e, target, seen)) return true;
+                std::unordered_set<std::string> seen) const
+    {
+        if (!node || seen.count(node->tag)) return false;
+        if (node->tag == target) return true;
+        seen.insert(node->tag);
+        for (std::size_t k = node->edges.size(); k-- > 0;)
+            if (search(node->edges[k], target, seen)) return true;
         return false;
     }
 };
 
-int main() {
-    Graph obj;
-    std::string ln, a, b;
-    while (std::cin >> ln && ln != "END") {
-        if (ln == "ADD_NODE") {
-            std::cin >> a;
-            obj.addNode(a);
-        } else if (ln == "ADD_EDGE") {
-            std::cin >> a >> b;
-            obj.addEdge(a, b);
-        } else if (ln == "QUERY") {
-            std::cin >> a >> b;
-            std::cout << (obj.query(a, b) ? "REACHABLE\n" : "UNREACHABLE\n");
+int main()
+{
+    Graph net;
+    std::string cmd_v, x, y;
+    while (std::cin >> cmd_v && cmd_v != "END")
+    {
+        if (cmd_v == "ADD_NODE")
+        {
+            std::cin >> x;
+            net.addNode(x);
+        } else if (cmd_v == "ADD_EDGE")
+        {
+            std::cin >> x >> y;
+            net.addEdge(x, y);
+        } else if (cmd_v == "QUERY")
+        {
+            std::cin >> x >> y;
+            std::cout << (net.query(x, y) ? "REACHABLE\n" : "UNREACHABLE\n");
         }
     }
     return 0;

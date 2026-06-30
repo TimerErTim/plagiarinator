@@ -1,78 +1,88 @@
+#include <string>
+#include <utility>
 #include <vector>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <utility>
-// from lab partner
+// borrowed from roommate's homework
 
-class FileWriter {
+class FileWriter
+{
 private:
-    std::ofstream body;
-    std::string tag;
+    std::ofstream outStream_;
+    std::string destPath_;
 
 public:
-    explicit FileWriter(const std::string& path) : tag(path) {
-        body.open(path);
+    explicit FileWriter(const std::string& path) : destPath_(path)
+    {
+        outStream_.open(destPath_);
     }
 
-    ~FileWriter() {
-        if (body.is_open())
-            body.close();
+    ~FileWriter()
+    {
+        if (outStream_.is_open())
+            outStream_.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
-    FileWriter(FileWriter&& other) noexcept
-        : body(std::move(other.body)), tag(std::move(other.tag)) {}
+    FileWriter(FileWriter&& donor) noexcept
+        : outStream_(std::move(donor.outStream_)), destPath_(std::move(donor.destPath_)) {}
 
-    FileWriter& operator=(FileWriter&& other) noexcept {
-        if (&other != this) {
-            if (body.is_open()) body.close();
-            body = std::move(other.body);
-            tag = std::move(other.tag);
+    FileWriter& operator=(FileWriter&& donor) noexcept
+    {
+        if (&donor != this)
+        {
+            if (outStream_.is_open()) outStream_.close();
+            outStream_ = std::move(donor.outStream_);
+            destPath_ = std::move(donor.destPath_);
         }
         return *this;
     }
 
-    void write_line(const std::string& line) {
-        body << line << '\n';
+    void write_line(const std::string& txt)
+    {
+        outStream_ << txt << '\n';
     }
 };
 
-char mapGrade(int score) {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
+char gradeChar(int pts)
+{
+    if (pts >= 90) return 'A';
+    if (pts >= 80) return 'B';
+    if (pts >= 70) return 'C';
+    if (pts >= 60) return 'D';
     return 'F';
 }
 
-void emitReport(FileWriter writer, const std::vector<std::pair<std::string, int>>& data) {
+void emitReport(FileWriter writer, const std::vector<std::pair<std::string, int>>& data)
+{
     writer.write_line("Student Report");
     writer.write_line("--------------");
     double total = 0.0;
-    for (const auto& item : data) {
+    for (const auto& item : data)
+    {
         total += item.second;
-        std::string row = item.first + ": " + std::to_string(item.second)
-                        + " [" + mapGrade(item.second) + "]";
-        writer.write_line(row);
+        writer.write_line(item.first + ": " + std::to_string(item.second)
+                          + " [" + gradeChar(item.second) + "]");
     }
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(1) << "Average: " << total / data.size();
     writer.write_line(oss.str());
 }
 
-int main() {
-    std::vector<std::pair<std::string, int>> buf;
-    std::string buffer;
-    while (std::getline(std::cin, buffer)) {
-        auto comma = buffer.find(',');
-        buf.push_back({buffer.substr(0, comma), std::stoi(buffer.substr(comma + 1))});
+int main()
+{
+    std::vector<std::pair<std::string, int>> rows;
+    std::string line;
+    while (std::getline(std::cin, line))
+    {
+        auto comma = line.find(',');
+        rows.emplace_back(line.substr(0, comma), std::stoi(line.substr(comma + 1)));
     }
-    emitReport(FileWriter("report.txt"), buf);
+    emitReport(FileWriter("report.txt"), rows);
     std::cout << "Report written to report.txt\n";
     return 0;
 }

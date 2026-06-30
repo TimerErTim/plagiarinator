@@ -1,10 +1,9 @@
+#include <string>
+#include <vector>
+#include <memory>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 #define PI_VAL 3.141592653589793
 
@@ -46,7 +45,7 @@ public:
 void print_shape(const Shape& s) {
     std::cout << std::fixed << std::setprecision(4)
               << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << ", perimeter=" << s.perimeter() << std::endl;
 }
 
 void accumulate(const Shape& s, double& a_sum, double& p_sum) {
@@ -55,25 +54,25 @@ void accumulate(const Shape& s, double& a_sum, double& p_sum) {
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> items;
-    std::string mode;
-    while (std::cin >> mode && mode != "DONE") {
-        if (mode == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> collection;
+    std::string kind;
+    while (std::cin >> kind && kind != "DONE") {
+        if (kind == "CIRCLE") {
             double rad; std::cin >> rad;
-            items.push_back(std::unique_ptr<Shape>(new Circle(rad)));
-        } else if (mode == "RECT") {
+            collection.emplace_back(std::unique_ptr<Shape>(new Circle(rad)));
+        } else if (kind == "RECT") {
             double w, h; std::cin >> w >> h;
-            items.push_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
-        } else if (mode == "TRI") {
+            collection.emplace_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
+        } else if (kind == "TRI") {
             double s; std::cin >> s;
-            items.push_back(std::unique_ptr<Shape>(new Triangle(s)));
+            collection.emplace_back(std::unique_ptr<Shape>(new Triangle(s)));
         }
     }
 
     double a = 0, p = 0;
-    for (size_t i = 0; i < items.size(); ++i) {
-        print_shape(*items[i]);
-        accumulate(*items[i], a, p);
+    for (size_t i = 0; i < collection.size(); i++) {
+        print_shape(*collection[i]);
+        accumulate(*collection[i], a, p);
     }
     std::cout << std::fixed << std::setprecision(4)
               << "TOTAL area=" << a << std::endl

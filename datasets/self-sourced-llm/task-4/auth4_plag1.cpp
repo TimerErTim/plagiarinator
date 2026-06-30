@@ -1,10 +1,10 @@
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iomanip>
 // cleaned up version
 
 class FileWriter {
@@ -38,7 +38,7 @@ public:
     }
 
     void write_line(const std::string& line) {
-        os_ << line << '\n';
+        os_ << line << std::endl;
     }
 };
 
@@ -66,13 +66,13 @@ void emitReport(FileWriter writer, const std::vector<std::pair<std::string, int>
 }
 
 int main() {
-    std::vector<std::pair<std::string, int>> lines;
-    std::string buf;
-    while (std::getline(std::cin, buf)) {
-        auto comma = buf.find(',');
-        lines.push_back({buf.substr(0, comma), std::stoi(buf.substr(comma + 1))});
+    std::vector<std::pair<std::string, int>> entries;
+    std::string buffer;
+    while (std::getline(std::cin, buffer)) {
+        auto comma = buffer.find(',');
+        entries.emplace_back({buffer.substr(0, comma), std::stoi(buffer.substr(comma + 1))});
     }
-    emitReport(FileWriter("report.txt"), lines);
+    emitReport(FileWriter("report.txt"), entries);
     std::cout << "Report written to report.txt\n";
     return 0;
 }

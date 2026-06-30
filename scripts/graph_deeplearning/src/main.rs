@@ -15,7 +15,7 @@ use burn::{
     Tensor,
 };
 use burn_store::ModuleStore;
-use data_loading::full_cpp_dataset;
+use data_loading::{full_cpp_dataset, train_test_cpp_dataset};
 
 mod learning_run;
 mod loading;
@@ -61,7 +61,7 @@ pub fn main() {
     println!("graph_deeplearning: using Burn device {device:?}");
 
     let seed = 41;
-    let batch_size = 8;
+    let batch_size = 16;
     let validation_interval = 50;
     let checkpoint_interval = 100;
     let rng = rand::rngs::SmallRng::seed_from_u64(seed);
@@ -77,8 +77,7 @@ pub fn main() {
     std::fs::create_dir_all(&analysis_dir).unwrap();
     let mut tensorboard_logger = create_tensorboard_logger("unknown", &run_timestamp);
 
-    let dataset = full_cpp_dataset().unwrap();
-    let (cpp_train_dataset, cpp_test_dataset) = dataset.train_test_split();
+    let (cpp_train_dataset, cpp_test_dataset) = train_test_cpp_dataset().unwrap();
     let num_train_items = cpp_train_dataset.len();
     let cpp_test_items = make_testset_loader::<InfBackend>(
         cpp_test_dataset.plagiarized_pairs.clone(),
@@ -102,7 +101,7 @@ pub fn main() {
 
     // init optimizer and loss function
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
-    let mut optimizer = PlagiarismOptimizer::new(0.005, 0.001);
+    let mut optimizer = PlagiarismOptimizer::new(0.002, 0.0002);
 
     for (step, batch) in batched_loader.enumerate() {
         if step % checkpoint_interval == 0 {
@@ -157,6 +156,11 @@ pub fn main() {
             tensorboard_logger.log_scalar(
                 "validation/pr_auc",
                 validation_output.pr_auc,
+                step as u64,
+            );
+            tensorboard_logger.log_scalar(
+                "validation/best_threshold",
+                validation_output.best_classification_statistic.threshold,
                 step as u64,
             );
             serde_json::to_writer_pretty(

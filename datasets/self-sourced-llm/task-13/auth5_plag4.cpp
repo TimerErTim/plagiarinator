@@ -1,11 +1,11 @@
-#include <condition_variable>
 #include <atomic>
-#include <mutex>
+#include <condition_variable>
 #include <iostream>
-#include <string>
+#include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
-// quick submit
+#include <vector>
 
 template <typename T>
 class BlockingQueue {
@@ -46,7 +46,8 @@ static void spawn_producers(BlockingQueue<int>& bq, std::size_t p, std::size_t n
         std::size_t start = cur;
         cur += k;
         out.emplace_back([&, k, start] {
-            for (std::size_t j = 0; j < k; ++j) bq.push(static_cast<int>(start + j));
+            for (std::size_t j = 0; j < k; ++j)
+                bq.push(static_cast<int>(start + j));
         });
     }
 }
@@ -56,25 +57,26 @@ int main() {
     std::string tag;
     std::cin >> tag >> p >> tag >> c >> tag >> n;
 
-    BlockingQueue<int> bq(n);
-    std::vector<std::thread> ts;
-    std::atomic<std::size_t> count{0};
+    BlockingQueue<int> fifo(n);
+    std::vector<std::thread> threads;
+    std::atomic<std::size_t> tally{0};
 
-    spawn_producers(bq, p, n, ts);
+    spawn_producers(fifo, p, n, threads);
 
     for (std::size_t i = 0; i < c; ++i) {
-        ts.emplace_back([&] {
+        threads.emplace_back([&] {
             while (true) {
-                int v = bq.pop();
+                int v = fifo.pop();
                 if (v < 0) break;
                 std::cout << "got " << v << '\n';
-                if (count.fetch_add(1) + 1 == n)
-                    for (std::size_t j = 0; j < c; ++j) bq.push(-1);
+                if (tally.fetch_add(1) + 1 == n)
+                    for (std::size_t j = 0; j < c; ++j)
+                        fifo.push(-1);
             }
         });
     }
 
-    for (auto& t : ts) t.join();
+    for (auto& t : threads) t.join();
     std::cout << "DONE\n";
     return 0;
 }

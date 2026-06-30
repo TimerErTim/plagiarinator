@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <memory>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace {
 constexpr double kPi = 3.141592653589793;
@@ -19,11 +18,11 @@ public:
 };
 
 class Circle : public Shape {
-    double rad_;
+    double radius_;
 public:
-    explicit Circle(double r) : rad_(r) {}
-    double area() const override { return kPi * rad_ * rad_; }
-    double perimeter() const override { return 2.0 * kPi * rad_; }
+    explicit Circle(double r) : radius_(r) {}
+    double area() const override { return kPi * radius_ * radius_; }
+    double perimeter() const override { return 2.0 * kPi * radius_; }
     std::string name() const override { return "Circle"; }
 };
 
@@ -37,56 +36,70 @@ public:
 };
 
 class Triangle : public Shape {
-    double side_;
+    double edge_;
 public:
-    explicit Triangle(double e) : side_(e) {}
-    double area() const override {
-        return std::sqrt(3.0) * side_ * side_ / 4.0;
+    explicit Triangle(double e) : edge_(e) {}
+    double area() const override
+    {
+        return std::sqrt(3.0) * edge_ * edge_ / 4.0;
     }
-    double perimeter() const override { return 3.0 * side_; }
+    double perimeter() const override { return 3.0 * edge_; }
     std::string name() const override { return "Triangle"; }
 };
 
-static void print_shape(const Shape& figure) {
+static void print_shape(const Shape& figure)
+{
     std::cout << std::fixed << std::setprecision(4)
               << figure.name() << ": area=" << figure.area()
               << ", perimeter=" << figure.perimeter() << std::endl;
 }
 
-static void accumulate(const Shape& figure, double& area_sum, double& peri_sum) {
+static void accumulate(const Shape& figure, double& area_sum, double& peri_sum)
+{
     area_sum += figure.area();
     peri_sum += figure.perimeter();
+}
+
+std::unique_ptr<Shape> extract(const std::string& token, std::istream& in)
+{
+    if (token == "CIRCLE")
+    {
+        double r; in >> r;
+        return std::make_unique<Circle>(r);
+    }
+    if (token == "RECT")
+    {
+        double w, h; in >> w >> h;
+        return std::make_unique<Rectangle>(w, h);
+    }
+    if (token == "TRI")
+    {
+        double s; in >> s;
+        return std::make_unique<Triangle>(s);
+    }
+    return nullptr;
 }
 
 int main()
 {
     std::vector<std::unique_ptr<Shape>> gallery;
-    std::string op;
-    while (std::cin >> op)
-{
-        if (op == "DONE") break;
-        if (op == "CIRCLE")
-{
-            double r; std::cin >> r;
-            gallery.emplace_back(std::make_unique<Circle>(r));
-        } else if (op == "RECT") {
-            double w, h; std::cin >> w >> h;
-            gallery.emplace_back(std::make_unique<Rectangle>(w, h));
-        } else if (op == "TRI") {
-            double s; std::cin >> s;
-            gallery.emplace_back(std::make_unique<Triangle>(s));
-        }
+    std::string token;
+    while (std::cin >> token)
+    {
+        if (token == "DONE") break;
+        auto fig = extract(token, std::cin);
+        if (fig) gallery.push_back(std::move(fig));
     }
 
-    double a = 0.0, p = 0.0;
-    for (const std::unique_ptr<Shape>& shapePtr : gallery)
-{
-        print_shape(*shapePtr);
-        accumulate(*shapePtr, a, p);
+    double areaTotal = 0.0, periTotal = 0.0;
+    for (std::size_t idx = 0; idx < gallery.size(); ++idx)
+    {
+        print_shape(*gallery[idx]);
+        accumulate(*gallery[idx], areaTotal, periTotal);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << a << std::endl
-              << "TOTAL perimeter=" << p << std::endl;
+              << "TOTAL area=" << areaTotal << std::endl
+              << "TOTAL perimeter=" << periTotal << std::endl;
     return 0;
 }

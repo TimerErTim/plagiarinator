@@ -4,69 +4,60 @@
 #include <iostream>
 // adapted from classmate submission
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::list;
-using std::pair;
-using std::size_t;
-using std::string;
-using std::unordered_map;
-
 template <typename Key, typename Value>
 class LRUCache
 {
-    size_t limit;
-    list<pair<Key, Value>> chain;
-    unordered_map<Key, typename list<pair<Key, Value>>::iterator> idx;
+    std::size_t maxCap;
+    std::list<std::pair<Key, Value>> nodes;
+    std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> loc;
 
 public:
-    explicit LRUCache(size_t c): limit(c) {}
+    explicit LRUCache(std::size_t c): maxCap(c) {}
 
     bool get(const Key& k, Value& out)
     {
-        auto f = idx.find(k);
-        if (f == idx.end()) return false;
+        auto f = loc.find(k);
+        if (f == loc.end()) return false;
         out = f->second->second;
-        chain.splice(chain.begin(), chain, f->second);
+        nodes.splice(nodes.begin(), nodes, f->second);
         return true;
     }
 
     void put(const Key& k, const Value& v)
     {
-        auto f = idx.find(k);
-        if (f != idx.end()) {
+        auto f = loc.find(k);
+        if (f != loc.end()) {
             f->second->second = v;
-            chain.splice(chain.begin(), chain, f->second);
+            nodes.splice(nodes.begin(), nodes, f->second);
             return;
         }
-        if (chain.size() >= limit) {
-            idx.erase(chain.back().first);
-            chain.pop_back();
+        if (nodes.size() >= maxCap) {
+            loc.erase(nodes.back().first);
+            nodes.pop_back();
         }
-        chain.emplace_front(k, v);
-        idx[k] = chain.begin();
+        nodes.emplace_front(k, v);
+        loc[k] = nodes.begin();
     }
 };
 
 int main()
 {
-    string tok;
-    size_t cap;
-    cin >> tok >> cap;
-    LRUCache<string, int> lru(cap);
-    string verb;
-    while (cin >> verb)
-{
+    std::string token;
+    std::size_t cap;
+    std::cin >> token >> cap;
+    LRUCache<std::string, int> lru(cap);
+    std::string verb;
+    while (std::cin >> verb)
+    {
         if (verb == "END") break;
         if (verb == "GET")
-{
-            string k; cin >> k;
+        {
+            std::string k; std::cin >> k;
             int v;
-            if (lru.get(k, v)) cout << "HIT " << v << endl;
-            else cout << "MISS" << endl;
+            if (lru.get(k, v)) std::cout << "HIT " << v << '\n';
+            else std::cout << "MISS\n";
         } else if (verb == "PUT") {
-            string k; int v; cin >> k >> v;
+            std::string k; int v; std::cin >> k >> v;
             lru.put(k, v);
         }
     }

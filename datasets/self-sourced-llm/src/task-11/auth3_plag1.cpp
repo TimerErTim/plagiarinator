@@ -1,20 +1,19 @@
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <utility>
 #include <vector>
-// cleaned up version
+#include <utility>
+#include <unordered_map>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 
 struct StreamLogger {
     std::ostream& out;
-    bool initial = true;
+    bool first = true;
 
     template <typename T>
     void emit(T&& v) {
-        if (!initial) out << ' ';
-        initial = false;
+        if (!first) out << ' ';
+        first = false;
         using D = std::decay_t<T>;
         if constexpr (std::is_same_v<D, double>)
             out << std::fixed << std::setprecision(2) << v;
@@ -22,7 +21,7 @@ struct StreamLogger {
             out << std::forward<T>(v);
     }
 
-    void newline() { out << '\n'; }
+    void newline() { out << std::endl; }
 };
 
 template <typename... Args>
@@ -33,48 +32,48 @@ void log_line(std::ostream& out, Args&&... args) {
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> slots_;
+    std::unordered_map<std::string, std::string> table_;
 
 public:
     void read_section(std::istream& in) {
         std::string line;
         while (std::getline(in, line) && !line.empty()) {
             auto eq = line.find('=');
-            slots_.emplace(line.substr(0, eq), line.substr(eq + 1));
+            table_.emplace(line.substr(0, eq), line.substr(eq + 1));
         }
     }
 
-    bool has(const std::string& key) const { return slots_.find(key) != slots_.end(); }
+    bool has(const std::string& key) const { return table_.find(key) != table_.end(); }
 
-    const std::string& get(const std::string& key) const { return slots_.at(key); }
+    const std::string& get(const std::string& key) const { return table_.at(key); }
 };
 
-bool is_digit_str(const std::string& s) {
+bool looks_like_int(const std::string& s) {
     if (s.empty()) return false;
     std::size_t i = (s[0] == '-' || s[0] == '+') ? 1 : 0;
     if (i >= s.size()) return false;
-    for (; i < s.size(); ++i)
+    for (; i < s.size(); i++)
         if (s[i] < '0' || s[i] > '9') return false;
     return true;
 }
 
-void emit_tokens(std::ostream& out, const std::vector<std::string>& raw) {
-    if (raw.empty()) { out << '\n'; return; }
+void log_values(std::ostream& out, const std::vector<std::string>& raw) {
+    if (raw.empty()) { out << std::endl; return; }
     if (raw.size() == 1) {
-        if (is_digit_str(raw[0])) log_line(out, std::stoi(raw[0]));
+        if (looks_like_int(raw[0])) log_line(out, std::stoi(raw[0]));
         else log_line(out, raw[0]);
     } else if (raw.size() == 2) {
-        if (is_digit_str(raw[1])) log_line(out, raw[0], std::stoi(raw[1]));
+        if (looks_like_int(raw[1])) log_line(out, raw[0], std::stoi(raw[1]));
         else log_line(out, raw[0], raw[1]);
     } else if (raw.size() == 3) {
-        if (is_digit_str(raw[1]))
+        if (looks_like_int(raw[1]))
             log_line(out, raw[0], std::stoi(raw[1]), raw[2]);
         else
             log_line(out, raw[0], raw[1], raw[2]);
     } else {
         StreamLogger lg{out};
         for (const auto& t : raw) {
-            if (is_digit_str(t)) lg.emit(std::stoi(t));
+            if (looks_like_int(t)) lg.emit(std::stoi(t));
             else lg.emit(t);
         }
         lg.newline();
@@ -82,27 +81,27 @@ void emit_tokens(std::ostream& out, const std::vector<std::string>& raw) {
 }
 
 int main() {
-    Config conf;
-    conf.read_section(std::cin);
+    Config cfg;
+    cfg.read_section(std::cin);
 
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") break;
-        if (piece == "GET") {
-            std::string id;
-            std::cin >> id;
-            std::cout << (conf.has(id) ? conf.get(id) : std::string("MISSING")) << '\n';
-        } else if (piece == "LOG") {
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "GET") {
+            std::string key;
+            std::cin >> key;
+            std::cout << (cfg.has(key) ? cfg.get(key) : std::string("MISSING")) << std::endl;
+        } else if (token == "LOG") {
             std::vector<std::string> raw;
-            std::string piece;
-            while (std::cin >> piece) {
-                if (piece == "GET" || piece == "LOG" || piece == "END") {
-                    for (auto rhs = piece.rbegin(); rhs != piece.rend(); ++rhs) std::cin.putback(*rhs);
+            std::string t;
+            while (std::cin >> t) {
+                if (t == "GET" || t == "LOG" || t == "END") {
+                    for (auto r = t.rbegin(); r != t.rend(); ++r) std::cin.putback(*r);
                     break;
                 }
-                raw.push_back(piece);
+                raw.emplace_back(t);
             }
-            emit_tokens(std::cout, raw);
+            log_values(std::cout, raw);
         }
     }
     return 0;

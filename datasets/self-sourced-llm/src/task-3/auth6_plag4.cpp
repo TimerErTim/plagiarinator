@@ -1,11 +1,10 @@
-#include <memory>
-#include <iostream>
-#include <string>
 #include <queue>
-#include <unordered_set>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-// quick submit
+#include <iostream>
+#include <memory>
 
 struct GraphNode {
     std::string label;
@@ -13,14 +12,14 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> table;
 
     std::shared_ptr<GraphNode> touch(const std::string& id) {
-        auto iter = ref_.find(id);
-        if (iter != ref_.end()) return iter->second;
+        auto iter = table.find(id);
+        if (iter != table.end()) return iter->second;
         std::shared_ptr<GraphNode> created = std::make_shared<GraphNode>();
         created->label = id;
-        ref_[id] = created;
+        table[id] = created;
         return created;
     }
 
@@ -32,8 +31,8 @@ public:
     }
 
     bool query(const std::string& src, const std::string& dst) const {
-        auto startIt = ref_.find(src);
-        if (startIt == ref_.end()) return false;
+        auto startIt = table.find(src);
+        if (startIt == table.end()) return false;
 
         std::queue<std::shared_ptr<GraphNode>> pending;
         std::unordered_set<std::string> visited;
@@ -54,21 +53,21 @@ public:
 };
 
 int main() {
-    Graph g;
-    for (std::string elem; std::cin >> elem;) {
-        if (elem == "END") break;
-        if (elem == "ADD_NODE") {
+    Graph G;
+    for (std::string token; std::cin >> token;) {
+        if (token == "END") break;
+        if (token == "ADD_NODE") {
             std::string name;
             std::cin >> name;
-            g.addNode(name);
-        } else if (elem == "ADD_EDGE") {
+            G.addNode(name);
+        } else if (token == "ADD_EDGE") {
             std::string u, v;
             std::cin >> u >> v;
-            g.addEdge(u, v);
-        } else if (elem == "QUERY") {
+            G.addEdge(u, v);
+        } else if (token == "QUERY") {
             std::string u, v;
             std::cin >> u >> v;
-            std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (G.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
         }
     }
     return 0;

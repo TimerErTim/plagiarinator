@@ -1,9 +1,9 @@
-#include <iomanip>
-#include <iostream>
-#include <string>
-#include <variant>
+#include <sstream>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <iostream>
+#include <iomanip>
 
 template <typename Derived>
 class Printable {
@@ -14,58 +14,58 @@ public:
 };
 
 struct Distance : Printable<Distance> {
-    double value_m;
-    Distance(double m) : value_m(m) {}
+    double meters;
+    Distance(double m) : meters(m) {}
     std::string format() const;
 };
 
 struct Mass : Printable<Mass> {
-    double value_kg;
-    Mass(double k) : value_kg(k) {}
+    double kilograms;
+    Mass(double k) : kilograms(k) {}
     std::string format() const;
 };
 
 struct Temperature : Printable<Temperature> {
-    double value_c;
-    Temperature(double c) : value_c(c) {}
+    double celsius;
+    Temperature(double c) : celsius(c) {}
     std::string format() const;
 };
 
 std::string Distance::format() const {
     std::ostringstream ss;
-    ss << std::fixed << std::setprecision(1) << "Distance: " << value_m << " m";
+    ss << std::fixed << std::setprecision(1) << "Distance: " << meters << " m";
     return ss.str();
 }
 
 std::string Mass::format() const {
     std::ostringstream ss;
-    ss << std::fixed << std::setprecision(1) << "Mass: " << value_kg << " kg";
+    ss << std::fixed << std::setprecision(1) << "Mass: " << kilograms << " kg";
     return ss.str();
 }
 
 std::string Temperature::format() const {
     std::ostringstream ss;
-    ss << std::fixed << std::setprecision(1) << "Temp: " << value_c << " C";
+    ss << std::fixed << std::setprecision(1) << "Temp: " << celsius << " C";
     return ss.str();
 }
 
 template <typename T>
 void print_metric(const Printable<T>& metric) {
-    std::cout << metric.to_string() << '\n';
+    std::cout << metric.to_string() << std::endl;
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> data;
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") break;
-        double lhs;
-        std::cin >> lhs;
-        if (piece == "DIST") data.emplace_back(Distance{lhs});
-        else if (piece == "MASS") data.emplace_back(Mass{lhs});
-        else if (piece == "TEMP") data.emplace_back(Temperature{lhs});
+    std::vector<std::variant<Distance, Mass, Temperature>> items;
+    std::string tok;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        double x;
+        std::cin >> x;
+        if (tok == "DIST") items.push_back(Distance{x});
+        else if (tok == "MASS") items.push_back(Mass{x});
+        else if (tok == "TEMP") items.push_back(Temperature{x});
     }
-    for (auto& n : data)
-        std::visit([](auto& m) { print_metric(m); }, n);
+    for (const auto& v : items)
+        std::visit([](const auto& m) { print_metric(m); }, v);
     return 0;
 }

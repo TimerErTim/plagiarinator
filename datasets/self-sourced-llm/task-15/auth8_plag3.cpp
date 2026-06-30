@@ -1,64 +1,63 @@
+#include <variant>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Unit>
+class ToLine {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Unit*>(this)->format();
     }
 };
 
-static std::string build_str(const char* head, double val, const char* tail) {
+static std::string mkLine(const char* head, double val, const char* tail) {
     std::ostringstream os;
     os << std::fixed << std::setprecision(1) << head << val << tail;
     return os.str();
 }
 
-struct Distance : Printable<Distance> {
+struct DistPack : ToLine<DistPack> {
     double m{};
-    explicit Distance(double v) : m(v) {}
-    std::string format() const { return build_str("Distance: ", m, " m"); }
+    explicit DistPack(double v) : m(v) {}
+    std::string format() const { return mkLine("Distance: ", m, " m"); }
 };
 
-struct Mass : Printable<Mass> {
+struct MassPack : ToLine<MassPack> {
     double m{};
-    explicit Mass(double v) : m(v) {}
-    std::string format() const { return build_str("Mass: ", m, " kg"); }
+    explicit MassPack(double v) : m(v) {}
+    std::string format() const { return mkLine("Mass: ", m, " kg"); }
 };
 
-struct Temperature : Printable<Temperature> {
+struct TempPack : ToLine<TempPack> {
     double m{};
-    explicit Temperature(double v) : m(v) {}
-    std::string format() const { return build_str("Temp: ", m, " C"); }
+    explicit TempPack(double v) : m(v) {}
+    std::string format() const { return mkLine("Temp: ", m, " C"); }
 };
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void emit_pack(const ToLine<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
 int main() {
-    using Item = std::variant<Distance, Mass, Temperature>;
-    std::vector<Item> rows;
+    using Item = std::variant<DistPack, MassPack, TempPack>;
+    std::vector<Item> items;
 
     std::string t;
     while (std::cin >> t) {
         if (t == "END") break;
         double n;
         std::cin >> n;
-        if (t == "DIST") rows.push_back(Distance(n));
-        else if (t == "MASS") rows.push_back(Mass(n));
-        else if (t == "TEMP") rows.push_back(Temperature(n));
+        if (t == "DIST") items.push_back(DistPack(n));
+        else if (t == "MASS") items.push_back(MassPack(n));
+        else if (t == "TEMP") items.push_back(TempPack(n));
     }
 
-    for (const Item& it : rows) {
-        std::visit([](const auto& m) { print_metric(m); }, it);
-    }
+    for (std::size_t rem = items.size(); rem-- > 0;)
+        std::visit([](const auto& m) { emit_pack(m); }, items[items.size() - 1 - rem]);
     return 0;
 }

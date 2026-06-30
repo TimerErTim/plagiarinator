@@ -1,10 +1,10 @@
 #include <vector>
+#include <memory>
+#include <iostream>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <string>
-// TODO: refactor later
+// my version of the shapes hw
 
 #define PI_VAL 3.141592653589793
 
@@ -17,66 +17,66 @@ public:
 };
 
 class Circle : public Shape {
-    double r;
+    double radVal;
 public:
-    Circle(double rad) : r(rad) {}
-    double area() const override { return PI_VAL * r * r; }
-    double perimeter() const override { return 2 * PI_VAL * r; }
+    Circle(double rad) : radVal(rad) {}
+    double area() const override { return PI_VAL * radVal * radVal; }
+    double perimeter() const override { return 2 * PI_VAL * radVal; }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double w, h;
+    double wid, ht;
 public:
-    Rectangle(double width, double height) : w(width), h(height) {}
-    double area() const override { return w * h; }
-    double perimeter() const override { return 2 * (w + h); }
+    Rectangle(double width, double height) : wid(width), ht(height) {}
+    double area() const override { return wid * ht; }
+    double perimeter() const override { return 2 * (wid + ht); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double sVal;
+    double edge;
 public:
-    Triangle(double s) : sVal(s) {}
-    double area() const override { return (std::sqrt(3.0) / 4.0) * sVal * sVal; }
-    double perimeter() const override { return 3.0 * sVal; }
+    Triangle(double s) : edge(s) {}
+    double area() const override { return (std::sqrt(3.0) / 4.0) * edge * edge; }
+    double perimeter() const override { return 3.0 * edge; }
     std::string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& s) {
+void print_shape(const Shape& fig) {
     std::cout << std::fixed << std::setprecision(4)
-              << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << fig.name() << ": area=" << fig.area()
+              << ", perimeter=" << fig.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& a_sum, double& p_sum) {
-    a_sum += s.area();
-    p_sum += s.perimeter();
+void accumulate(const Shape& fig, double& arSum, double& prSum) {
+    arSum += fig.area();
+    prSum += fig.perimeter();
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> collection;
-    std::string typ;
-    while (std::cin >> typ && typ != "DONE") {
-        if (typ == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> bag;
+    std::string tag;
+    while (std::cin >> tag && tag != "DONE") {
+        if (tag == "CIRCLE") {
             double rad; std::cin >> rad;
-            collection.push_back(std::unique_ptr<Shape>(new Circle(rad)));
-        } else if (typ == "RECT") {
+            bag.push_back(std::unique_ptr<Shape>(new Circle(rad)));
+        } else if (tag == "RECT") {
             double w, h; std::cin >> w >> h;
-            collection.push_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
-        } else if (typ == "TRI") {
+            bag.push_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
+        } else if (tag == "TRI") {
             double s; std::cin >> s;
-            collection.push_back(std::unique_ptr<Shape>(new Triangle(s)));
+            bag.push_back(std::unique_ptr<Shape>(new Triangle(s)));
         }
     }
 
-    double a = 0, p = 0;
-    for (size_t i = 0; i < collection.size(); ++i) {
-        print_shape(*collection[i]);
-        accumulate(*collection[i], a, p);
+    double areaTot = 0, periTot = 0;
+    for (std::size_t n = 0; n < bag.size(); ++n) {
+        print_shape(*bag[n]);
+        accumulate(*bag[n], areaTot, periTot);
     }
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << a << std::endl
-              << "TOTAL perimeter=" << p << std::endl;
+              << "TOTAL area=" << areaTot << '\n'
+              << "TOTAL perimeter=" << periTot << '\n';
     return 0;
 }

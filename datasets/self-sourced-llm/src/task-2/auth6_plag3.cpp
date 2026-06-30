@@ -1,86 +1,95 @@
-#include <string>
 #include <iostream>
 #include <sstream>
-// from lab partner
+#include <string>
+// borrowed from roommate's homework
 
 template <typename T>
-class LinkedList {
-    struct Node {
-        T value;
-        Node* next;
-        Node(const T& x) : value(x), next(nullptr) {}
+class LinkedList
+{
+    struct Node
+    {
+        T payload;
+        Node* link;
+        Node(const T& x) : payload(x), link(nullptr) {}
     };
 
-    Node* ptr_;
-    std::size_t length_;
+    Node* chainStart;
+    std::size_t elemCount;
 
 public:
-    LinkedList() : ptr_(nullptr), length_(0) {}
+    LinkedList() : chainStart(nullptr), elemCount(0) {}
 
-    ~LinkedList() {
-        Node* current = ptr_;
-        while (current != nullptr) {
-            Node* doomed = current;
-            current = current->next;
-            delete doomed;
+    ~LinkedList()
+    {
+        Node* cur = chainStart;
+        while (cur != nullptr)
+        {
+            Node* trash = cur;
+            cur = cur->link;
+            delete trash;
         }
     }
 
-    void push_back(const T& item) {
+    void push_back(const T& item)
+    {
         Node* fresh = new Node(item);
-        if (ptr_ == nullptr)
-            ptr_ = fresh;
-        else {
-            Node* walker = ptr_;
-            while (walker->next != nullptr)
-                walker = walker->next;
-            walker->next = fresh;
+        if (chainStart == nullptr)
+            chainStart = fresh;
+        else
+        {
+            Node* rover = chainStart;
+            while (rover->link != nullptr)
+                rover = rover->link;
+            rover->link = fresh;
         }
-        length_++;
+        elemCount++;
     }
 
-    std::size_t size() const { return length_; }
+    std::size_t size() const { return elemCount; }
 
-    class Iterator {
-        Node* node_;
+    class Iterator
+    {
+        Node* spot;
     public:
-        explicit Iterator(Node* n) : node_(n) {}
-        T& operator*() { return node_->value; }
-        const T& operator*() const { return node_->value; }
-        Iterator& operator++() { node_ = node_->next; return *this; }
-        bool operator!=(const Iterator& other) const { return node_ != other.node_; }
+        explicit Iterator(Node* n) : spot(n) {}
+        T& operator*() { return spot->payload; }
+        const T& operator*() const { return spot->payload; }
+        Iterator& operator++() { spot = spot->link; return *this; }
+        bool operator!=(const Iterator& peer) const { return spot != peer.spot; }
     };
 
-    Iterator begin() { return Iterator(ptr_); }
+    Iterator begin() { return Iterator(chainStart); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(ptr_); }
+    Iterator begin() const { return Iterator(chainStart); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& second) {
-    LinkedList<T> combined;
-    auto it1 = first.begin();
-    auto it2 = second.begin();
-    auto end1 = first.end();
-    auto end2 = second.end();
+LinkedList<T> merge_sorted(const LinkedList<T>& alpha, const LinkedList<T>& beta)
+{
+    LinkedList<T> combo;
+    auto ia = alpha.begin(), ib = beta.begin();
+    auto ea = alpha.end(), eb = beta.end();
 
-    while (it1 != end1 && it2 != end2) {
-        if (*it1 <= *it2) {
-            combined.push_back(*it1);
-            ++it1;
-        } else {
-            combined.push_back(*it2);
-            ++it2;
-        }
+    while (ia != ea && ib != eb)
+    {
+        if (*ia <= *ib) { combo.push_back(*ia); ++ia; }
+        else { combo.push_back(*ib); ++ib; }
     }
-    while (it1 != end1) { combined.push_back(*it1); ++it1; }
-    while (it2 != end2) { combined.push_back(*it2); ++it2; }
-    return combined;
+    auto flushRest = [&](auto it, auto end) {
+        std::size_t n = 0;
+        for (auto t = it; t != end; ++t) ++n;
+        for (; n-- > 0; ++it) combo.push_back(*it);
+    };
+    flushRest(ia, ea);
+    flushRest(ib, eb);
+    return combo;
 }
 
-namespace io {
-    LinkedList<int> readSequence(std::istream& stream) {
+namespace io
+{
+    LinkedList<int> readSequence(std::istream& stream)
+    {
         LinkedList<int> seq;
         std::string buffer;
         std::getline(stream, buffer);
@@ -92,16 +101,18 @@ namespace io {
     }
 }
 
-int main() {
-    LinkedList<int> seqA = io::readSequence(std::cin);
-    LinkedList<int> seqB = io::readSequence(std::cin);
-    LinkedList<int> res = merge_sorted(seqA, seqB);
+int main()
+{
+    LinkedList<int> alpha = io::readSequence(std::cin);
+    LinkedList<int> beta = io::readSequence(std::cin);
+    LinkedList<int> combined = merge_sorted(alpha, beta);
 
-    bool leading = true;
-    for (auto iter = res.begin(); iter != res.end(); ++iter) {
-        if (!leading) std::cout << ' ';
-        std::cout << *iter;
-        leading = false;
+    bool gapNeeded = true;
+    for (auto step = combined.begin(); step != combined.end(); ++step)
+    {
+        if (!gapNeeded) std::cout << ' ';
+        std::cout << *step;
+        gapNeeded = false;
     }
     std::cout << '\n';
     return 0;

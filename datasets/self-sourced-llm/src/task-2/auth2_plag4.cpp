@@ -1,7 +1,6 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-// quick submit
 
 using std::cin;
 using std::cout;
@@ -15,23 +14,23 @@ template <typename T>
 class LinkedList
 {
     struct Node { T val; Node* nxt; Node(T v): val(v), nxt(nullptr) {} };
-    Node* hd;
+    Node* headLink;
     size_t sz;
 
 public:
-    LinkedList(): hd(nullptr), sz(0) {}
+    LinkedList(): headLink(nullptr), sz(0) {}
     ~LinkedList() { clear(); }
 
     void clear() {
-        while (hd) { Node* t = hd; hd = hd->nxt; delete t; }
+        while (headLink) { Node* t = headLink; headLink = headLink->nxt; delete t; }
         sz = 0;
     }
 
     void push_back(const T& v) {
         Node* node = new Node(v);
-        if (!hd) hd = node;
+        if (!headLink) headLink = node;
         else {
-            Node* p = hd;
+            Node* p = headLink;
             while (p->nxt) p = p->nxt;
             p->nxt = node;
         }
@@ -50,9 +49,9 @@ public:
         bool operator!=(const Iterator& o) { return cur != o.cur; }
     };
 
-    Iterator begin() { return Iterator(hd); }
+    Iterator begin() { return Iterator(headLink); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(hd); }
+    Iterator begin() const { return Iterator(headLink); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -84,13 +83,13 @@ int main()
     string l1, l2;
     getline(cin, l1);
     getline(cin, l2);
-    auto tmp = merge_sorted(parseInts(l1), parseInts(l2));
+    auto merged = merge_sorted(parseInts(l1), parseInts(l2));
     bool sep = false;
-    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+    for (auto it = merged.begin(); it != merged.end(); ++it) {
         if (sep) cout << ' ';
         cout << *it;
         sep = true;
     }
-    cout << '\n';
+    cout << endl;
     return 0;
 }

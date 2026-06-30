@@ -1,5 +1,5 @@
 #include <iostream>
-// quick submit
+#include <utility>
 
 namespace ds {
 
@@ -59,10 +59,10 @@ public:
 int main() {
     using ds::Vector;
 
-    int n;
-    std::cin >> n;
+    int item_count;
+    std::cin >> item_count;
     Vector<int> values;
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < item_count; ++i) {
         int x;
         std::cin >> x;
         values.push_back(x);

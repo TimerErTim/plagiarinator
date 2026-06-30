@@ -1,10 +1,9 @@
 #include <memory>
-#include <iostream>
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <unordered_set>
-// quick submit
+#include <vector>
+#include <iostream>
 
 struct GraphNode {
     std::string label;
@@ -12,26 +11,26 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> ref_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> storev_;
 
 public:
     void addNode(const std::string& name) {
-        if (!ref_.count(name)) {
+        if (!storev_.count(name)) {
             auto n = std::make_shared<GraphNode>();
             n->label = name;
-            ref_[name] = n;
+            storev_[name] = n;
         }
     }
 
     void addEdge(const std::string& u, const std::string& v) {
         addNode(u);
         addNode(v);
-        ref_[u]->edges.push_back(ref_[v]);
+        storev_[u]->edges.push_back(storev_[v]);
     }
 
     bool query(const std::string& from, const std::string& to) const {
-        if (!ref_.count(from)) return false;
-        return search(ref_.at(from), to, {});
+        if (!storev_.count(from)) return false;
+        return search(storev_.at(from), to, {});
     }
 
 private:
@@ -48,18 +47,18 @@ private:
 };
 
 int main() {
-    Graph ref;
-    std::string elem, a, b;
-    while (std::cin >> elem && elem != "END") {
-        if (elem == "ADD_NODE") {
+    Graph G;
+    std::string cmd2, a, b;
+    while (std::cin >> cmd2 && cmd2 != "END") {
+        if (cmd2 == "ADD_NODE") {
             std::cin >> a;
-            ref.addNode(a);
-        } else if (elem == "ADD_EDGE") {
+            G.addNode(a);
+        } else if (cmd2 == "ADD_EDGE") {
             std::cin >> a >> b;
-            ref.addEdge(a, b);
-        } else if (elem == "QUERY") {
+            G.addEdge(a, b);
+        } else if (cmd2 == "QUERY") {
             std::cin >> a >> b;
-            std::cout << (ref.query(a, b) ? "REACHABLE\n" : "UNREACHABLE\n");
+            std::cout << (G.query(a, b) ? "REACHABLE\n" : "UNREACHABLE\n");
         }
     }
     return 0;

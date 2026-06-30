@@ -3,22 +3,25 @@
 #include <list>
 #include <string>
 #include <unordered_map>
-// from lab partner
+// borrowed from roommate's homework
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     std::size_t box;
     std::list<std::pair<Key, Value>> pool;
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> ref;
 
-    void touch(typename std::list<std::pair<Key, Value>>::iterator it) {
+    void touch(typename std::list<std::pair<Key, Value>>::iterator it)
+    {
         pool.splice(pool.begin(), pool, it);
     }
 
 public:
     explicit LRUCache(std::size_t capacity) : box(capacity) {}
 
-    bool get(const Key& key, Value& out) {
+    bool get(const Key& key, Value& out)
+    {
         auto it = ref.find(key);
         if (it == ref.end()) return false;
         out = it->second->second;
@@ -26,7 +29,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto it = ref.find(key);
         if (it != ref.end()) {
             it->second->second = value;
@@ -42,23 +46,26 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     std::size_t cap;
     std::string tag;
     std::cin >> tag >> cap;
     LRUCache<std::string, int> obj(cap);
 
     std::string ln;
-    while (std::cin >> ln) {
+    while (std::cin >> ln)
+    {
         if (ln == "END") break;
-        if (ln == "GET") {
+        if (ln == "GET")
+        {
             std::string key;
             std::cin >> key;
             int val;
             if (obj.get(key, val))
-                std::cout << "HIT " << val << '\n';
+                std::cout << "HIT " << val << std::endl;
             else
-                std::cout << "MISS\n";
+                std::cout << "MISS" << std::endl;
         } else if (ln == "PUT") {
             std::string key;
             int val;

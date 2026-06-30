@@ -1,49 +1,48 @@
-#include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <iostream>
 
 class StringBuilder {
-    std::string content_;
+    std::string buf_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& src) noexcept : content_(std::move(src.content_)) {}
+    StringBuilder(StringBuilder&& src) noexcept : buf_(std::move(src.buf_)) {}
     StringBuilder& operator=(StringBuilder&& src) noexcept {
-        content_ = std::move(src.content_);
-        src.content_.clear();
+        buf_ = std::move(src.buf_);
+        src.buf_.clear();
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s) {
-        content_.append(s);
+        buf_.append(s);
         return *this;
     }
 
     StringBuilder& append(std::string&& s) {
-        content_.append(std::move(s));
+        buf_.append(std::move(s));
         return *this;
     }
 
     StringBuilder& append_line(const std::string& s) {
-        content_.append(s);
-        content_.append(1, '\n');
+        buf_.append(s);
+        buf_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return content_; }
-    void clear() { content_.clear(); }
+    const std::string& str() const { return buf_; }
+    void clear() { buf_.clear(); }
 };
 
 int main() {
     StringBuilder final_doc;
-    std::string token;
+    std::string word;
 
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token != "SECTION") continue;
+    while (std::cin >> word) {
+        if (word == "END") break;
+        if (word != "SECTION") continue;
 
         std::string heading;
         std::getline(std::cin, heading);
@@ -54,9 +53,10 @@ int main() {
         assembled += heading;
         assembled += "\n";
 
-        for (std::string s; std::getline(std::cin, s);) {
-            if (s.empty()) break;
-            assembled += s;
+        std::string row;
+        while (std::getline(std::cin, row)) {
+            if (row.empty()) break;
+            assembled += row;
             assembled += '\n';
         }
         assembled += '\n';

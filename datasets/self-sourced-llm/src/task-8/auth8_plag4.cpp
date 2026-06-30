@@ -1,42 +1,40 @@
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
-// quick submit
 
 template <typename T>
 class Matrix {
-    std::size_t rows_;
-    std::size_t cols_;
-    std::vector<T> word_;
+    std::size_t nRows, nCols;
+    std::vector<T> flat;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), word_(r * c) {}
+    Matrix(std::size_t r, std::size_t c) : nRows(r), nCols(c), flat(r * c) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return word_[r * cols_ + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return word_[r * cols_ + c]; }
+    T& operator()(std::size_t r, std::size_t c) { return flat[r * nCols + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return flat[r * nCols + c]; }
 
-    std::size_t rows() const { return rows_; }
-    std::size_t cols() const { return cols_; }
+    std::size_t rows() const { return nRows; }
+    std::size_t cols() const { return nCols; }
 
     Matrix operator+(const Matrix& rhs) const {
-        Matrix out(rows_, cols_);
-        for (std::size_t i = 0; i < word_.size(); ++i)
-            out.word_[i] = word_[i] + rhs.word_[i];
+        Matrix out(nRows, nCols);
+        for (std::size_t i = 0; i < flat.size(); ++i)
+            out.flat[i] = flat[i] + rhs.flat[i];
         return out;
     }
 
     Matrix operator*(const Matrix& rhs) const {
-        Matrix out(rows_, rhs.cols_);
-        for (std::size_t i = 0; i < rows_; ++i)
-            for (std::size_t j = 0; j < rhs.cols_; ++j)
-                for (std::size_t k = 0; k < cols_; ++k)
+        Matrix out(nRows, rhs.nCols);
+        for (std::size_t i = 0; i < nRows; ++i)
+            for (std::size_t j = 0; j < rhs.nCols; ++j)
+                for (std::size_t k = 0; k < nCols; ++k)
                     out(i, j) += (*this)(i, k) * rhs(k, j);
         return out;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-        for (std::size_t i = 0; i < m.rows_; ++i) {
-            for (std::size_t j = 0; j < m.cols_; ++j) {
+        for (std::size_t i = 0; i < m.nRows; ++i) {
+            for (std::size_t j = 0; j < m.nCols; ++j) {
                 if (j) os << ' ';
                 os << m(i, j);
             }
@@ -52,21 +50,21 @@ int main() {
 
     std::size_t rA, cA, rB, cB;
     in >> rA >> cA;
-    Matrix<int> A(rA, cA);
+    Matrix<int> m1(rA, cA);
     for (std::size_t i = 0; i < rA; ++i)
         for (std::size_t j = 0; j < cA; ++j)
-            in >> A(i, j);
+            in >> m1(i, j);
 
     in >> rB >> cB;
     if (cA != rB) {
         std::cout << "ERROR\n";
         return 0;
     }
-    Matrix<int> B(rB, cB);
+    Matrix<int> m2(rB, cB);
     for (std::size_t i = 0; i < rB; ++i)
         for (std::size_t j = 0; j < cB; ++j)
-            in >> B(i, j);
+            in >> m2(i, j);
 
-    std::cout << A * B + A;
+    std::cout << m1 * m2 + m1;
     return 0;
 }

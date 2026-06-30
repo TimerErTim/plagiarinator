@@ -1,34 +1,34 @@
-#include <vector>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <utility>
 #include <variant>
-// TODO: refactor later
+#include <vector>
+#include <utility>
+#include <unordered_map>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+// borrowed from roommate's homework
 
 namespace detail {
 
-inline void write_value(std::ostream& out, double v) {
-    out << std::fixed << std::setprecision(2) << v;
+inline void write_value(std::ostream& sink, double v) {
+    sink << std::fixed << std::setprecision(2) << v;
 }
 
 template <typename T>
-void write_value(std::ostream& out, T&& v) {
-    out << std::forward<T>(v);
+void write_value(std::ostream& sink, T&& v) {
+    sink << std::forward<T>(v);
 }
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    bool first = true;
-    auto emit = [&](auto&& val) {
-        if (!first) out << ' ';
-        first = false;
-        write_value(out, std::forward<decltype(val)>(val));
+void log_line(std::ostream& sink, Args&&... args) {
+    bool lead = true;
+    auto put = [&](auto&& val) {
+        if (!lead) sink << ' ';
+        lead = false;
+        write_value(sink, std::forward<decltype(val)>(val));
     };
-    (emit(std::forward<Args>(args)), ...);
-    out << '\n';
+    (put(std::forward<Args>(args)), ...);
+    sink << std::endl;
 }
 
 }  // namespace detail
@@ -36,82 +36,82 @@ void log_line(std::ostream& out, Args&&... args) {
 using detail::log_line;
 
 class Config {
-    std::unordered_map<std::string, std::string> pool_;
+    std::unordered_map<std::string, std::string> kv_;
 
 public:
-    bool has(const std::string& key) const { return pool_.count(key) > 0; }
+    bool has(const std::string& key) const { return kv_.count(key) > 0; }
 
-    const std::string& get(const std::string& key) const { return pool_.at(key); }
+    const std::string& get(const std::string& key) const { return kv_.at(key); }
 
-    void loadFromStream(std::istream& is) {
+    void loadFromStream(std::istream& src) {
         std::string row;
-        while (std::getline(is, row) && !row.empty()) {
+        while (std::getline(src, row) && !row.empty()) {
             std::size_t eq = row.find('=');
-            pool_.emplace(row.substr(0, eq), row.substr(eq + 1));
+            kv_.emplace(row.substr(0, eq), row.substr(eq + 1));
         }
     }
 };
 
-bool allDigits(const std::string& text, std::size_t start) {
-    for (; start < text.size(); ++start)
-        if (!isdigit(text[start])) return false;
+bool allDigits(const std::string& txt, std::size_t start) {
+    for (std::size_t k = txt.size(); k-- > start;)
+        if (!isdigit(txt[k])) return false;
     return start > 0;
 }
 
-bool parseAsInt(const std::string& text, int& value) {
-    if (text.empty()) return false;
+bool parseAsInt(const std::string& txt, int& value) {
+    if (txt.empty()) return false;
     std::size_t idx = 0;
-    if (text[0] == '+' || text[0] == '-') idx = 1;
-    if (!allDigits(text, idx)) return false;
-    value = std::stoi(text);
+    if (txt[0] == '+' || txt[0] == '-') idx = 1;
+    if (!allDigits(txt, idx)) return false;
+    value = std::stoi(txt);
     return true;
 }
 
-void emitLogLine(std::ostream& out, const std::vector<std::string>& parts) {
-    if (parts.size() == 1) {
+void emitLogLine(std::ostream& sink, const std::vector<std::string>& chunks) {
+    if (chunks.size() == 1) {
         int n;
-        if (parseAsInt(parts[0], n)) log_line(out, n);
-        else log_line(out, parts[0]);
-    } else if (parts.size() == 2) {
+        if (parseAsInt(chunks[0], n)) log_line(sink, n);
+        else log_line(sink, chunks[0]);
+    } else if (chunks.size() == 2) {
         int n;
-        if (parseAsInt(parts[1], n)) log_line(out, parts[0], n);
-        else log_line(out, parts[0], parts[1]);
-    } else if (parts.size() == 3) {
+        if (parseAsInt(chunks[1], n)) log_line(sink, chunks[0], n);
+        else log_line(sink, chunks[0], chunks[1]);
+    } else if (chunks.size() == 3) {
         int n;
-        if (parseAsInt(parts[1], n)) log_line(out, parts[0], n, parts[2]);
-        else log_line(out, parts[0], parts[1], parts[2]);
-    } else if (parts.empty()) {
-        out << '\n';
+        if (parseAsInt(chunks[1], n)) log_line(sink, chunks[0], n, chunks[2]);
+        else log_line(sink, chunks[0], chunks[1], chunks[2]);
+    } else if (chunks.empty()) {
+        sink << std::endl;
     } else {
-        for (std::size_t i = 0; i < parts.size(); ++i) {
-            if (i) out << ' ';
+        for (std::size_t k = chunks.size(); k-- > 0;) {
+            if (k + 1 < chunks.size()) sink << ' ';
             int n;
-            if (parseAsInt(parts[i], n)) out << n;
-            else out << parts[i];
+            if (parseAsInt(chunks[k], n)) sink << n;
+            else sink << chunks[k];
         }
-        out << '\n';
+        sink << std::endl;
     }
 }
 
 int main() {
-    Config box;
-    box.loadFromStream(std::cin);
+    Config cfg;
+    cfg.loadFromStream(std::cin);
 
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            std::cout << (box.has(val) ? box.get(val) : std::string("MISSING")) << '\n';
-        } else if (ln == "LOG") {
-            std::string rest;
-            std::getline(std::cin, rest);
-            std::istringstream iss(rest);
-            std::vector<std::string> parts;
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (cfg.has(k) ? cfg.get(k) : std::string("MISSING")) << std::endl;
+        } else if (token == "LOG") {
+            std::string tail;
+            std::getline(std::cin, tail);
+            std::istringstream parser(tail);
+            std::vector<std::string> chunks;
             std::string p;
-            while (iss >> p) parts.push_back(p);
-            emitLogLine(std::cout, parts);
+            while (parser >> p) chunks.push_back(p);
+            emitLogLine(std::cout, chunks);
         }
     }
     return 0;

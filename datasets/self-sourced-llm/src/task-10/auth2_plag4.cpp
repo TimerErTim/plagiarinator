@@ -1,7 +1,6 @@
 #include <string>
-#include <iostream>
 #include <vector>
-// quick submit
+#include <iostream>
 
 using std::cin;
 using std::cout;
@@ -14,7 +13,7 @@ using size_t = std::size_t;
 class IntBST
 {
     struct Node { int v; Node* L; Node* R; Node(int x): v(x), L(0), R(0) {} };
-    Node* root;
+    Node* rootz;
 
     void freeTree(Node* n)
     {
@@ -49,16 +48,16 @@ class IntBST
     Node* leftmost(Node* n) const { while (n && n->L) n = n->L; return n; }
 
 public:
-    IntBST(): root(0) {}
-    ~IntBST() { freeTree(root); }
+    IntBST(): rootz(0) {}
+    ~IntBST() { freeTree(rootz); }
 
-    void insert(int x) { root = ins(root, x); }
-    bool contains(int x) const { return has(root, x); }
-    void inorder(vector<int>& out) const { walk(root, out); }
+    void insert(int x) { rootz = ins(rootz, x); }
+    bool contains(int x) const { return has(rootz, x); }
+    void inorder(vector<int>& out) const { walk(rootz, out); }
 
-    int& min() { return leftmost(root)->v; }
-    const int& min() const { return leftmost(root)->v; }
-    bool empty() const { return root == 0; }
+    int& min() { return leftmost(rootz)->v; }
+    const int& min() const { return leftmost(rootz)->v; }
+    bool empty() const { return rootz == 0; }
 };
 
 int main()

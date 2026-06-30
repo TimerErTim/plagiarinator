@@ -1,89 +1,88 @@
+#include <utility>
 #include <cstddef>
 #include <iostream>
-#include <utility>
-// cleaned up version
 
 template <typename T>
 class Vector {
-    T* elems_ = nullptr;
-    std::size_t size_ = 0;
-    std::size_t limit_ = 0;
+    T* storage_ = nullptr;
+    std::size_t n_ = 0;
+    std::size_t cap_ = 0;
 
     void grow() {
-        std::size_t ncap = limit_ ? limit_ * 2 : 4;
+        std::size_t ncap = cap_ ? cap_ * 2 : 4;
         T* fresh = new T[ncap];
-        for (std::size_t i = 0; i < size_; ++i) fresh[i] = elems_[i];
-        delete[] elems_;
-        elems_ = fresh;
-        limit_ = ncap;
+        for (std::size_t i = 0; i < n_; i++) fresh[i] = storage_[i];
+        delete[] storage_;
+        storage_ = fresh;
+        cap_ = ncap;
     }
 
 public:
     Vector() = default;
 
-    ~Vector() { delete[] elems_; }
+    ~Vector() { delete[] storage_; }
 
-    Vector(const Vector& other) : size_(other.size_), limit_(other.limit_) {
-        elems_ = new T[limit_];
-        for (std::size_t i = 0; i < size_; ++i) elems_[i] = other.elems_[i];
+    Vector(const Vector& other) : n_(other.n_), cap_(other.cap_) {
+        storage_ = new T[cap_];
+        for (std::size_t i = 0; i < n_; i++) storage_[i] = other.storage_[i];
     }
 
     Vector& operator=(const Vector& other) {
         if (this != &other) {
-            delete[] elems_;
-            size_ = other.size_;
-            limit_ = other.limit_;
-            elems_ = new T[limit_];
-            for (std::size_t i = 0; i < size_; ++i) elems_[i] = other.elems_[i];
+            delete[] storage_;
+            n_ = other.n_;
+            cap_ = other.cap_;
+            storage_ = new T[cap_];
+            for (std::size_t i = 0; i < n_; i++) storage_[i] = other.storage_[i];
         }
         return *this;
     }
 
     void push_back(const T& value) {
-        if (size_ == limit_) grow();
-        elems_[size_++] = value;
+        if (n_ == cap_) grow();
+        storage_[n_++] = value;
     }
 
     void push_back(T&& value) {
-        if (size_ == limit_) grow();
-        elems_[size_++] = std::move(value);
+        if (n_ == cap_) grow();
+        storage_[n_++] = std::move(value);
     }
 
-    T& operator[](std::size_t i) { return elems_[i]; }
-    const T& operator[](std::size_t i) const { return elems_[i]; }
+    T& operator[](std::size_t i) { return storage_[i]; }
+    const T& operator[](std::size_t i) const { return storage_[i]; }
 
-    std::size_t size() const { return size_; }
-    T* data() { return elems_; }
-    const T* data() const { return elems_; }
+    std::size_t size() const { return n_; }
+    T* data() { return storage_; }
+    const T* data() const { return storage_; }
 };
 
 int main() {
-    std::size_t cnt;
-    std::cin >> cnt;
-    Vector<int> n;
-    for (std::size_t i = 0; i < cnt; ++i) {
-        int lhs;
-        std::cin >> lhs;
-        n.push_back(lhs);
+    std::size_t n;
+    std::cin >> n;
+    Vector<int> v;
+    for (std::size_t i = 0; i < n; i++) {
+        int x;
+        std::cin >> x;
+        v.push_back(x);
     }
 
     Vector<int> unique;
-    for (std::size_t i = 0; i < n.size(); ++i) {
+    for (std::size_t i = 0; i < v.size(); i++) {
         bool seen = false;
-        for (std::size_t j = 0; j < unique.size(); ++j) {
-            if (unique[j] == n[i]) { seen = true; break; }
+        for (std::size_t j = 0; j < unique.size(); j++) {
+            if (unique[j] == v[i]) { seen = true; break; }
         }
-        if (!seen) unique.push_back(n[i]);
+        if (!seen) unique.push_back(v[i]);
     }
 
     long long sum = 0, prod = 1;
     const long long MOD = 1000000007LL;
-    for (std::size_t i = 0; i < unique.size(); ++i) {
+    for (std::size_t i = 0; i < unique.size(); i++) {
         sum += unique[i];
         prod = (prod * unique[i]) % MOD;
     }
 
-    std::cout << "SUM " << sum << '\n';
-    std::cout << "PROD " << prod << '\n';
+    std::cout << "SUM " << sum << std::endl;
+    std::cout << "PROD " << prod << std::endl;
     return 0;
 }

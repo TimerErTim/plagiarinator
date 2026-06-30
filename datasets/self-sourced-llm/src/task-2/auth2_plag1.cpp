@@ -1,11 +1,9 @@
-#include <iostream>
 #include <sstream>
 #include <string>
-// cleaned up version
+#include <iostream>
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::getline;
 using std::istringstream;
 using std::string;
@@ -14,45 +12,48 @@ using size_t = std::size_t;
 template <typename T>
 class LinkedList
 {
-    struct Node { T val; Node* nxt; Node(T v): val(v), nxt(nullptr) {} };
-    Node* hd;
-    size_t sz;
+    struct Node { T val; Node* nextPtr; Node(T v): val(v), nextPtr(nullptr) {} };
+    Node* headNode;
+    size_t length;
 
 public:
-    LinkedList(): hd(nullptr), sz(0) {}
+    LinkedList(): headNode(nullptr), length(0) {}
     ~LinkedList() { clear(); }
 
     void clear() {
-        while (hd) { Node* t = hd; hd = hd->nxt; delete t; }
-        sz = 0;
+        while (headNode) { Node* t = headNode; headNode = headNode->nextPtr; delete t; }
+        length = 0;
     }
 
     void push_back(const T& v) {
         Node* node = new Node(v);
-        if (!hd) hd = node;
+        if (!headNode) headNode = node;
         else {
-            Node* p = hd;
-            while (p->nxt) p = p->nxt;
-            p->nxt = node;
+            Node* p = headNode;
+            while (p->nextPtr) p = p->nextPtr;
+            p->nextPtr = node;
         }
-        sz++;
+        ++length;
     }
 
-    size_t size() const { return sz; }
+    void emplace_back(const T& v) { push_back(v); }
+
+    size_t size() const { return length; }
 
     class Iterator {
-        Node* cur;
+        Node* pos;
     public:
-        Iterator(Node* n): cur(n) {}
-        T& operator*() { return cur->val; }
-        const T& operator*() const { return cur->val; }
-        Iterator& operator++() { cur = cur->nxt; return *this; }
-        bool operator!=(const Iterator& o) { return cur != o.cur; }
+        Iterator(Node* n): pos(n) {}
+        T& operator*() { return pos->val; }
+        const T& operator*() const { return pos->val; }
+        Iterator& operator++() { pos = pos->nextPtr; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+        bool operator!=(const Iterator& o) { return pos != o.pos; }
     };
 
-    Iterator begin() { return Iterator(hd); }
+    Iterator begin() { return Iterator(headNode); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(hd); }
+    Iterator begin() const { return Iterator(headNode); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -62,11 +63,11 @@ LinkedList<T> merge_sorted(const LinkedList<T>& L, const LinkedList<T>& R)
     LinkedList<T> out;
     auto i = L.begin(), j = R.begin();
     while (i != L.end() && j != R.end()) {
-        if (*i <= *j) { out.push_back(*i); ++i; }
+        if (*i <= *j) { out.emplace_back(*i); ++i; }
         else { out.push_back(*j); ++j; }
     }
-    for (; i != L.end(); ++i) out.push_back(*i);
-    for (; j != R.end(); ++j) out.push_back(*j);
+    for (; i != L.end(); i++) out.emplace_back(*i);
+    for (; j != R.end(); j++) out.push_back(*j);
     return out;
 }
 
@@ -75,7 +76,7 @@ LinkedList<int> parseInts(const string& line)
     LinkedList<int> lst;
     istringstream iss(line);
     int v;
-    while (iss >> v) lst.push_back(v);
+    while (iss >> v) lst.emplace_back(v);
     return lst;
 }
 
@@ -91,6 +92,6 @@ int main()
         cout << *it;
         sep = true;
     }
-    cout << endl;
+    cout << '\n';
     return 0;
 }

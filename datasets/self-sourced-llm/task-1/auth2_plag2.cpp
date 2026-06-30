@@ -1,13 +1,11 @@
-#include <vector>
 #include <iostream>
-#include <cstring>
-#include <cctype>
 #include <algorithm>
-// adapted from classmate submission
+#include <cctype>
+#include <cstring>
+#include <vector>
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::getline;
 using std::remove_if;
 using std::sort;
@@ -19,12 +17,17 @@ class StringBuffer
     char* buf;
     size_t length;
 
-    void release() { delete[] buf; buf = nullptr; length = 0; }
+    void release()
+    {
+        delete[] buf;
+        buf = nullptr;
+        length = 0;
+    }
 
     void copyFrom(const char* src, size_t n)
     {
         buf = new char[n + 1];
-        memcpy(buf, src, n);
+        std::memcpy(buf, src, n);
         buf[n] = '\0';
         length = n;
     }
@@ -32,7 +35,7 @@ class StringBuffer
 public:
     explicit StringBuffer(const char* text)
     {
-        length = strlen(text);
+        length = std::strlen(text);
         copyFrom(text, length);
     }
 
@@ -54,9 +57,9 @@ public:
     void trim()
     {
         size_t lo = 0, hi = length;
-        while (lo < hi && isspace(static_cast<unsigned char>(buf[lo]))) lo++;
-        while (hi > lo && isspace(static_cast<unsigned char>(buf[hi - 1]))) hi--;
-        memmove(buf, buf + lo, hi - lo);
+        while (lo < hi && std::isspace(static_cast<unsigned char>(buf[lo]))) lo++;
+        while (hi > lo && std::isspace(static_cast<unsigned char>(buf[hi - 1]))) hi--;
+        std::memmove(buf, buf + lo, hi - lo);
         length = hi - lo;
         buf[length] = '\0';
     }
@@ -67,23 +70,25 @@ public:
 
     bool operator<(const StringBuffer& rhs) const
     {
-        return strcmp(buf, rhs.buf) < 0;
+        return std::strcmp(buf, rhs.buf) < 0;
     }
 };
 
 int main()
 {
-    vector<StringBuffer> data;
-    string ln;
-    while (getline(cin, ln))
-        data.emplace_back(ln.c_str());
+    vector<StringBuffer> entries;
+    string raw;
+    while (getline(cin, raw))
+        entries.emplace_back(raw.c_str());
 
-    for (auto& e : data) e.trim();
-    data.erase(remove_if(data.begin(), data.end(),
-        [](const StringBuffer& s){ return s.empty(); }), data.end());
-    sort(data.begin(), data.end());
+    for (size_t i = 0; i < entries.size(); i++)
+        entries[i].trim();
 
-    for (const auto& e : data)
-        cout << e.c_str() << endl;
+    entries.erase(remove_if(entries.begin(), entries.end(),
+        [](const StringBuffer& s){ return s.empty(); }), entries.end());
+    sort(entries.begin(), entries.end());
+
+    for (const auto& e : entries)
+        cout << e.c_str() << '\n';
     return 0;
 }

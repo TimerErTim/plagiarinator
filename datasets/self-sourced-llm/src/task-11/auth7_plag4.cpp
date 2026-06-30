@@ -1,11 +1,10 @@
-#include <iostream>
 #include <functional>
-#include <sstream>
+#include <iostream>
 #include <iomanip>
-#include <unordered_map>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
-// quick submit
 
 class Config {
     std::unordered_map<std::string, std::string> kv;
@@ -65,28 +64,28 @@ void dispatchLog(const std::vector<std::string>& tokens) {
 }
 
 int main() {
-    Config ref;
-    ref.readUntilBlank(std::cin);
+    Config settings;
+    settings.readUntilBlank(std::cin);
 
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            if (ref.has(tag)) log_line(std::cout, ref.get(tag));
+    std::string command;
+    while (std::cin >> command) {
+        if (command == "END") break;
+        if (command == "GET") {
+            std::string key;
+            std::cin >> key;
+            if (settings.has(key)) log_line(std::cout, settings.get(key));
             else log_line(std::cout, "MISSING");
-        } else if (elem == "LOG") {
+        } else if (command == "LOG") {
             std::vector<std::string> args;
-            std::string bit;
-            while (std::cin >> bit) {
-                if (bit == "GET" || bit == "LOG" || bit == "END") {
+            std::string piece;
+            while (std::cin >> piece) {
+                if (piece == "GET" || piece == "LOG" || piece == "END") {
                     std::cin.unget();
-                    for (std::size_t j = 0; j < bit.size(); ++j)
-                        std::cin.putback(bit[bit.size() - 1 - j]);
+                    for (std::size_t j = 0; j < piece.size(); ++j)
+                        std::cin.putback(piece[piece.size() - 1 - j]);
                     break;
                 }
-                args.push_back(bit);
+                args.push_back(piece);
             }
             if (args.size() <= 3) {
                 if (args.size() == 3) {

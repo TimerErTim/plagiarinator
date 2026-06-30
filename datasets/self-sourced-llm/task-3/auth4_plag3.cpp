@@ -1,49 +1,59 @@
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-// from lab partner
+#include <vector>
+// borrowed from roommate's homework
 
-struct GraphNode {
-    std::string label;
-    std::vector<std::shared_ptr<GraphNode>> edges;
+struct GraphNode
+{
+    std::string tag;
+    std::vector<std::shared_ptr<GraphNode>> links;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> pool;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> verts;
 
-    std::shared_ptr<GraphNode> fetch(const std::string& key) {
-        if (!pool.count(key)) {
+    std::shared_ptr<GraphNode> fetch(const std::string& key)
+    {
+        if (!verts.count(key))
+        {
             auto ptr = std::make_shared<GraphNode>();
-            ptr->label = key;
-            pool[key] = ptr;
+            ptr->tag = key;
+            verts[key] = ptr;
         }
-        return pool[key];
+        return verts[key];
     }
 
 public:
     void addNode(const std::string& key) { fetch(key); }
 
-    void addEdge(const std::string& x, const std::string& y) {
-        fetch(x)->edges.push_back(fetch(y));
+    void addEdge(const std::string& x, const std::string& y)
+    {
+        fetch(x)->links.push_back(fetch(y));
     }
 
-    bool query(const std::string& start, const std::string& end) const {
-        if (!pool.count(start)) return false;
+    bool query(const std::string& start, const std::string& end) const
+    {
+        if (!verts.count(start)) return false;
         std::queue<std::shared_ptr<GraphNode>> frontier;
         std::unordered_set<std::string> done;
-        frontier.push(pool.at(start));
+        frontier.push(verts.at(start));
         done.insert(start);
-        while (!frontier.empty()) {
+        while (!frontier.empty())
+        {
             auto now = frontier.front();
             frontier.pop();
-            if (now->label == end) return true;
-            for (auto& link : now->edges) {
-                if (!done.count(link->label)) {
-                    done.insert(link->label);
+            if (now->tag == end) return true;
+            for (std::size_t k = now->links.size(); k-- > 0;)
+            {
+                auto& link = now->links[k];
+                if (!done.count(link->tag))
+                {
+                    done.insert(link->tag);
                     frontier.push(link);
                 }
             }
@@ -52,20 +62,25 @@ public:
     }
 };
 
-int main() {
-    Graph g;
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word == "ADD_NODE") {
+int main()
+{
+    Graph dag;
+    std::string word_v;
+    while (std::cin >> word_v)
+    {
+        if (word_v == "END") break;
+        if (word_v == "ADD_NODE")
+        {
             std::string n; std::cin >> n;
-            g.addNode(n);
-        } else if (word == "ADD_EDGE") {
+            dag.addNode(n);
+        } else if (word_v == "ADD_EDGE")
+        {
             std::string f, t; std::cin >> f >> t;
-            g.addEdge(f, t);
-        } else if (word == "QUERY") {
+            dag.addEdge(f, t);
+        } else if (word_v == "QUERY")
+        {
             std::string f, t; std::cin >> f >> t;
-            std::cout << (g.query(f, t) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (dag.query(f, t) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

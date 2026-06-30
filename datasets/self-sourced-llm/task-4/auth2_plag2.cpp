@@ -1,9 +1,9 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 // adapted from classmate submission
 
 using std::cin;
@@ -42,7 +42,7 @@ public:
     FileWriter& operator=(FileWriter&& src) noexcept
     {
         if (this != &src)
-{
+        {
             if (stream.is_open()) stream.close();
             stream = std::move(src.stream);
             filename = std::move(src.filename);
@@ -62,27 +62,39 @@ char letterGrade(int s)
     return 'F';
 }
 
+static bool parseRow(const string& row, string& name, int& score)
+{
+    auto pos = row.find(',');
+    if (pos == string::npos) return false;
+    name = row.substr(0, pos);
+    score = stoi(row.substr(pos + 1));
+    return true;
+}
+
 int main()
 {
-    vector<pair<string,int>> data;
+    vector<pair<string,int>> rows;
     string row;
-    while (getline(cin, row)) {
-        auto pos = row.find(',');
-        if (pos == string::npos) continue;
-        data.emplace_back(row.substr(0, pos), stoi(row.substr(pos + 1)));
+    while (getline(cin, row))
+    {
+        string name;
+        int score = 0;
+        if (parseRow(row, name, score))
+            rows.push_back({name, score});
     }
 
     FileWriter fw("report.txt");
     fw.write_line("Student Report");
     fw.write_line("--------------");
-    double tot = 0;
-    for (auto& p : data)
-{
-        tot += p.second;
-        fw.write_line(p.first + ": " + to_string(p.second) + " [" + letterGrade(p.second) + "]");
+    double total = 0;
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+        total += rows[i].second;
+        fw.write_line(rows[i].first + ": " + to_string(rows[i].second)
+                      + " [" + letterGrade(rows[i].second) + "]");
     }
     ostringstream avgLine;
-    avgLine << fixed << setprecision(1) << "Average: " << tot / data.size();
+    avgLine << fixed << setprecision(1) << "Average: " << total / rows.size();
     fw.write_line(avgLine.str());
 
     cout << "Report written to report.txt" << endl;

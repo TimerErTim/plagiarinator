@@ -1,66 +1,79 @@
 #include <vector>
-#include <algorithm>
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+// found online
 
-namespace util {
+namespace engine
+{
 
-template <typename T, typename = void>
-struct sort_impl;
+template <typename Node, typename = void>
+struct sorter_core;
 
-template <typename T>
-struct sort_impl<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
-    static void apply(std::vector<T>& data) { std::sort(data.begin(), data.end()); }
+template <typename Node>
+struct sorter_core<Node, typename std::enable_if<std::is_arithmetic<Node>::value>::type>
+{
+    static void drive(std::vector<Node>& deck) { std::sort(deck.begin(), deck.end()); }
 };
 
-template <typename T>
-struct sort_impl<T, typename std::enable_if<!std::is_arithmetic<T>::value>::type> {
-    static void apply(std::vector<T>& data) {
-        std::sort(data.begin(), data.end(), [](const T& a, const T& b) {
-            if (a.size() != b.size()) return a.size() < b.size();
-            return a < b;
+template <typename Node>
+struct sorter_core<Node, typename std::enable_if<!std::is_arithmetic<Node>::value>::type>
+{
+    static void drive(std::vector<Node>& deck)
+    {
+        std::sort(deck.begin(), deck.end(), [](const Node& x, const Node& y)
+        {
+            if (x.size() != y.size()) return x.size() < y.size();
+            return x < y;
         });
     }
 };
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    sort_impl<T>::apply(data);
+template <typename Node>
+typename std::enable_if<std::is_arithmetic<Node>::value, void>::type
+sort_values(std::vector<Node>& deck)
+{
+    sorter_core<Node>::drive(deck);
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    sort_impl<T>::apply(data);
+template <typename Node>
+typename std::enable_if<!std::is_arithmetic<Node>::value, void>::type
+sort_values(std::vector<Node>& deck)
+{
+    sorter_core<Node>::drive(deck);
 }
 
-}  // namespace util
+}  // namespace engine
 
-int main() {
-    std::string typ;
-    int count;
-    std::cin >> typ >> count;
+int main()
+{
+    std::string opcode;
+    int limit;
+    std::cin >> opcode >> limit;
 
-    if (typ == "NUM") {
-        std::vector<double> values(static_cast<std::size_t>(count));
-        for (int i = 0; i < count; ++i) std::cin >> values[static_cast<std::size_t>(i)];
-        util::sort_values(values);
-        for (int i = 0; i < count; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << values[static_cast<std::size_t>(i)];
-        }
-    } else {
-        std::vector<std::string> values(static_cast<std::size_t>(count));
-        for (int i = 0; i < count; ++i) std::cin >> values[static_cast<std::size_t>(i)];
-        util::sort_values(values);
-        for (int i = 0; i < count; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << values[static_cast<std::size_t>(i)];
+    if (opcode == "NUM")
+    {
+        std::vector<double> deck(static_cast<std::size_t>(limit));
+        for (int tick = 0; tick < limit; ++tick) std::cin >> deck[static_cast<std::size_t>(tick)];
+        engine::sort_values(deck);
+        for (int tick = 0; tick < limit; ++tick)
+        {
+            if (tick) std::cout << ' ';
+            std::cout << deck[static_cast<std::size_t>(tick)];
         }
     }
-    std::cout << '\n';
+    else
+    {
+        std::vector<std::string> deck(static_cast<std::size_t>(limit));
+        for (int tick = 0; tick < limit; ++tick) std::cin >> deck[static_cast<std::size_t>(tick)];
+        engine::sort_values(deck);
+        for (int tick = 0; tick < limit; ++tick)
+        {
+            if (tick) std::cout << ' ';
+            std::cout << deck[static_cast<std::size_t>(tick)];
+        }
+    }
+    std::cout << std::endl;
     return 0;
 }

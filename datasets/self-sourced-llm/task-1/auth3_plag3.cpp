@@ -1,75 +1,73 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <iostream>
-// from lab partner
+#include <cctype>
+// borrowed from roommate's homework
 
-// Heap-backed string for name normalization
 class StringBuffer {
-    char* ref_;
-    std::size_t cnt_;
+    char* rawPtr;
+    std::size_t rawLen;
 
-    static bool isSpace(char c) {
-        return std::isspace(static_cast<unsigned char>(c)) != 0;
-    }
+    static bool ws(char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; }
 
 public:
-    StringBuffer(const char* src) : ref_(nullptr), cnt_(0) {
-        cnt_ = std::strlen(src);
-        ref_ = new char[cnt_ + 1];
-        std::memcpy(ref_, src, cnt_ + 1);
+    StringBuffer(const char* src) : rawPtr(nullptr), rawLen(0) {
+        rawLen = std::strlen(src);
+        rawPtr = new char[rawLen + 1];
+        std::memcpy(rawPtr, src, rawLen + 1);
     }
 
-    ~StringBuffer() { delete[] ref_; }
+    ~StringBuffer() { delete[] rawPtr; }
 
-    StringBuffer(const StringBuffer& that) {
-        cnt_ = that.cnt_;
-        ref_ = new char[cnt_ + 1];
-        std::memcpy(ref_, that.ref_, cnt_ + 1);
+    StringBuffer(const StringBuffer& peer) {
+        rawLen = peer.rawLen;
+        rawPtr = new char[rawLen + 1];
+        std::memcpy(rawPtr, peer.rawPtr, rawLen + 1);
     }
 
-    StringBuffer& operator=(const StringBuffer& that) {
-        if (this != &that) {
-            char* fresh = new char[that.cnt_ + 1];
-            std::memcpy(fresh, that.ref_, that.cnt_ + 1);
-            delete[] ref_;
-            ref_ = fresh;
-            cnt_ = that.cnt_;
+    StringBuffer& operator=(const StringBuffer& peer) {
+        if (this != &peer) {
+            char* tmp = new char[peer.rawLen + 1];
+            std::memcpy(tmp, peer.rawPtr, peer.rawLen + 1);
+            delete[] rawPtr;
+            rawPtr = tmp;
+            rawLen = peer.rawLen;
         }
         return *this;
     }
 
     void trim() {
-        std::size_t i = 0, j = cnt_;
-        while (i < j && isSpace(ref_[i])) ++i;
-        while (j > i && isSpace(ref_[j - 1])) --j;
-        std::size_t k = 0;
-        for (; i < j; ++i, ++k) ref_[k] = ref_[i];
-        ref_[k] = '\0';
-        cnt_ = k;
+        std::size_t lo = 0, hi = rawLen;
+        while (lo < hi && ws(rawPtr[lo])) ++lo;
+        while (hi > lo && ws(rawPtr[hi - 1])) --hi;
+        std::size_t out = hi - lo;
+        for (std::size_t k = out; k-- > 0;)
+            rawPtr[k] = rawPtr[lo + k];
+        rawPtr[out] = '\0';
+        rawLen = out;
     }
 
-    const char* c_str() const { return ref_; }
-    std::size_t size() const { return cnt_; }
+    const char* c_str() const { return rawPtr; }
+    std::size_t size() const { return rawLen; }
 
     bool operator<(const StringBuffer& rhs) const {
-        return std::strcmp(ref_, rhs.ref_) < 0;
+        return std::strcmp(rawPtr, rhs.rawPtr) < 0;
     }
 };
 
 static bool isBlank(const StringBuffer& s) { return s.size() == 0; }
 
 int main() {
-    std::vector<StringBuffer> batch;
+    std::vector<StringBuffer> names;
     for (std::string ln; std::getline(std::cin, ln); )
-        batch.push_back(StringBuffer(ln.c_str()));
+        names.emplace_back(ln.c_str());
 
-    for (StringBuffer& item : batch) item.trim();
-    batch.erase(std::remove_if(batch.begin(), batch.end(), isBlank), batch.end());
-    std::sort(batch.begin(), batch.end());
+    for (auto& nm : names) nm.trim();
+    names.erase(std::remove_if(names.begin(), names.end(), isBlank), names.end());
+    std::sort(names.begin(), names.end());
 
-    for (const StringBuffer& item : batch)
-        std::cout << item.c_str() << "\n";
+    for (const StringBuffer& nm : names)
+        std::cout << nm.c_str() << std::endl;
     return 0;
 }

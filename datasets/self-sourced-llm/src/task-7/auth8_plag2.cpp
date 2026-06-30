@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <sstream>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 class Vehicle {
 public:
@@ -24,11 +23,11 @@ public:
 };
 
 class Truck : public Vehicle {
-    double consumption_;
+    double perKm_;
 public:
-    explicit Truck(double p) : consumption_(p) {}
+    explicit Truck(double p) : perKm_(p) {}
     double fuel_needed(double distance_km) const override {
-        return consumption_ * distance_km;
+        return perKm_ * distance_km;
     }
     std::string type() const override { return "TRUCK"; }
 };
@@ -39,14 +38,15 @@ public:
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config) {
-    if (kind == "CAR")
+std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config)
 {
+    if (kind == "CAR")
+    {
         double val; config >> val;
         return std::make_unique<Car>(val);
     }
     if (kind == "TRUCK")
-{
+    {
         double val; config >> val;
         return std::make_unique<Truck>(val);
     }
@@ -55,40 +55,51 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
     return nullptr;
 }
 
+bool extract(const std::string& line, std::unique_ptr<Vehicle>& veh, double& dist)
+{
+    std::istringstream rowStream(line);
+    std::string kind;
+    rowStream >> kind;
+    veh = create_vehicle(kind, rowStream);
+    if (!veh)
+        return false;
+    rowStream >> dist;
+    return true;
+}
+
 int main()
 {
     std::stringstream input;
     input << std::cin.rdbuf();
 
     std::vector<std::unique_ptr<Vehicle>> fleet;
-    std::vector<double> ds;
+    std::vector<double> distances;
     std::string row;
-    while (std::getline(input, row)) {
-        if (row.empty()) continue;
-        std::istringstream rowStream(row);
-        std::string kind;
-        rowStream >> kind;
-        auto vehicle = create_vehicle(kind, rowStream);
-        if (!vehicle)
-{
+    while (std::getline(input, row))
+    {
+        if (row.empty())
+            continue;
+        std::unique_ptr<Vehicle> vehicle;
+        double km;
+        if (!extract(row, vehicle, km))
+        {
             std::cout << "ERROR" << std::endl;
             continue;
         }
-        double km;
-        rowStream >> km;
         fleet.push_back(std::move(vehicle));
-        ds.push_back(km);
+        distances.push_back(km);
     }
 
-    double sum = 0.0;
-    for (std::size_t n = 0; n < fleet.size(); ++n) {
-        double liters = fleet[n]->fuel_needed(ds[n]);
-        sum += liters;
+    double runningTotal = 0.0;
+    for (std::size_t n = 0; n < fleet.size(); ++n)
+    {
+        double liters = fleet[n]->fuel_needed(distances[n]);
+        runningTotal += liters;
         std::cout << "Trip " << n + 1 << ": " << fleet[n]->type()
                   << " needs " << std::fixed << std::setprecision(2)
                   << liters << " liters" << std::endl;
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2)
-              << sum << " liters" << std::endl;
+              << runningTotal << " liters" << std::endl;
     return 0;
 }

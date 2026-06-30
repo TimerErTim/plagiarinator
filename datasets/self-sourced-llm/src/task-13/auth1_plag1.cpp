@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
@@ -6,73 +7,72 @@
 #include <string>
 #include <thread>
 #include <vector>
-// cleaned up version
 
 template <typename T>
 class BlockingQueue {
-    std::queue<T> queue_;
-    std::size_t limit_;
-    mutable std::mutex lock_;
+    std::queue<T> q_;
+    std::size_t cap_;
+    mutable std::mutex mtx_;
     std::condition_variable not_full_;
     std::condition_variable not_empty_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : limit_(capacity) {}
+    explicit BlockingQueue(std::size_t capacity) : cap_(capacity) {}
 
     void push(T value) {
-        std::unique_lock<std::mutex> lock(lock_);
-        not_full_.wait(lock, [&] { return queue_.size() < limit_; });
-        queue_.push(std::move(value));
+        std::unique_lock<std::mutex> lock(mtx_);
+        not_full_.wait(lock, [&] { return q_.size() < cap_; });
+        q_.emplace(std::move(value));
         not_empty_.notify_one();
     }
 
     T pop() {
-        std::unique_lock<std::mutex> lock(lock_);
-        not_empty_.wait(lock, [&] { return !queue_.empty(); });
-        T out = std::move(queue_.front());
-        queue_.pop();
+        std::unique_lock<std::mutex> lock(mtx_);
+        not_empty_.wait(lock, [&] { return !q_.empty(); });
+        T out = std::move(q_.front());
+        q_.pop();
         not_full_.notify_one();
         return out;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> lock(lock_);
-        return queue_.size();
+        std::lock_guard<std::mutex> lock(mtx_);
+        return q_.size();
     }
 };
 
 int main() {
-    std::size_t p_count = 0, c_count = 0, n_items = 0;
-    std::string tag;
-    std::cin >> tag >> p_count >> tag >> c_count >> tag >> n_items;
+    std::size_t prod_n = 0, cons_n = 0, item_total = 0;
+    std::string label;
+    std::cin >> label >> prod_n >> label >> cons_n >> label >> item_total;
 
-    BlockingQueue<int> queue(std::max<std::size_t>(1, n_items));
+    BlockingQueue<int> queue(std::max<std::size_t>(1, item_total));
     std::vector<std::thread> pool;
 
-    std::size_t per = n_items / p_count;
-    std::size_t extra = n_items % p_count;
+    std::size_t per = item_total / prod_n;
+    std::size_t extra = item_total % prod_n;
     int cursor = 0;
 
-    for (std::size_t pi = 0; pi < p_count; ++pi) {
+    for (std::size_t pi = 0; pi < prod_n; ++pi) {
         std::size_t batch = per + (pi < extra ? 1 : 0);
         int start = cursor;
         cursor += static_cast<int>(batch);
         pool.emplace_back([&, batch, start]() {
-            for (std::size_t i = 0; i < batch; ++i)
+            for (std::size_t i = 0; i < batch; i++)
                 queue.push(start + static_cast<int>(i));
         });
     }
 
     std::atomic<std::size_t> finished{0};
 
-    for (std::size_t ci = 0; ci < c_count; ++ci) {
+    for (std::size_t ci = 0; ci < cons_n; ++ci) {
         pool.emplace_back([&]() {
             while (true) {
-                int elem = queue.pop();
-                if (elem < 0) break;
-                std::cout << "got " << elem << '\n';
-                if (finished.fetch_add(1) + 1 == n_items) {
-                    for (std::size_t id = 0; id < c_count; ++id)
+                int item = queue.pop();
+                if (item < 0) break;
+                std::cout << "got " << item << std::endl;
+                if (finished.fetch_add(1) + 1 == item_total) {
+                    for (std::size_t k = 0; k < cons_n; k++)
                         queue.push(-1);
                 }
             }
@@ -80,6 +80,6 @@ int main() {
     }
 
     for (auto& th : pool) th.join();
-    std::cout << "DONE\n";
+    std::cout << "DONE" << std::endl;
     return 0;
 }

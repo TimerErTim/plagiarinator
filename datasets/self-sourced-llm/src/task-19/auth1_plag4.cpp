@@ -1,7 +1,6 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
     std::string data;
@@ -41,29 +40,29 @@ public:
 };
 
 int main() {
-    StringBuilder ref;
-    std::string elem;
+    StringBuilder doc;
+    std::string tok;
 
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem != "SECTION") continue;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        if (tok != "SECTION") continue;
 
-        std::string hdr;
-        std::getline(std::cin, hdr);
-        hdr.erase(0, hdr.find_first_not_of(' '));
+        std::string title;
+        std::getline(std::cin, title);
+        title.erase(0, title.find_first_not_of(' '));
 
-        StringBuilder tmp;
-        tmp.append("# ").append(hdr).append_line("");
+        StringBuilder section;
+        section.append("# ").append(title).append_line("");
 
-        std::string str;
-        while (std::getline(std::cin, str)) {
-            if (str.empty()) break;
-            tmp.append_line(str);
+        std::string ln;
+        while (std::getline(std::cin, ln)) {
+            if (ln.empty()) break;
+            section.append_line(ln);
         }
-        tmp.append_line("");
-        ref.append(std::move(tmp.str()));
+        section.append_line("");
+        doc.append(std::move(section.str()));
     }
 
-    std::cout << ref.str();
+    std::cout << doc.str();
     return 0;
 }

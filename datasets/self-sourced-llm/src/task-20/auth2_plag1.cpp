@@ -1,8 +1,7 @@
-#include <array>
-#include <iostream>
 #include <string>
+#include <iostream>
 #include <utility>
-// cleaned up version
+#include <array>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -46,7 +45,8 @@ static int pair_score(char a, char b) {
 
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> stk;
-    for (unsigned char c : s) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        unsigned char c = static_cast<unsigned char>(s[i]);
         if (c == '(' || c == '[' || c == '{') {
             if (!stk.push(static_cast<char>(c))) return false;
         } else if (c == ')' || c == ']' || c == '}') {
@@ -59,9 +59,10 @@ bool is_balanced(const std::string& s) {
 }
 
 int main() {
-    for (std::string s; std::getline(std::cin, s);) {
-        if (s == "END") break;
-        std::cout << (is_balanced(s) ? "OK" : "FAIL") << std::endl;
+    std::string input;
+    for (; std::getline(std::cin, input);) {
+        if (input == "END") break;
+        std::cout << (is_balanced(input) ? "OK" : "FAIL") << std::endl;
     }
     return 0;
 }

@@ -1,10 +1,9 @@
+#include <unordered_set>
+#include <vector>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
-// cleaned up version
 
 struct GraphNode {
     std::string label;
@@ -12,15 +11,15 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> map_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> mapx_;
 
     std::shared_ptr<GraphNode> lookupOrMake(const std::string& lbl) {
-        auto found = map_.find(lbl);
-        if (found != map_.end())
+        auto found = mapx_.find(lbl);
+        if (found != mapx_.end())
             return found->second;
         std::shared_ptr<GraphNode> fresh = std::make_shared<GraphNode>();
         fresh->label = lbl;
-        map_.emplace(lbl, fresh);
+        mapx_.emplace(lbl, fresh);
         return fresh;
     }
 
@@ -31,10 +30,9 @@ class Graph {
         if (marks.find(node->label) != marks.end()) return false;
         if (node->label == goal) return true;
         marks.insert(node->label);
-        for (const std::shared_ptr<GraphNode>& child : node->edges) {
-            if (walk(child, goal, marks))
+        for (std::size_t i = 0; i < node->edges.size(); i++)
+            if (walk(node->edges[i], goal, marks))
                 return true;
-        }
         return false;
     }
 
@@ -46,12 +44,12 @@ public:
     void addEdge(const std::string& src, const std::string& dst) {
         std::shared_ptr<GraphNode> from = lookupOrMake(src);
         std::shared_ptr<GraphNode> to = lookupOrMake(dst);
-        from->edges.push_back(to);
+        from->edges.emplace_back(to);
     }
 
     bool query(const std::string& src, const std::string& dst) const {
-        auto pos = map_.find(src);
-        if (pos == map_.end()) return false;
+        auto pos = mapx_.find(src);
+        if (pos == mapx_.end()) return false;
         std::unordered_set<std::string> marks;
         return walk(pos->second, dst, marks);
     }
@@ -74,9 +72,9 @@ int main() {
             std::string a, b;
             std::cin >> a >> b;
             if (graph.query(a, b))
-                std::cout << "REACHABLE\n";
+                std::cout << "REACHABLE" << std::endl;
             else
-                std::cout << "UNREACHABLE\n";
+                std::cout << "UNREACHABLE" << std::endl;
         }
     }
     return 0;

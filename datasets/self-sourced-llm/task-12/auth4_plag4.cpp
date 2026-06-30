@@ -1,10 +1,9 @@
-#include <iostream>
 #include <functional>
-#include <string>
+#include <iostream>
 #include <sstream>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 struct Number { int value; };
 struct Add { std::size_t left, right; };
@@ -64,7 +63,7 @@ void handle(const std::string& input) {
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str) && !str.empty()) handle(str);
+    std::string line;
+    while (std::getline(std::cin, line) && !line.empty()) handle(line);
     return 0;
 }

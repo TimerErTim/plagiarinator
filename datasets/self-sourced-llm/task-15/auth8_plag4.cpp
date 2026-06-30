@@ -1,10 +1,9 @@
-#include <iomanip>
 #include <iostream>
-#include <string>
+#include <iomanip>
 #include <sstream>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -45,19 +44,19 @@ void print_metric(const Printable<T>& metric) {
 
 int main() {
     using Item = std::variant<Distance, Mass, Temperature>;
-    std::vector<Item> word_;
+    std::vector<Item> data;
 
     std::string t;
     while (std::cin >> t) {
         if (t == "END") break;
         double n;
         std::cin >> n;
-        if (t == "DIST") word_.push_back(Distance(n));
-        else if (t == "MASS") word_.push_back(Mass(n));
-        else if (t == "TEMP") word_.push_back(Temperature(n));
+        if (t == "DIST") data.push_back(Distance(n));
+        else if (t == "MASS") data.push_back(Mass(n));
+        else if (t == "TEMP") data.push_back(Temperature(n));
     }
 
-    for (const Item& it : word_) {
+    for (const Item& it : data) {
         std::visit([](const auto& m) { print_metric(m); }, it);
     }
     return 0;

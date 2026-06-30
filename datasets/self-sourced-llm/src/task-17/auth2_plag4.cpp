@@ -1,9 +1,8 @@
-#include <iostream>
 #include <algorithm>
-#include <type_traits>
+#include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
-// quick submit
 
 namespace util {
 
@@ -45,7 +44,7 @@ void print_vec(const std::vector<T>& v) {
         if (i) std::cout << ' ';
         std::cout << v[i];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 int main() {

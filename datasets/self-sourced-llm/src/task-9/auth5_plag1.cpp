@@ -1,10 +1,9 @@
-#include <functional>
-#include <iomanip>
 #include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
-// cleaned up version
+#include <functional>
+#include <iomanip>
+#include <utility>
 
 class Sensor {
     double reading_{0.0};
@@ -12,14 +11,15 @@ class Sensor {
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> cb) {
-        obs_.emplace_back(name, std::move(cb));
+        obs_.push_back({name, std::move(cb)});
     }
 
     void set_value(double celsius) {
         reading_ = celsius;
-        for (const auto& o : obs_) {
+        for (std::size_t i = 0; i < obs_.size(); i++) {
+            const auto& o = obs_[i];
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << o.first << "] temp=" << reading_ << '\n';
+                      << "[" << o.first << "] temp=" << reading_ << std::endl;
             if (o.second) o.second(reading_);
         }
     }

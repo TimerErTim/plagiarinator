@@ -1,99 +1,99 @@
-#include <vector>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <thread>
-// TODO: refactor later
+#include <vector>
+// borrowed from roommate's homework
 
-template <typename Item>
-class BlockingQueue {
+template <typename Payload>
+class ItemBuffer {
 public:
-    explicit BlockingQueue(std::size_t max_items) : max_items_(max_items) {}
+    explicit ItemBuffer(std::size_t cap) : cap_(cap) {}
 
-    void push(Item value) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        room_available_.wait(lock, [this] { return queue_.size() < max_items_; });
-        queue_.emplace(std::move(value));
-        item_ready_.notify_one();
+    void push(Payload val) {
+        std::unique_lock<std::mutex> lk(sync_);
+        freeSlots_.wait(lk, [this] { return store_.size() < cap_; });
+        store_.emplace(std::move(val));
+        ready_.notify_one();
     }
 
-    Item pop() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        item_ready_.wait(lock, [this] { return !queue_.empty(); });
-        Item result = std::move(queue_.front());
-        queue_.pop();
-        room_available_.notify_one();
-        return result;
+    Payload pop() {
+        std::unique_lock<std::mutex> lk(sync_);
+        ready_.wait(lk, [this] { return !store_.empty(); });
+        Payload out = std::move(store_.front());
+        store_.pop();
+        freeSlots_.notify_one();
+        return out;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return queue_.size();
+        std::lock_guard<std::mutex> lk(sync_);
+        return store_.size();
     }
 
 private:
-    std::queue<Item> queue_;
-    std::size_t max_items_;
-    mutable std::mutex mutex_;
-    std::condition_variable room_available_;
-    std::condition_variable item_ready_;
+    std::queue<Payload> store_;
+    std::size_t cap_;
+    mutable std::mutex sync_;
+    std::condition_variable freeSlots_;
+    std::condition_variable ready_;
 };
 
-struct SimConfig {
-    std::size_t producers, consumers, rows;
+struct RunParams {
+    std::size_t prodCount, consCount, itemTotal;
 };
 
-SimConfig load_config() {
-    SimConfig cfg{};
-    std::string key;
-    std::cin >> key >> cfg.producers >> key >> cfg.consumers >> key >> cfg.rows;
-    return cfg;
+RunParams parse_script() {
+    RunParams rp{};
+    std::string word;
+    std::cin >> word >> rp.prodCount >> word >> rp.consCount >> word >> rp.itemTotal;
+    return rp;
 }
 
 int main() {
-    SimConfig box = load_config();
-    BlockingQueue<int> queue(box.rows);
-    std::vector<std::thread> threads;
+    RunParams cfg = parse_script();
+    ItemBuffer<int> buf(cfg.itemTotal);
+    std::vector<std::thread> workers;
 
-    std::size_t per = box.rows / box.producers;
-    std::size_t extra = box.rows % box.producers;
-    int next_id = 0;
+    std::size_t slice = cfg.itemTotal / cfg.prodCount;
+    std::size_t rem = cfg.itemTotal % cfg.prodCount;
+    int cursor = 0;
 
-    for (std::size_t pi = 0; pi < box.producers; ++pi) {
-        std::size_t batch = per + (pi < extra ? 1 : 0);
-        int start = next_id;
-        next_id += static_cast<int>(batch);
-        threads.emplace_back([&, batch, start] {
-            for (std::size_t i = 0; i < batch; ++i)
-                queue.push(start + static_cast<int>(i));
+    for (std::size_t pi = 0; pi < cfg.prodCount; ++pi) {
+        std::size_t batch = slice + (pi < rem ? 1 : 0);
+        int start = cursor;
+        cursor += static_cast<int>(batch);
+        workers.emplace_back([&, batch, start] {
+            for (std::size_t step = batch; step-- > 0;)
+                buf.push(start + static_cast<int>(step));
         });
     }
 
-    std::mutex done_lock;
-    std::size_t consumed = 0;
+    std::mutex tallyLock;
+    std::size_t tally = 0;
 
-    for (std::size_t ci = 0; ci < box.consumers; ++ci) {
-        threads.emplace_back([&] {
+    for (std::size_t ci = 0; ci < cfg.consCount; ++ci) {
+        workers.emplace_back([&] {
             while (true) {
-                int value = queue.pop();
+                int value = buf.pop();
                 if (value < 0) break;
                 std::cout << "got " << value << '\n';
-                bool finished = false;
+                bool allDone = false;
                 {
-                    std::lock_guard<std::mutex> guard(done_lock);
-                    ++consumed;
-                    finished = (consumed == box.rows);
+                    std::lock_guard<std::mutex> guard(tallyLock);
+                    ++tally;
+                    allDone = (tally == cfg.itemTotal);
                 }
-                if (finished) {
-                    for (std::size_t val = 0; val < box.consumers; ++val)
-                        queue.push(-1);
+                if (allDone) {
+                    for (std::size_t k = cfg.consCount; k-- > 0;)
+                        buf.push(-1);
                 }
             }
         });
     }
 
-    for (auto& th : threads) th.join();
+    for (auto& th : workers) th.join();
     std::cout << "DONE\n";
     return 0;
 }

@@ -1,69 +1,85 @@
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
-class StringBuilder {
-    std::string payload_;
+class StringBuilder
+{
+    std::string buffer_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& src) noexcept : payload_(std::move(src.payload_)) {}
-    StringBuilder& operator=(StringBuilder&& src) noexcept {
-        payload_ = std::move(src.payload_);
-        src.payload_.clear();
+    StringBuilder(StringBuilder&& src) noexcept : buffer_(std::move(src.buffer_)) {}
+    StringBuilder& operator=(StringBuilder&& src) noexcept
+    {
+        buffer_ = std::move(src.buffer_);
+        src.buffer_.clear();
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) {
-        payload_.append(s);
+    StringBuilder& append(const std::string& s)
+    {
+        buffer_.append(s);
         return *this;
     }
 
-    StringBuilder& append(std::string&& s) {
-        payload_.append(std::move(s));
+    StringBuilder& append(std::string&& s)
+    {
+        buffer_.append(std::move(s));
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& s) {
-        payload_.append(s);
-        payload_.append(1, '\n');
+    StringBuilder& append_line(const std::string& s)
+    {
+        buffer_.append(s);
+        buffer_.append(1, '\n');
         return *this;
     }
 
-    const std::string& str() const { return payload_; }
-    void clear() { payload_.clear(); }
+    const std::string& str() const { return buffer_; }
+    void clear() { buffer_.clear(); }
 };
+
+static void strip_heading(std::string& heading)
+{
+    while (!heading.empty() && heading.front() == ' ') heading.erase(0, 1);
+}
+
+static std::string collect_section(std::istream& in, const std::string& heading)
+{
+    std::string assembled;
+    assembled += "# ";
+    assembled += heading;
+    assembled += "\n";
+
+    std::string row;
+    while (std::getline(in, row))
+    {
+        if (row.empty()) break;
+        assembled += row;
+        assembled += '\n';
+    }
+    assembled += '\n';
+    return assembled;
+}
 
 int main()
 {
     StringBuilder final_doc;
-    std::string op;
+    std::string token;
 
-    while (std::cin >> op) {
-        if (op == "END") break;
-        if (op != "SECTION") continue;
+    while (std::cin >> token)
+    {
+        if (token == "END") break;
+        if (token != "SECTION") continue;
 
         std::string heading;
         std::getline(std::cin, heading);
-        while (!heading.empty() && heading.front() == ' ') heading.erase(0, 1);
-
-        std::string assembled;
-        assembled += "# ";
-        assembled += heading;
-        assembled += "\n";
-
-        for (std::string input; std::getline(std::cin, input);) {
-            if (input.empty()) break;
-            assembled += input;
-            assembled += '\n';
-        }
-        assembled += '\n';
+        strip_heading(heading);
 
         StringBuilder tmp;
-        tmp.append(std::move(assembled));
+        tmp.append(std::move(collect_section(std::cin, heading)));
         final_doc.append(std::move(tmp.str()));
     }
 

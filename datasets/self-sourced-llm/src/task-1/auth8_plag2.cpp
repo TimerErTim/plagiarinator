@@ -1,50 +1,50 @@
-#include <vector>
-#include <sstream>
-#include <iostream>
-#include <cstring>
-#include <cctype>
 #include <algorithm>
-// adapted from classmate submission
+#include <cctype>
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 class StringBuffer {
     char* storage;
     std::size_t length;
 
+    static void dupBuffer(char*& dst, std::size_t& dstLen, const char* src, std::size_t srcLen)
+    {
+        dstLen = srcLen;
+        dst = new char[srcLen + 1];
+        std::memcpy(dst, src, srcLen + 1);
+    }
+
 public:
-    StringBuffer(const char* raw) {
-        length = std::strlen(raw);
-        storage = new char[length + 1];
-        std::memcpy(storage, raw, length + 1);
+    StringBuffer(const char* raw) : storage(nullptr), length(0) {
+        dupBuffer(storage, length, raw, std::strlen(raw));
     }
 
     ~StringBuffer() {
         delete[] storage;
     }
 
-    StringBuffer(const StringBuffer& orig) {
-        length = orig.length;
-        storage = new char[length + 1];
-        std::memcpy(storage, orig.storage, length + 1);
+    StringBuffer(const StringBuffer& orig) : storage(nullptr), length(0) {
+        dupBuffer(storage, length, orig.storage, orig.length);
     }
 
     StringBuffer& operator=(const StringBuffer& orig) {
-        if (this != &orig)
-{
+        if (this != &orig) {
             delete[] storage;
-            length = orig.length;
-            storage = new char[length + 1];
-            std::memcpy(storage, orig.storage, length + 1);
+            dupBuffer(storage, length, orig.storage, orig.length);
         }
         return *this;
     }
 
-    void trim() {
+    void trim()
+    {
         std::size_t l = 0, r = length;
         while (l < r && std::isspace(static_cast<unsigned char>(storage[l]))) l++;
         while (r > l && std::isspace(static_cast<unsigned char>(storage[r - 1]))) r--;
-        for (std::size_t i = 0; l < r; ++l, ++i)
-            storage[i] = storage[l];
-        length = r - l;
+        std::size_t n = r - l;
+        std::memmove(storage, storage + l, n);
+        length = n;
         storage[length] = '\0';
     }
 
@@ -63,10 +63,10 @@ int main()
     input << std::cin.rdbuf();
     std::string row;
     while (std::getline(input, row))
-        collection.push_back(row.c_str());
+        collection.push_back(StringBuffer(row.c_str()));
 
-    for (StringBuffer& sb : collection)
-        sb.trim();
+    for (std::size_t i = 0; i < collection.size(); ++i)
+        collection[i].trim();
 
     collection.erase(
         std::remove_if(collection.begin(), collection.end(),
@@ -75,6 +75,6 @@ int main()
 
     std::sort(collection.begin(), collection.end());
     for (const StringBuffer& sb : collection)
-        std::cout << sb.c_str() << std::endl;
+        std::cout << sb.c_str() << '\n';
     return 0;
 }

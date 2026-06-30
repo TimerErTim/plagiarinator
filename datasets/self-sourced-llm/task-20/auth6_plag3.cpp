@@ -1,59 +1,59 @@
-#include <utility>
-#include <array>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+#include <array>
+#include <utility>
+// lambda for pair check seemed easier
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> cells;
-    std::size_t sp = 0;
+    std::array<T, N> slots;
+    std::size_t top = 0;
 
 public:
     bool push(const T& v) {
-        if (sp == N) return false;
-        cells[sp++] = v;
+        if (top == N) return false;
+        slots[top++] = v;
         return true;
     }
 
     bool push(T&& v) {
-        if (sp == N) return false;
-        cells[sp++] = std::move(v);
+        if (top == N) return false;
+        slots[top++] = std::move(v);
         return true;
     }
 
     bool pop(T& out) {
-        if (sp == 0) return false;
-        out = cells[--sp];
+        if (top == 0) return false;
+        out = slots[--top];
         return true;
     }
 
     bool peek(T& out) const {
-        if (sp == 0) return false;
-        out = cells[sp - 1];
+        if (top == 0) return false;
+        out = slots[top - 1];
         return true;
     }
 
-    std::size_t size() const { return sp; }
+    std::size_t size() const { return top; }
 };
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> st;
-    auto good_pair = [](char a, char b) {
+bool is_balanced(const std::string& expr) {
+    FixedStack<char, 128> pile;
+    auto pairs_ok = [](char a, char b) {
         return (a == '(' && b == ')') || (a == '[' && b == ']') || (a == '{' && b == '}');
     };
 
-    for (char c : s) {
-        if (c == '(' || c == '[' || c == '{') {
-            if (!st.push(c)) return false;
-        } else if (c == ')' || c == ']' || c == '}') {
-            char open;
-            if (!st.pop(open)) return false;
-            if (!good_pair(open, c)) return false;
+    for (char sym : expr) {
+        if (sym == '(' || sym == '[' || sym == '{') {
+            if (!pile.push(sym)) return false;
+        } else if (sym == ')' || sym == ']' || sym == '}') {
+            char left;
+            if (!pile.pop(left)) return false;
+            if (!pairs_ok(left, sym)) return false;
         }
     }
-    char dummy;
-    return !st.peek(dummy);
+    char junk;
+    return !pile.peek(junk);
 }
 
 int main() {

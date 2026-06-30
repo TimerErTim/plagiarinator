@@ -1,28 +1,49 @@
-#include <vector>
-#include <type_traits>
-#include <string>
-#include <iostream>
 #include <algorithm>
-// adapted from classmate submission
+#include <iostream>
+#include <string>
+#include <type_traits>
+#include <vector>
 
-namespace util {
+namespace util
+{
+
+template <typename T>
+bool lenLexCompare(const T& lhs, const T& rhs)
+{
+    return lhs.size() < rhs.size() || (lhs.size() == rhs.size() && lhs < rhs);
+}
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
+sort_values(std::vector<T>& data)
+{
     std::sort(data.begin(), data.end(), std::less<T>{});
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    auto cmp = [](const T& lhs, const T& rhs) {
-        return lhs.size() < rhs.size() || (lhs.size() == rhs.size() && lhs < rhs);
-    };
-    std::sort(data.begin(), data.end(), cmp);
+sort_values(std::vector<T>& data)
+{
+    std::sort(data.begin(), data.end(), lenLexCompare<T>);
 }
 
 }  // namespace util
+
+template <typename T>
+void readItems(std::vector<T>& items, int n)
+{
+    for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
+}
+
+template <typename T>
+void writeItems(const std::vector<T>& items, int n)
+{
+    for (int i = 0; i < n; ++i)
+    {
+        if (i) std::cout << ' ';
+        std::cout << items[static_cast<std::size_t>(i)];
+    }
+}
 
 int main()
 {
@@ -30,22 +51,19 @@ int main()
     int n;
     std::cin >> kind >> n;
 
-    if (kind == "STR") {
+    if (kind == "STR")
+    {
         std::vector<std::string> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
+        readItems(items, n);
         util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
-        }
-    } else {
+        writeItems(items, n);
+    }
+    else
+    {
         std::vector<double> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
+        readItems(items, n);
         util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
-        }
+        writeItems(items, n);
     }
     std::cout << '\n';
     return 0;

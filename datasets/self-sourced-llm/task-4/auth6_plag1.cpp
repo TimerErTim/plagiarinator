@@ -1,10 +1,10 @@
+#include <string>
+#include <utility>
+#include <vector>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
 // cleaned up version
 
 class FileWriter {
@@ -37,7 +37,7 @@ public:
     }
 
     void write_line(const std::string& content) {
-        outStream << content << std::endl;
+        outStream << content << '\n';
     }
 };
 
@@ -52,13 +52,13 @@ namespace grading {
 }
 
 int main() {
-    struct Student { std::string tag; int score; };
+    struct Student { std::string name; int score; };
     std::vector<Student> roster;
     std::string inputLine;
     while (std::getline(std::cin, inputLine)) {
         std::size_t delim = inputLine.find(',');
-        roster.push_back({inputLine.substr(0, delim),
-                          std::stoi(inputLine.substr(delim + 1))});
+        roster.emplace_back(Student{inputLine.substr(0, delim),
+                                    std::stoi(inputLine.substr(delim + 1))});
     }
 
     FileWriter writer("report.txt");
@@ -69,7 +69,7 @@ int main() {
     for (const Student& s : roster) {
         runningTotal += s.score;
         std::ostringstream lineBuilder;
-        lineBuilder << s.tag << ": " << s.score
+        lineBuilder << s.name << ": " << s.score
                     << " [" << grading::forScore(s.score) << "]";
         writer.write_line(lineBuilder.str());
     }

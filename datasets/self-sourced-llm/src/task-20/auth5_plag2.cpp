@@ -1,40 +1,39 @@
-#include <utility>
 #include <string>
+#include <utility>
 #include <iostream>
 #include <array>
-// adapted from classmate submission
 
 template <typename T, std::size_t N>
 class FixedStack {
 public:
     bool push(const T& value) {
         if (size_ >= N) return false;
-        elems_[size_++] = value;
+        items_[size_++] = value;
         return true;
     }
 
     bool push(T&& value) {
         if (size_ >= N) return false;
-        elems_[size_++] = std::move(value);
+        items_[size_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
         if (size_ == 0) return false;
-        out = elems_[--size_];
+        out = items_[--size_];
         return true;
     }
 
     bool peek(T& out) const {
         if (size_ == 0) return false;
-        out = elems_[size_ - 1];
+        out = items_[size_ - 1];
         return true;
     }
 
     std::size_t size() const { return size_; }
 
 private:
-    std::array<T, N> elems_{};
+    std::array<T, N> items_{};
     std::size_t size_ = 0;
 };
 
@@ -47,15 +46,25 @@ static char counterpart(char c) {
     }
 }
 
+static bool process_closer(FixedStack<char, 128>& stack, char ch)
+{
+    char need = counterpart(ch);
+    char have;
+    if (!stack.pop(have)) return false;
+    return have == need;
+}
+
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> stack;
-    for (char ch : s) {
-        if (ch == '(' || ch == '[' || ch == '{') {
+    for (char ch : s)
+    {
+        if (ch == '(' || ch == '[' || ch == '{')
+        {
             if (!stack.push(ch)) return false;
-        } else if (ch == ')' || ch == ']' || ch == '}') {
-            char need = counterpart(ch);
-            char have;
-            if (!stack.pop(have) || have != need) return false;
+        }
+        else if (ch == ')' || ch == ']' || ch == '}')
+        {
+            if (!process_closer(stack, ch)) return false;
         }
     }
     return stack.size() == 0;
@@ -63,10 +72,11 @@ bool is_balanced(const std::string& s) {
 
 int main()
 {
-    std::string input;
-    while (std::getline(std::cin, input)) {
-        if (input == "END") break;
-        std::cout << (is_balanced(input) ? "OK" : "FAIL") << '\n';
+    std::string line;
+    while (std::getline(std::cin, line))
+    {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

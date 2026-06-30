@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <iostream>
 #include <string>
-#include <type_traits>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <type_traits>
+#include <algorithm>
 
 namespace util {
 
@@ -12,53 +11,53 @@ struct sort_impl;
 
 template <typename T>
 struct sort_impl<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
-    static void apply(std::vector<T>& data) { std::sort(data.begin(), data.end()); }
+    static void apply(std::vector<T>& heap) { std::sort(heap.begin(), heap.end()); }
 };
 
 template <typename T>
 struct sort_impl<T, typename std::enable_if<!std::is_arithmetic<T>::value>::type> {
-    static void apply(std::vector<T>& data) {
-        std::sort(data.begin(), data.end(), [](const T& a, const T& b) {
-            if (a.size() != b.size()) return a.size() < b.size();
-            return a < b;
+    static void apply(std::vector<T>& heap) {
+        std::sort(heap.begin(), heap.end(), [](const T& left, const T& right) {
+            if (left.size() != right.size()) return left.size() < right.size();
+            return left < right;
         });
     }
 };
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    sort_impl<T>::apply(data);
+sort_values(std::vector<T>& heap) {
+    sort_impl<T>::apply(heap);
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    sort_impl<T>::apply(data);
+sort_values(std::vector<T>& heap) {
+    sort_impl<T>::apply(heap);
 }
 
 }  // namespace util
 
 int main() {
-    std::string kind;
-    int count;
-    std::cin >> kind >> count;
+    std::string selector;
+    int span;
+    std::cin >> selector >> span;
 
-    if (kind == "NUM") {
-        std::vector<double> values(static_cast<std::size_t>(count));
-        for (int i = 0; i < count; ++i) std::cin >> values[static_cast<std::size_t>(i)];
-        util::sort_values(values);
-        for (int i = 0; i < count; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << values[static_cast<std::size_t>(i)];
+    if (selector == "NUM") {
+        std::vector<double> heap(static_cast<std::size_t>(span));
+        for (int k = 0; k < span; ++k) std::cin >> heap[static_cast<std::size_t>(k)];
+        util::sort_values(heap);
+        for (int k = 0; k < span; ++k) {
+            if (k) std::cout << ' ';
+            std::cout << heap[static_cast<std::size_t>(k)];
         }
     } else {
-        std::vector<std::string> values(static_cast<std::size_t>(count));
-        for (int i = 0; i < count; ++i) std::cin >> values[static_cast<std::size_t>(i)];
-        util::sort_values(values);
-        for (int i = 0; i < count; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << values[static_cast<std::size_t>(i)];
+        std::vector<std::string> heap(static_cast<std::size_t>(span));
+        for (int k = 0; k < span; ++k) std::cin >> heap[static_cast<std::size_t>(k)];
+        util::sort_values(heap);
+        for (int k = 0; k < span; ++k) {
+            if (k) std::cout << ' ';
+            std::cout << heap[static_cast<std::size_t>(k)];
         }
     }
     std::cout << std::endl;

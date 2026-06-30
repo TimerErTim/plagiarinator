@@ -1,27 +1,26 @@
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <queue>
+#include <vector>
 #include <sstream>
 #include <thread>
-#include <vector>
-// cleaned up version
+#include <queue>
+#include <mutex>
+#include <iostream>
+#include <condition_variable>
 
 template <typename T>
 class BlockingQueue {
-    const std::size_t limit_;
+    const std::size_t cap_;
     std::queue<T> fifo_;
     mutable std::mutex sync_;
     std::condition_variable prod_wait_;
     std::condition_variable cons_wait_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : limit_(capacity) {}
+    explicit BlockingQueue(std::size_t capacity) : cap_(capacity) {}
 
     void push(T value) {
         std::unique_lock<std::mutex> hold(sync_);
-        prod_wait_.wait(hold, [this] { return fifo_.size() < limit_; });
-        fifo_.emplace(std::move(value));
+        prod_wait_.wait(hold, [this] { return fifo_.size() < cap_; });
+        fifo_.push(std::move(value));
         cons_wait_.notify_one();
     }
 
@@ -42,24 +41,24 @@ public:
 
 int main() {
     std::size_t producers = 0, consumers = 0, items = 0;
-    std::string s;
-    std::getline(std::cin, s);
+    std::string line;
+    std::getline(std::cin, line);
     {
-        std::istringstream lhs(s);
-        std::string piece;
-        lhs >> piece >> producers;
+        std::istringstream a(line);
+        std::string t;
+        a >> t >> producers;
     }
-    std::getline(std::cin, s);
+    std::getline(std::cin, line);
     {
-        std::istringstream rhs(s);
-        std::string piece;
-        rhs >> piece >> consumers;
+        std::istringstream b(line);
+        std::string t;
+        b >> t >> consumers;
     }
-    std::getline(std::cin, s);
+    std::getline(std::cin, line);
     {
-        std::istringstream conf(s);
-        std::string piece;
-        conf >> piece >> items;
+        std::istringstream c(line);
+        std::string t;
+        c >> t >> items;
     }
 
     BlockingQueue<int> q(items);
@@ -68,22 +67,22 @@ int main() {
     std::mutex served_mu;
 
     int id_base = 0;
-    for (std::size_t p = 0; p < producers; ++p) {
+    for (std::size_t p = 0; p < producers; p++) {
         std::size_t share = items / producers + (p < items % producers ? 1 : 0);
         int base = id_base;
         id_base += static_cast<int>(share);
         pool.emplace_back([&, share, base] {
-            for (std::size_t i = 0; i < share; ++i)
+            for (std::size_t i = 0; i < share; i++)
                 q.push(base + static_cast<int>(i));
         });
     }
 
-    for (std::size_t conf = 0; conf < consumers; ++conf) {
+    for (std::size_t c = 0; c < consumers; c++) {
         pool.emplace_back([&] {
             while (true) {
-                int n = q.pop();
-                if (n < 0) break;
-                std::cout << "got " << n << '\n';
+                int v = q.pop();
+                if (v < 0) break;
+                std::cout << "got " << v << std::endl;
                 bool all = false;
                 {
                     std::lock_guard<std::mutex> g(served_mu);
@@ -91,7 +90,7 @@ int main() {
                     all = (served == items);
                 }
                 if (all) {
-                    for (std::size_t id = 0; id < consumers; ++id)
+                    for (std::size_t k = 0; k < consumers; k++)
                         q.push(-1);
                 }
             }
@@ -99,6 +98,6 @@ int main() {
     }
 
     for (auto& th : pool) th.join();
-    std::cout << "DONE\n";
+    std::cout << "DONE" << std::endl;
     return 0;
 }

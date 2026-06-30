@@ -1,7 +1,6 @@
-#include <sstream>
 #include <iostream>
 #include <string>
-// quick submit
+#include <sstream>
 
 template <typename T>
 class LinkedList {
@@ -85,15 +84,15 @@ LinkedList<int> loadList(std::istream& in) {
 }
 
 int main() {
-    LinkedList<int> a = loadList(std::cin);
-    LinkedList<int> b = loadList(std::cin);
-    LinkedList<int> out = merge_sorted(a, b);
+    LinkedList<int> seqA = loadList(std::cin);
+    LinkedList<int> seqB = loadList(std::cin);
+    LinkedList<int> combined = merge_sorted(seqA, seqB);
     bool needSpace = false;
-    for (auto it = out.begin(); it != out.end(); ++it) {
+    for (auto it = combined.begin(); it != combined.end(); ++it) {
         if (needSpace) std::cout << ' ';
         std::cout << *it;
         needSpace = true;
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }

@@ -1,10 +1,10 @@
-#include <iomanip>
 #include <fstream>
-#include <string>
+#include <iomanip>
 #include <iostream>
-#include <vector>
+#include <string>
 #include <utility>
-// quick submit
+#include <vector>
+// quick submit before deadline
 
 using std::cin;
 using std::cout;
@@ -22,34 +22,34 @@ using std::vector;
 
 class FileWriter
 {
-    ofstream word_;
-    string tmp_;
+    ofstream stream;
+    string filename;
 
 public:
-    explicit FileWriter(const string& path): tmp_(path)
+    explicit FileWriter(const string& path): filename(path)
     {
-        word_.open(tmp_);
+        stream.open(filename);
     }
 
-    ~FileWriter() { if (word_.is_open()) word_.close(); }
+    ~FileWriter() { if (stream.is_open()) stream.close(); }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& src) noexcept
-        : word_(std::move(src.word_)), tmp_(std::move(src.tmp_)) {}
+        : stream(std::move(src.stream)), filename(std::move(src.filename)) {}
 
     FileWriter& operator=(FileWriter&& src) noexcept
     {
         if (this != &src) {
-            if (word_.is_open()) word_.close();
-            word_ = std::move(src.word_);
-            tmp_ = std::move(src.tmp_);
+            if (stream.is_open()) stream.close();
+            stream = std::move(src.stream);
+            filename = std::move(src.filename);
         }
         return *this;
     }
 
-    void write_line(const string& text) { word_ << text << '\n'; }
+    void write_line(const string& text) { stream << text << endl; }
 };
 
 char letterGrade(int s)
@@ -83,6 +83,6 @@ int main()
     avgLine << fixed << setprecision(1) << "Average: " << total / rows.size();
     fw.write_line(avgLine.str());
 
-    cout << "Report written to report.txt" << '\n';
+    cout << "Report written to report.txt" << endl;
     return 0;
 }

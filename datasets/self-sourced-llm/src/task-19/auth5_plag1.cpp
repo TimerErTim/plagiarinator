@@ -1,70 +1,69 @@
-#include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <iostream>
 
 class StringBuilder {
-    std::string storage;
+    std::string buf;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& from) noexcept : storage(std::move(from.storage)) {}
+    StringBuilder(StringBuilder&& from) noexcept : buf(std::move(from.buf)) {}
     StringBuilder& operator=(StringBuilder&& from) noexcept {
-        storage = std::move(from.storage);
-        from.storage.clear();
+        buf = std::move(from.buf);
+        from.buf.clear();
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& text) {
-        storage += text;
+    StringBuilder& append(const std::string& chunk) {
+        buf += chunk;
         return *this;
     }
 
-    StringBuilder& append(std::string&& text) {
-        storage += std::move(text);
+    StringBuilder& append(std::string&& chunk) {
+        buf += std::move(chunk);
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& text) {
-        storage.append(text).push_back('\n');
+    StringBuilder& append_line(const std::string& chunk) {
+        buf.append(chunk).push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return storage; }
-    void clear() { storage.clear(); }
+    const std::string& str() const { return buf; }
+    void clear() { buf.clear(); }
 };
 
 int main() {
-    StringBuilder output;
-    std::string label;
+    StringBuilder master;
+    std::string cmd;
 
-    while (std::cin >> label) {
-        if (label == "END") break;
-        if (label != "SECTION") continue;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd != "SECTION") continue;
 
-        std::string heading;
-        std::getline(std::cin, heading);
-        if (heading.size() && heading[0] == ' ') heading = heading.substr(1);
+        std::string title;
+        std::getline(std::cin, title);
+        if (title.size() && title[0] == ' ') title = title.substr(1);
 
         std::string body;
         body.reserve(128);
         body += "# ";
-        body += heading;
+        body += title;
         body += "\n";
 
-        std::string s;
-        while (std::getline(std::cin, s)) {
-            if (s.empty()) break;
-            body += s;
+        std::string entry;
+        while (std::getline(std::cin, entry)) {
+            if (entry.empty()) break;
+            body += entry;
             body += '\n';
         }
         body += '\n';
 
-        output.append(std::move(body));
+        master.append(std::move(body));
     }
 
-    std::cout << output.str();
+    std::cout << master.str();
     return 0;
 }

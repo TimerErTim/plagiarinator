@@ -1,25 +1,28 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 // adapted from classmate submission
 
-class FileWriter {
+class FileWriter
+{
     std::ofstream stream_;
-    std::string fname_;
+    std::string location_;
 
-    void shutdown() {
+    void shutdown()
+    {
         if (stream_.is_open())
             stream_.close();
     }
 
 public:
     explicit FileWriter(const std::string& location)
-        : fname_(location) {
-        stream_.open(fname_);
+        : location_(location)
+    {
+        stream_.open(location_);
     }
 
     ~FileWriter() { shutdown(); }
@@ -29,24 +32,27 @@ public:
 
     FileWriter(FileWriter&& donor) noexcept
         : stream_(std::move(donor.stream_)),
-          fname_(std::move(donor.fname_)) {}
+          location_(std::move(donor.location_)) {}
 
-    FileWriter& operator=(FileWriter&& donor) noexcept {
+    FileWriter& operator=(FileWriter&& donor) noexcept
+    {
         if (this != &donor)
-{
+        {
             shutdown();
             stream_ = std::move(donor.stream_);
-            fname_ = std::move(donor.fname_);
+            location_ = std::move(donor.location_);
         }
         return *this;
     }
 
-    void write_line(const std::string& text) {
+    void write_line(const std::string& text)
+    {
         stream_ << text << '\n';
     }
 };
 
-static std::string gradeToken(int score) {
+static std::string gradeToken(int score)
+{
     if (score >= 90) return "A";
     if (score >= 80) return "B";
     if (score >= 70) return "C";
@@ -56,15 +62,13 @@ static std::string gradeToken(int score) {
 
 int main()
 {
-    std::stringstream stdinCopy;
-    stdinCopy << std::cin.rdbuf();
-
-    std::vector<std::pair<std::string, int>> data;
-    std::string ln;
-    while (std::getline(stdinCopy, ln)) {
-        std::size_t commaPos = ln.find(',');
-        data.emplace_back(ln.substr(0, commaPos),
-                          std::stoi(ln.substr(commaPos + 1)));
+    std::vector<std::pair<std::string, int>> rows;
+    std::string line;
+    while (std::getline(std::cin, line))
+    {
+        std::size_t commaPos = line.find(',');
+        rows.push_back({line.substr(0, commaPos),
+                        std::stoi(line.substr(commaPos + 1))});
     }
 
     FileWriter reportWriter("report.txt");
@@ -72,16 +76,16 @@ int main()
     reportWriter.write_line("--------------");
 
     double scoreSum = 0.0;
-    for (const auto& row : data)
-{
-        scoreSum += row.second;
-        reportWriter.write_line(row.first + ": " + std::to_string(row.second)
-                                + " [" + gradeToken(row.second) + "]");
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+        scoreSum += rows[i].second;
+        reportWriter.write_line(rows[i].first + ": " + std::to_string(rows[i].second)
+                                + " [" + gradeToken(rows[i].second) + "]");
     }
 
     std::ostringstream avgStream;
     avgStream << std::fixed << std::setprecision(1)
-              << "Average: " << scoreSum / data.size();
+              << "Average: " << scoreSum / rows.size();
     reportWriter.write_line(avgStream.str());
 
     std::cout << "Report written to report.txt" << std::endl;

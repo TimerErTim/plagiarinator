@@ -1,8 +1,8 @@
 #include <unordered_map>
-#include <iostream>
-#include <memory>
 #include <string>
-// TODO: refactor later
+#include <memory>
+#include <iostream>
+// lab partner let me copy this
 
 struct Image {
     std::string name;
@@ -10,35 +10,35 @@ struct Image {
 };
 
 class ImageCache {
-    mutable std::unordered_map<std::string, std::weak_ptr<Image>> pool_;
+    mutable std::unordered_map<std::string, std::weak_ptr<Image>> img_table_;
 
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        auto it = pool_.find(key);
-        if (it != pool_.end()) {
-            if (auto sp = it->second.lock()) return sp;
-            if (it->second.expired()) pool_.erase(it);
+        auto iter = img_table_.find(key);
+        if (iter != img_table_.end()) {
+            if (auto holder = iter->second.lock()) return holder;
+            if (iter->second.expired()) img_table_.erase(iter);
         }
-        if (auto sp = pool_[key].lock()) return sp;
-        auto created = std::shared_ptr<Image>(new Image{key, pixels});
-        pool_[key] = created;
-        return created;
+        if (auto holder = img_table_[key].lock()) return holder;
+        auto built = std::shared_ptr<Image>(new Image{key, pixels});
+        img_table_[key] = built;
+        return built;
     }
 
     std::size_t size() const {
-        std::size_t c = 0;
-        for (auto& e : pool_)
-            if (!e.second.expired()) ++c;
-        return c;
+        std::size_t alive_cnt = 0;
+        for (auto& row : img_table_)
+            if (!row.second.expired()) ++alive_cnt;
+        return alive_cnt;
     }
 
-    void drop_all() { pool_.clear(); }
+    void drop_all() { img_table_.clear(); }
 
     bool alive(const std::string& key, int& pixels_out) const {
-        auto it = pool_.find(key);
-        if (it == pool_.end()) return false;
-        if (auto sp = it->second.lock()) {
-            pixels_out = sp->pixel_count;
+        auto iter = img_table_.find(key);
+        if (iter == img_table_.end()) return false;
+        if (auto holder = iter->second.lock()) {
+            pixels_out = holder->pixel_count;
             return true;
         }
         return false;
@@ -46,26 +46,26 @@ public:
 };
 
 int main() {
-    ImageCache ic;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "LOAD") {
-            std::string id;
-            int tmp;
-            std::cin >> id >> tmp;
+    ImageCache mgr;
+    std::string word;
+    while (std::cin >> word) {
+        if (word == "END") break;
+        if (word == "LOAD") {
+            std::string asset_id;
+            int px_val;
+            std::cin >> asset_id >> px_val;
             {
-                std::shared_ptr<Image> obj = ic.load(id, tmp);
-                std::cout << "loaded " << obj->name << " pixels=" << obj->pixel_count << '\n';
+                std::shared_ptr<Image> pic = mgr.load(asset_id, px_val);
+                std::cout << "loaded " << pic->name << " pixels=" << pic->pixel_count << '\n';
             }
-        } else if (ln == "QUERY") {
-            std::string id;
-            std::cin >> id;
-            int tmp;
-            if (ic.alive(id, tmp)) std::cout << "pixels=" << tmp << '\n';
+        } else if (word == "QUERY") {
+            std::string asset_id;
+            std::cin >> asset_id;
+            int px_val;
+            if (mgr.alive(asset_id, px_val)) std::cout << "pixels=" << px_val << std::endl;
             else std::cout << "EXPIRED\n";
-        } else if (ln == "DROP_ALL") {
-            ic.drop_all();
+        } else if (word == "DROP_ALL") {
+            mgr.drop_all();
         }
     }
     return 0;

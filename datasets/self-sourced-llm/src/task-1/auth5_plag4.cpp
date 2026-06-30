@@ -1,9 +1,8 @@
+#include <cstring>
 #include <cctype>
 #include <algorithm>
-#include <iostream>
-#include <cstring>
 #include <vector>
-// quick submit
+#include <iostream>
 
 class StringBuffer {
     char* chars;
@@ -55,8 +54,7 @@ int main() {
     while (std::getline(std::cin, s))
         list.push_back(StringBuffer(s.c_str()));
 
-    for (auto it = list.begin(); it != list.end(); ++it)
-        it->trim();
+    for (auto& item : list) item.trim();
 
     std::vector<StringBuffer> kept;
     for (const auto& sb : list)

@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <memory>
-#include <iostream>
-#include <iomanip>
 #include <cmath>
-// adapted from classmate submission
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 #define PI_VAL 3.141592653589793
 
@@ -35,48 +34,63 @@ public:
 };
 
 class Triangle : public Shape {
-    double edge;
+    double side;
 public:
-    Triangle(double s) : edge(s) {}
-    double area() const override { return (std::sqrt(3.0) / 4.0) * edge * edge; }
-    double perimeter() const override { return 3.0 * edge; }
+    Triangle(double s) : side(s) {}
+    double area() const override { return (std::sqrt(3.0) / 4.0) * side * side; }
+    double perimeter() const override { return 3.0 * side; }
     std::string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& s) {
+void print_shape(const Shape& s)
+{
     std::cout << std::fixed << std::setprecision(4)
               << s.name() << ": area=" << s.area()
               << ", perimeter=" << s.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& a_sum, double& p_sum) {
+void accumulate(const Shape& s, double& a_sum, double& p_sum)
+{
     a_sum += s.area();
     p_sum += s.perimeter();
+}
+
+std::unique_ptr<Shape> extract(const std::string& kind, std::istream& in)
+{
+    if (kind == "CIRCLE")
+    {
+        double rad; in >> rad;
+        return std::unique_ptr<Shape>(new Circle(rad));
+    }
+    if (kind == "RECT")
+    {
+        double w, h; in >> w >> h;
+        return std::unique_ptr<Shape>(new Rectangle(w, h));
+    }
+    if (kind == "TRI")
+    {
+        double s; in >> s;
+        return std::unique_ptr<Shape>(new Triangle(s));
+    }
+    return nullptr;
 }
 
 int main()
 {
     std::vector<std::unique_ptr<Shape>> collection;
     std::string kind;
-    while (std::cin >> kind && kind != "DONE")
-{
-        if (kind == "CIRCLE")
-{
-            double rad; std::cin >> rad;
-            collection.push_back(std::unique_ptr<Shape>(new Circle(rad)));
-        } else if (kind == "RECT") {
-            double w, h; std::cin >> w >> h;
-            collection.push_back(std::unique_ptr<Shape>(new Rectangle(w, h)));
-        } else if (kind == "TRI") {
-            double s; std::cin >> s;
-            collection.push_back(std::unique_ptr<Shape>(new Triangle(s)));
-        }
+    while (std::cin >> kind)
+    {
+        if (kind == "DONE") break;
+        auto item = extract(kind, std::cin);
+        if (item) collection.push_back(std::move(item));
     }
 
     double a = 0, p = 0;
-    for (size_t i = 0; i < collection.size(); ++i) {
-        print_shape(*collection[i]);
-        accumulate(*collection[i], a, p);
+    for (std::size_t idx = 0; idx < collection.size(); ++idx)
+    {
+        print_shape(*collection[idx]);
+        accumulate(*collection[idx], a, p);
     }
     std::cout << std::fixed << std::setprecision(4)
               << "TOTAL area=" << a << '\n'

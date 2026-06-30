@@ -1,54 +1,46 @@
-#include <functional>
-#include <iomanip>
 #include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
+#include <functional>
+#include <iomanip>
+#include <utility>
 // cleaned up version
 
-namespace monitoring {
-
 class Sensor {
-    double storedValue_;
-    std::vector<std::pair<std::string, std::function<void(double)>>> registry_;
-
-    void broadcast() {
-        for (const auto& item : registry_) {
-            std::cout << std::fixed << std::setprecision(1)
-                      << "[" << item.first << "] temp=" << storedValue_ << '\n';
-            if (item.second)
-                item.second(storedValue_);
-        }
-    }
+    double reading_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> subs_;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        registry_.emplace_back(name, std::move(callback));
+        subs_.push_back({name, std::move(callback)});
     }
 
     void set_value(double celsius) {
-        storedValue_ = celsius;
-        broadcast();
+        reading_ = celsius;
+        for (std::size_t i = 0; i < subs_.size(); i++) {
+            const auto& sub = subs_[i];
+            std::cout << std::fixed << std::setprecision(1)
+                      << "[" << sub.first << "] temp=" << reading_ << std::endl;
+            if (sub.second) sub.second(reading_);
+        }
     }
 
-    double value() const { return storedValue_; }
+    double value() const { return reading_; }
 };
 
-} // namespace monitoring
-
 int main() {
-    monitoring::Sensor probe;
+    Sensor sensor;
     std::string token;
     while (std::cin >> token) {
         if (token == "END") break;
         if (token == "SUB") {
-            std::string label;
-            std::cin >> label;
-            probe.subscribe(label, [](double) {});
+            std::string name;
+            std::cin >> name;
+            sensor.subscribe(name, [](double) {});
         } else if (token == "SET") {
-            double val;
-            std::cin >> val;
-            probe.set_value(val);
+            double v;
+            std::cin >> v;
+            sensor.set_value(v);
         }
     }
     return 0;

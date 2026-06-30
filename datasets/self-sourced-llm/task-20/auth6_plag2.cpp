@@ -1,8 +1,7 @@
 #include <utility>
-#include <string>
-#include <iostream>
 #include <array>
-// adapted from classmate submission
+#include <iostream>
+#include <string>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -37,20 +36,31 @@ public:
     std::size_t size() const { return sp; }
 };
 
+static bool good_pair(char a, char b)
+{
+    return (a == '(' && b == ')') || (a == '[' && b == ']') || (a == '{' && b == '}');
+}
+
+static bool handle_bracket(FixedStack<char, 128>& st, char c)
+{
+    if (c == '(' || c == '[' || c == '{')
+    {
+        return st.push(c);
+    }
+    if (c == ')' || c == ']' || c == '}')
+    {
+        char open;
+        if (!st.pop(open)) return false;
+        return good_pair(open, c);
+    }
+    return true;
+}
+
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> st;
-    auto good_pair = [](char a, char b) {
-        return (a == '(' && b == ')') || (a == '[' && b == ']') || (a == '{' && b == '}');
-    };
-
-    for (char c : s) {
-        if (c == '(' || c == '[' || c == '{') {
-            if (!st.push(c)) return false;
-        } else if (c == ')' || c == ']' || c == '}') {
-            char open;
-            if (!st.pop(open)) return false;
-            if (!good_pair(open, c)) return false;
-        }
+    for (char c : s)
+    {
+        if (!handle_bracket(st, c)) return false;
     }
     char dummy;
     return !st.peek(dummy);
@@ -59,7 +69,8 @@ bool is_balanced(const std::string& s) {
 int main()
 {
     std::string s;
-    while (std::getline(std::cin, s)) {
+    while (std::getline(std::cin, s))
+    {
         if (s == "END") break;
         std::cout << (is_balanced(s) ? "OK" : "FAIL") << '\n';
     }

@@ -1,8 +1,8 @@
-#include <string>
 #include <iostream>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
+#include <cstdio>
 
 template <typename Derived>
 class Printable {
@@ -42,18 +42,18 @@ void print_metric(const Printable<T>& metric) {
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> metrics;
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") break;
+    std::vector<std::variant<Distance, Mass, Temperature>> items;
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
         double d;
         std::cin >> d;
-        if (word == "DIST") metrics.emplace_back(Distance(d));
-        else if (word == "MASS") metrics.emplace_back(Mass(d));
-        else if (word == "TEMP") metrics.emplace_back(Temperature(d));
+        if (op == "DIST") items.emplace_back(Distance(d));
+        else if (op == "MASS") items.emplace_back(Mass(d));
+        else if (op == "TEMP") items.emplace_back(Temperature(d));
     }
 
     auto emit = [](const auto& m) { print_metric(m); };
-    for (const auto& m : metrics) std::visit(emit, m);
+    for (const auto& m : items) std::visit(emit, m);
     return 0;
 }

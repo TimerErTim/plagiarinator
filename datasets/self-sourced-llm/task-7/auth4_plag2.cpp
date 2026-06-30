@@ -1,9 +1,8 @@
-#include <vector>
-#include <string>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 class Vehicle {
 public:
@@ -34,14 +33,15 @@ public:
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config) {
-    if (kind == "CAR")
+std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config)
 {
+    if (kind == "CAR")
+    {
         double v; config >> v;
         return std::unique_ptr<Vehicle>(new Car(v));
     }
     if (kind == "TRUCK")
-{
+    {
         double v; config >> v;
         return std::unique_ptr<Vehicle>(new Truck(v));
     }
@@ -50,30 +50,41 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
     return nullptr;
 }
 
+bool extract(const std::string& kindToken, std::istream& in,
+             std::unique_ptr<Vehicle>& veh, double& dist)
+{
+    veh = create_vehicle(kindToken, in);
+    if (!veh)
+        return false;
+    in >> dist;
+    return true;
+}
+
 int main()
 {
-    std::vector<std::unique_ptr<Vehicle>> vs;
-    std::vector<double> ds;
+    std::vector<std::unique_ptr<Vehicle>> vehicles;
+    std::vector<double> kms;
     std::string kind;
     while (std::cin >> kind)
-{
-        auto v = create_vehicle(kind, std::cin);
-        if (!v)
-{
+    {
+        std::unique_ptr<Vehicle> v;
+        double d;
+        if (!extract(kind, std::cin, v, d))
+        {
             std::string junk; std::getline(std::cin, junk);
             std::cout << "ERROR\n";
             continue;
         }
-        double d; std::cin >> d;
-        vs.push_back(std::move(v));
-        ds.push_back(d);
+        vehicles.push_back(std::move(v));
+        kms.push_back(d);
     }
 
     double tot = 0;
-    for (size_t i = 0; i < vs.size(); ++i) {
-        double f = vs[i]->fuel_needed(ds[i]);
+    for (size_t i = 0; i < vehicles.size(); ++i)
+    {
+        double f = vehicles[i]->fuel_needed(kms[i]);
         tot += f;
-        std::cout << "Trip " << i + 1 << ": " << vs[i]->type()
+        std::cout << "Trip " << i + 1 << ": " << vehicles[i]->type()
                   << " needs " << std::fixed << std::setprecision(2) << f
                   << " liters\n";
     }

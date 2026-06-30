@@ -1,10 +1,10 @@
 #include <vector>
-#include <functional>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <variant>
-// TODO: refactor later
+#include <functional>
+#include <string>
+#include <sstream>
+#include <iostream>
+// borrowed from roommate's homework
 
 struct Number { int value; };
 struct Add { std::size_t left, right; };
@@ -14,7 +14,7 @@ struct Div { std::size_t left, right; };
 
 using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
-int go_node(const std::vector<Expr>& pool, std::size_t id) {
+int walk_tree(const std::vector<Expr>& arena, std::size_t id) {
     std::function<int(std::size_t)> rec = [&](std::size_t i) {
         return std::visit(
             [&](auto&& node) -> int {
@@ -32,39 +32,39 @@ int go_node(const std::vector<Expr>& pool, std::size_t id) {
                     return rec(node.left) / d;
                 }
             },
-            pool[i]);
+            arena[i]);
     };
     return rec(id);
 }
 
-void exec_input(const std::string& input) {
-    std::vector<Expr> nodes;
-    std::vector<std::size_t> st;
-    std::istringstream parser(input);
-    std::string token;
-    while (parser >> token) {
-        if (token == "+" || token == "-" || token == "*" || token == "/") {
-            std::size_t b = st.back(); st.pop_back();
-            std::size_t a = st.back(); st.pop_back();
-            if (token == "+") nodes.emplace_back(Add{a, b});
-            else if (token == "-") nodes.emplace_back(Sub{a, b});
-            else if (token == "*") nodes.emplace_back(Mul{a, b});
-            else nodes.emplace_back(Div{a, b});
-            st.push_back(nodes.size() - 1);
+void handle(const std::string& input) {
+    std::vector<Expr> arena;
+    std::vector<std::size_t> tops;
+    std::istringstream lex(input);
+    std::string sym;
+    while (lex >> sym) {
+        if (sym == "+" || sym == "-" || sym == "*" || sym == "/") {
+            std::size_t b = tops.back(); tops.pop_back();
+            std::size_t a = tops.back(); tops.pop_back();
+            if (sym == "+") arena.emplace_back(Add{a, b});
+            else if (sym == "-") arena.emplace_back(Sub{a, b});
+            else if (sym == "*") arena.emplace_back(Mul{a, b});
+            else arena.emplace_back(Div{a, b});
+            tops.push_back(arena.size() - 1);
         } else {
-            nodes.emplace_back(Number{std::stoi(token)});
-            st.push_back(nodes.size() - 1);
+            arena.emplace_back(Number{std::stoi(sym)});
+            tops.push_back(arena.size() - 1);
         }
     }
     try {
-        std::cout << go_node(nodes, st.back()) << '\n';
+        std::cout << walk_tree(arena, tops.back()) << std::endl;
     } catch (...) {
         std::cout << "ERROR\n";
     }
 }
 
 int main() {
-    std::string buf;
-    while (std::getline(std::cin, buf) && !buf.empty()) exec_input(buf);
+    std::string row;
+    while (std::getline(std::cin, row) && !row.empty()) handle(row);
     return 0;
 }

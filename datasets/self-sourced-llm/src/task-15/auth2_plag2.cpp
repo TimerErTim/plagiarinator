@@ -1,9 +1,9 @@
-#include <vector>
-#include <variant>
-#include <string>
-#include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <iomanip>
+#include <string>
+#include <variant>
+#include <vector>
+#include <cstdio>
 
 template <typename Derived>
 class Printable {
@@ -50,25 +50,29 @@ void print_metric(const Printable<T>& m) {
 
 using Metric = std::variant<Distance, Mass, Temperature>;
 
-int main()
+static void append_entry(const std::string& tag, double num, std::vector<Metric>& list)
+{
+    if (tag == "DIST") list.push_back(Distance(num));
+    else if (tag == "MASS") list.push_back(Mass(num));
+    else if (tag == "TEMP") list.push_back(Temperature(num));
+}
 
+int main()
 {
     std::vector<Metric> list;
     std::string tag;
-    double x;
+    double num;
 
-    while (std::cin >> tag) 
-{
-        if (tag == "END") break;
-        if (!(std::cin >> x)) break;
-        if (tag == "DIST") list.push_back(Distance(x));
-        else if (tag == "MASS") list.push_back(Mass(x));
-        else if (tag == "TEMP") list.push_back(Temperature(x));
+    for (std::string tok; std::cin >> tok;)
+    {
+        if (tok == "END") break;
+        if (!(std::cin >> num)) break;
+        append_entry(tok, num, list);
     }
 
-    for (const Metric& entry : list) 
-{
-        std::visit([](const auto& typed) { print_metric(typed); }, entry);
+    for (std::size_t j = 0; j < list.size(); ++j)
+    {
+        std::visit([](const auto& typed) { print_metric(typed); }, list[j]);
     }
     return 0;
 }

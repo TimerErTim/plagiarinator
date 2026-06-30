@@ -1,36 +1,35 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> data_;
+    std::array<T, N> slots_;
     std::size_t top_ = 0;
 
 public:
     bool push(const T& value) {
         if (top_ >= N) return false;
-        data_[top_++] = value;
+        slots_[top_++] = value;
         return true;
     }
 
     bool push(T&& value) {
         if (top_ >= N) return false;
-        data_[top_++] = std::move(value);
+        slots_[top_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
         if (top_ == 0) return false;
-        out = data_[--top_];
+        out = slots_[--top_];
         return true;
     }
 
     bool peek(T& out) const {
         if (top_ == 0) return false;
-        out = data_[top_ - 1];
+        out = slots_[top_ - 1];
         return true;
     }
 
@@ -53,14 +52,14 @@ bool is_balanced(const std::string& s) {
             if (!matches(open, ch)) return false;
         }
     }
-    return st.size() == 0;
+    return !st.size();
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str == "END") break;
-        std::cout << (is_balanced(str) ? "OK" : "FAIL") << '\n';
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

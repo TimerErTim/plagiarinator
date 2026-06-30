@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <iostream>
 #include <string>
 #include <type_traits>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <algorithm>
 
 namespace util {
 
@@ -12,57 +11,57 @@ struct Sorter;
 
 template <typename T>
 struct Sorter<T, true> {
-    static void run(std::vector<T>& data) { std::sort(data.begin(), data.end()); }
+    static void run(std::vector<T>& payload) { std::sort(payload.begin(), payload.end()); }
 };
 
 template <typename T>
 struct Sorter<T, false> {
-    static void run(std::vector<T>& data) {
-        std::sort(data.begin(), data.end(), [](const T& x, const T& y) {
-            if (x.length() != y.length()) return x.length() < y.length();
-            return x < y;
+    static void run(std::vector<T>& payload) {
+        std::sort(payload.begin(), payload.end(), [](const T& left, const T& right) {
+            if (left.length() != right.length()) return left.length() < right.length();
+            return left < right;
         });
     }
 };
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    Sorter<T, true>::run(data);
+sort_values(std::vector<T>& payload) {
+    Sorter<T, true>::run(payload);
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    Sorter<T, false>::run(data);
+sort_values(std::vector<T>& payload) {
+    Sorter<T, false>::run(payload);
 }
 
 }  // namespace util
 
 template <typename T>
-void print_vec(const std::vector<T>& v) {
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+void showLine(const std::vector<T>& seq) {
+    for (std::size_t k = 0; k < seq.size(); ++k) {
+        if (k) std::cout << ' ';
+        std::cout << seq[k];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 int main() {
-    std::string kind;
-    std::size_t count;
-    std::cin >> kind >> count;
+    std::string opMode;
+    std::size_t total;
+    std::cin >> opMode >> total;
 
-    if (kind == "NUM") {
-        std::vector<int> vals(count);
-        for (auto& x : vals) std::cin >> x;
-        util::sort_values(vals);
-        print_vec(vals);
+    if (opMode == "NUM") {
+        std::vector<int> numbers(total);
+        for (int i = 0; i < static_cast<int>(total); ++i) std::cin >> numbers[static_cast<std::size_t>(i)];
+        util::sort_values(numbers);
+        showLine(numbers);
     } else {
-        std::vector<std::string> vals(count);
-        for (auto& s : vals) std::cin >> s;
-        util::sort_values(vals);
-        print_vec(vals);
+        std::vector<std::string> labels(total);
+        for (int i = 0; i < static_cast<int>(total); ++i) std::cin >> labels[static_cast<std::size_t>(i)];
+        util::sort_values(labels);
+        showLine(labels);
     }
     return 0;
 }

@@ -1,70 +1,78 @@
 #include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// cleaned up version
 
-class StringBuilder {
-    std::string storage;
+class StringBuilder
+{
+    std::string heap;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& from) noexcept : storage(std::move(from.storage)) {}
-    StringBuilder& operator=(StringBuilder&& from) noexcept {
-        storage = std::move(from.storage);
-        from.storage.clear();
+    StringBuilder(StringBuilder&& donor) noexcept : heap(std::move(donor.heap)) {}
+    StringBuilder& operator=(StringBuilder&& donor) noexcept
+    {
+        heap = std::move(donor.heap);
+        donor.heap.clear();
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& text) {
-        storage += text;
+    StringBuilder& append(const std::string& unit)
+    {
+        heap += unit;
         return *this;
     }
 
-    StringBuilder& append(std::string&& text) {
-        storage += std::move(text);
+    StringBuilder& append(std::string&& unit)
+    {
+        heap += std::move(unit);
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& text) {
-        storage.append(text).push_back('\n');
+    StringBuilder& append_line(const std::string& unit)
+    {
+        heap.append(unit).emplace_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return storage; }
-    void clear() { storage.clear(); }
+    const std::string& str() const { return heap; }
+    void clear() { heap.clear(); }
 };
 
-int main() {
-    StringBuilder master;
-    std::string tag;
+int main()
+{
+    StringBuilder rollup;
+    std::string opcode;
 
-    while (std::cin >> tag) {
-        if (tag == "END") break;
-        if (tag != "SECTION") continue;
+    while (std::cin >> opcode)
+    {
+        if (opcode == "END") break;
+        if (opcode != "SECTION") continue;
 
         std::string hdr;
         std::getline(std::cin, hdr);
         if (hdr.size() && hdr[0] == ' ') hdr = hdr.substr(1);
 
-        std::string body;
-        body.reserve(128);
-        body += "# ";
-        body += hdr;
-        body += "\n";
+        std::string draft;
+        draft.reserve(128);
+        draft += "# ";
+        draft += hdr;
+        draft += "\n";
 
-        std::string buf;
-        while (std::getline(std::cin, buf)) {
-            if (buf.empty()) break;
-            body += buf;
-            body += '\n';
+        std::string record;
+        while (std::getline(std::cin, record))
+        {
+            if (record.empty()) break;
+            draft += record;
+            draft += '\n';
         }
-        body += '\n';
+        draft += '\n';
 
-        master.append(std::move(body));
+        rollup.append(std::move(draft));
     }
 
-    std::cout << master.str();
+    std::cout << rollup.str();
     return 0;
 }

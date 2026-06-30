@@ -1,12 +1,13 @@
-#include <unordered_map>
-#include <string>
 #include <sstream>
-#include <list>
+#include <string>
 #include <iostream>
+#include <list>
+#include <unordered_map>
 // adapted from classmate submission
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     std::size_t limit_;
     std::list<std::pair<Key, Value>> chain_;
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> idx_;
@@ -14,7 +15,8 @@ class LRUCache {
 public:
     LRUCache(std::size_t s) : limit_(s) {}
 
-    bool get(const Key& k, Value& v) {
+    bool get(const Key& k, Value& v)
+    {
         auto f = idx_.find(k);
         if (f == idx_.end()) return false;
         v = f->second->second;
@@ -22,7 +24,8 @@ public:
         return true;
     }
 
-    void put(const Key& k, const Value& v) {
+    void put(const Key& k, const Value& v)
+    {
         auto f = idx_.find(k);
         if (f != idx_.end()) {
             f->second->second = v;
@@ -46,16 +49,16 @@ int main()
     std::string w;
     in >> w >> cap;
     LRUCache<std::string, int> lru(cap);
-    std::string ln;
-    while (in >> ln)
-{
-        if (ln == "END") break;
-        if (ln == "GET")
-{
+    std::string verb;
+    while (in >> verb)
+    {
+        if (verb == "END") break;
+        if (verb == "GET")
+        {
             std::string k; in >> k;
             int v;
             std::cout << (lru.get(k, v) ? "HIT " + std::to_string(v) : "MISS") << '\n';
-        } else if (ln == "PUT") {
+        } else if (verb == "PUT") {
             std::string k; int v; in >> k >> v;
             lru.put(k, v);
         }

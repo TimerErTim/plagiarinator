@@ -1,8 +1,8 @@
-#include <vector>
-#include <variant>
-#include <string>
+#include <cstdio>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <variant>
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -41,22 +41,28 @@ void print_metric(const Printable<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
-int main()
+using MetricVar = std::variant<Distance, Mass, Temperature>;
 
+static void read_metric(const std::string& op, double d, std::vector<MetricVar>& metrics)
 {
-    std::vector<std::variant<Distance, Mass, Temperature>> metrics;
+    if (op == "DIST") metrics.emplace_back(Distance(d));
+    else if (op == "MASS") metrics.emplace_back(Mass(d));
+    else if (op == "TEMP") metrics.emplace_back(Temperature(d));
+}
+
+int main()
+{
+    std::vector<MetricVar> metrics;
     std::string op;
-    while (std::cin >> op) 
-{
+    while (std::cin >> op)
+    {
         if (op == "END") break;
         double d;
         std::cin >> d;
-        if (op == "DIST") metrics.push_back(Distance(d));
-        else if (op == "MASS") metrics.push_back(Mass(d));
-        else if (op == "TEMP") metrics.push_back(Temperature(d));
+        read_metric(op, d, metrics);
     }
 
-    auto emit = [](const auto& m) { print_metric(m); };
-    for (const auto& m : metrics) std::visit(emit, m);
+    for (std::size_t idx = 0; idx < metrics.size(); ++idx)
+        std::visit([](const auto& m) { print_metric(m); }, metrics[idx]);
     return 0;
 }

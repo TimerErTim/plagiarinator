@@ -1,14 +1,13 @@
-#include <vector>
+#include <memory>
+#include <iostream>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <string>
-// TODO: refactor later
+#include <vector>
+// quick fix before deadline
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::fixed;
 using std::make_unique;
 using std::setprecision;
@@ -17,7 +16,7 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 
-static const double PI = 3.141592653589793;
+static const double kPiVal = 3.141592653589793;
 
 class Shape
 {
@@ -30,70 +29,70 @@ public:
 
 class Circle : public Shape
 {
-    double rVal;
+    double radLen;
 public:
-    Circle(double r): rVal(r) {}
-    double area() const override { return PI * rVal * rVal; }
-    double perimeter() const override { return 2 * PI * rVal; }
+    Circle(double r): radLen(r) {}
+    double area() const override { return kPiVal * radLen * radLen; }
+    double perimeter() const override { return 2 * kPiVal * radLen; }
     string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape
 {
-    double w, h;
+    double xDim, yDim;
 public:
-    Rectangle(double width, double height): w(width), h(height) {}
-    double area() const override { return w * h; }
-    double perimeter() const override { return 2 * (w + h); }
+    Rectangle(double width, double height): xDim(width), yDim(height) {}
+    double area() const override { return xDim * yDim; }
+    double perimeter() const override { return 2 * (xDim + yDim); }
     string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape
 {
-    double sVal;
+    double edgeLen;
 public:
-    Triangle(double s): sVal(s) {}
-    double area() const override { return sqrt(3.0) / 4.0 * sVal * sVal; }
-    double perimeter() const override { return 3 * sVal; }
+    Triangle(double s): edgeLen(s) {}
+    double area() const override { return sqrt(3.0) / 4.0 * edgeLen * edgeLen; }
+    double perimeter() const override { return 3 * edgeLen; }
     string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& s)
+void print_shape(const Shape& fig)
 {
     cout << fixed << setprecision(4)
-         << s.name() << ": area=" << s.area()
-         << ", perimeter=" << s.perimeter() << endl;
+         << fig.name() << ": area=" << fig.area()
+         << ", perimeter=" << fig.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& a, double& p)
+void accumulate(const Shape& fig, double& areaTot, double& periTot)
 {
-    a += s.area();
-    p += s.perimeter();
+    areaTot += fig.area();
+    periTot += fig.perimeter();
 }
 
 int main()
 {
-    vector<unique_ptr<Shape>> buf;
-    string tok;
-    while (cin >> tok && tok != "DONE") {
-        if (tok == "CIRCLE") {
+    vector<unique_ptr<Shape>> shapeBag;
+    string word;
+    while (cin >> word && word != "DONE") {
+        if (word == "CIRCLE") {
             double r; cin >> r;
-            buf.push_back(make_unique<Circle>(r));
-        } else if (tok == "RECT") {
+            shapeBag.push_back(make_unique<Circle>(r));
+        } else if (word == "RECT") {
             double w, h; cin >> w >> h;
-            buf.push_back(make_unique<Rectangle>(w, h));
-        } else if (tok == "TRI") {
+            shapeBag.push_back(make_unique<Rectangle>(w, h));
+        } else if (word == "TRI") {
             double s; cin >> s;
-            buf.push_back(make_unique<Triangle>(s));
+            shapeBag.push_back(make_unique<Triangle>(s));
         }
     }
-    double ta = 0, tp = 0;
-    for (auto& sh : buf) {
-        print_shape(*sh);
-        accumulate(*sh, ta, tp);
+    double sumA = 0, sumP = 0;
+    for (size_t k = 0; k < shapeBag.size(); ++k) {
+        print_shape(*shapeBag[k]);
+        accumulate(*shapeBag[k], sumA, sumP);
     }
     cout << fixed << setprecision(4)
-         << "TOTAL area=" << ta << endl
-         << "TOTAL perimeter=" << tp << endl;
+         << "TOTAL area=" << sumA << '\n'
+         << "TOTAL perimeter=" << sumP << '\n';
     return 0;
 }

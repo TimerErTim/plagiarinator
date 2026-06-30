@@ -1,9 +1,8 @@
-#include <iomanip>
-#include <functional>
+#include <vector>
 #include <string>
 #include <iostream>
-#include <vector>
-// quick submit
+#include <iomanip>
+#include <functional>
 
 using std::cin;
 using std::cout;
@@ -19,18 +18,18 @@ using std::vector;
 class Sensor
 {
     double val;
-    vector<pair<string, function<void(double)>>> observers;
+    vector<pair<string, function<void(double)>>> watchers;
 
 public:
     void subscribe(const string& name, function<void(double)> cb)
     {
-        observers.emplace_back(name, move(cb));
+        watchers.emplace_back(name, move(cb));
     }
 
     void set_value(double celsius)
     {
         val = celsius;
-        for (auto& ob : observers) {
+        for (auto& ob : watchers) {
             cout << fixed << setprecision(1)
                  << "[" << ob.first << "] temp=" << val << endl;
             if (ob.second) ob.second(val);
@@ -43,13 +42,13 @@ public:
 int main()
 {
     Sensor s;
-    string word;
-    while (cin >> word) {
-        if (word == "END") break;
-        if (word == "SUB") {
+    string cmd;
+    while (cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "SUB") {
             string n; cin >> n;
             s.subscribe(n, [](double) {});
-        } else if (word == "SET") {
+        } else if (cmd == "SET") {
             double t; cin >> t;
             s.set_value(t);
         }

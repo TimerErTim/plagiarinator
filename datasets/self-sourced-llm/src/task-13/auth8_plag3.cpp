@@ -1,104 +1,104 @@
-#include <vector>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <sstream>
 #include <thread>
-// TODO: refactor later
+#include <vector>
+// borrowed from roommate's homework
 
-template <typename T>
-class BlockingQueue {
-    const std::size_t cap_;
-    std::queue<T> fifo_;
-    mutable std::mutex sync_;
-    std::condition_variable prod_wait_;
-    std::condition_variable cons_wait_;
+template <typename Unit>
+class LineQueue {
+    const std::size_t limit_;
+    std::queue<Unit> pipe_;
+    mutable std::mutex gate_;
+    std::condition_variable prodSig_;
+    std::condition_variable consSig_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : cap_(capacity) {}
+    explicit LineQueue(std::size_t limit) : limit_(limit) {}
 
-    void push(T value) {
-        std::unique_lock<std::mutex> hold(sync_);
-        prod_wait_.wait(hold, [this] { return fifo_.size() < cap_; });
-        fifo_.emplace(std::move(value));
-        cons_wait_.notify_one();
+    void push(Unit val) {
+        std::unique_lock<std::mutex> hold(gate_);
+        prodSig_.wait(hold, [this] { return pipe_.size() < limit_; });
+        pipe_.emplace(std::move(val));
+        consSig_.notify_one();
     }
 
-    T pop() {
-        std::unique_lock<std::mutex> hold(sync_);
-        cons_wait_.wait(hold, [this] { return !fifo_.empty(); });
-        T picked = std::move(fifo_.front());
-        fifo_.pop();
-        prod_wait_.notify_one();
+    Unit pop() {
+        std::unique_lock<std::mutex> hold(gate_);
+        consSig_.wait(hold, [this] { return !pipe_.empty(); });
+        Unit picked = std::move(pipe_.front());
+        pipe_.pop();
+        prodSig_.notify_one();
         return picked;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> hold(sync_);
-        return fifo_.size();
+        std::lock_guard<std::mutex> hold(gate_);
+        return pipe_.size();
     }
 };
 
 int main() {
-    std::size_t producers = 0, consumers = 0, rows = 0;
-    std::string buf;
-    std::getline(std::cin, buf);
+    std::size_t prodCnt = 0, consCnt = 0, itemCnt = 0;
+    std::string line;
+    std::getline(std::cin, line);
     {
-        std::istringstream a(buf);
+        std::istringstream a(line);
         std::string t;
-        a >> t >> producers;
+        a >> t >> prodCnt;
     }
-    std::getline(std::cin, buf);
+    std::getline(std::cin, line);
     {
-        std::istringstream b(buf);
+        std::istringstream b(line);
         std::string t;
-        b >> t >> consumers;
+        b >> t >> consCnt;
     }
-    std::getline(std::cin, buf);
+    std::getline(std::cin, line);
     {
-        std::istringstream c(buf);
+        std::istringstream c(line);
         std::string t;
-        c >> t >> rows;
+        c >> t >> itemCnt;
     }
 
-    BlockingQueue<int> q(rows);
-    std::vector<std::thread> store;
-    std::size_t served = 0;
-    std::mutex served_mu;
+    LineQueue<int> lane(itemCnt);
+    std::vector<std::thread> team;
+    std::size_t recv = 0;
+    std::mutex recvMu;
 
-    int id_base = 0;
-    for (std::size_t p = 0; p < producers; ++p) {
-        std::size_t share = rows / producers + (p < rows % producers ? 1 : 0);
-        int base = id_base;
-        id_base += static_cast<int>(share);
-        store.emplace_back([&, share, base] {
-            for (std::size_t i = 0; i < share; ++i)
-                q.push(base + static_cast<int>(i));
+    int idBase = 0;
+    for (std::size_t p = 0; p < prodCnt; ++p) {
+        std::size_t share = itemCnt / prodCnt + (p < itemCnt % prodCnt ? 1 : 0);
+        int base = idBase;
+        idBase += static_cast<int>(share);
+        team.emplace_back([&, share, base] {
+            for (std::size_t step = share; step-- > 0;)
+                lane.push(base + static_cast<int>(step));
         });
     }
 
-    for (std::size_t c = 0; c < consumers; ++c) {
-        store.emplace_back([&] {
+    for (std::size_t c = 0; c < consCnt; ++c) {
+        team.emplace_back([&] {
             while (true) {
-                int v = q.pop();
+                int v = lane.pop();
                 if (v < 0) break;
                 std::cout << "got " << v << '\n';
                 bool all = false;
                 {
-                    std::lock_guard<std::mutex> g(served_mu);
-                    ++served;
-                    all = (served == rows);
+                    std::lock_guard<std::mutex> g(recvMu);
+                    ++recv;
+                    all = (recv == itemCnt);
                 }
                 if (all) {
-                    for (std::size_t val = 0; val < consumers; ++val)
-                        q.push(-1);
+                    for (std::size_t k = consCnt; k-- > 0;)
+                        lane.push(-1);
                 }
             }
         });
     }
 
-    for (auto& th : store) th.join();
+    for (auto& th : team) th.join();
     std::cout << "DONE\n";
     return 0;
 }

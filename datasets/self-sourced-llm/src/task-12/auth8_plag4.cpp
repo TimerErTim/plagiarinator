@@ -1,9 +1,8 @@
-#include <sstream>
 #include <iostream>
-#include <variant>
+#include <sstream>
 #include <string>
+#include <variant>
 #include <vector>
-// quick submit
 
 struct Number { int value; };
 struct Add { std::size_t x, y; };
@@ -36,24 +35,24 @@ int resolve(const std::vector<Expr>& store, std::size_t id) {
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str.empty()) break;
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) break;
         std::vector<Expr> arena;
         std::vector<std::size_t> tops;
-        std::istringstream lex(str);
-        std::string bit;
-        while (lex >> bit) {
-            if (bit == "+" || bit == "-" || bit == "*" || bit == "/") {
+        std::istringstream lex(line);
+        std::string tok;
+        while (lex >> tok) {
+            if (tok == "+" || tok == "-" || tok == "*" || tok == "/") {
                 std::size_t r = tops.back(); tops.pop_back();
                 std::size_t l = tops.back(); tops.pop_back();
-                if (bit == "+") arena.emplace_back(Add{l, r});
-                else if (bit == "-") arena.emplace_back(Sub{l, r});
-                else if (bit == "*") arena.emplace_back(Mul{l, r});
+                if (tok == "+") arena.emplace_back(Add{l, r});
+                else if (tok == "-") arena.emplace_back(Sub{l, r});
+                else if (tok == "*") arena.emplace_back(Mul{l, r});
                 else arena.emplace_back(Div{l, r});
                 tops.push_back(arena.size() - 1);
             } else {
-                arena.emplace_back(Number{std::stoi(bit)});
+                arena.emplace_back(Number{std::stoi(tok)});
                 tops.push_back(arena.size() - 1);
             }
         }

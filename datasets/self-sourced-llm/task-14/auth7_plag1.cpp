@@ -1,5 +1,5 @@
 #include <iostream>
-// cleaned up version
+#include <utility>
 
 template <typename Elem>
 class Vector {
@@ -10,7 +10,7 @@ class Vector {
     void upsize() {
         std::size_t new_limit = limit_ == 0 ? 4 : limit_ * 2;
         Elem* fresh = new Elem[new_limit];
-        for (std::size_t i = 0; i < count_; ++i) fresh[i] = base_[i];
+        for (std::size_t i = 0; i < count_; i++) fresh[i] = base_[i];
         delete[] base_;
         base_ = fresh;
         limit_ = new_limit;
@@ -22,7 +22,7 @@ public:
 
     Vector(const Vector& rhs) : count_(rhs.count_), limit_(rhs.limit_) {
         base_ = limit_ ? new Elem[limit_] : nullptr;
-        for (std::size_t i = 0; i < count_; ++i) base_[i] = rhs.base_[i];
+        for (std::size_t i = 0; i < count_; i++) base_[i] = rhs.base_[i];
     }
 
     Vector& operator=(const Vector& rhs) {
@@ -31,7 +31,7 @@ public:
             count_ = rhs.count_;
             limit_ = rhs.limit_;
             base_ = limit_ ? new Elem[limit_] : nullptr;
-            for (std::size_t i = 0; i < count_; ++i) base_[i] = rhs.base_[i];
+            for (std::size_t i = 0; i < count_; i++) base_[i] = rhs.base_[i];
         }
         return *this;
     }
@@ -55,19 +55,19 @@ public:
 };
 
 int main() {
-    std::size_t cnt;
-    std::cin >> cnt;
+    std::size_t n;
+    std::cin >> n;
     Vector<int> all;
-    for (std::size_t i = 0; i < cnt; ++i) {
-        int lhs;
-        std::cin >> lhs;
-        all.push_back(lhs);
+    for (std::size_t i = 0; i < n; i++) {
+        int x;
+        std::cin >> x;
+        all.push_back(x);
     }
 
     Vector<int> kept;
-    for (std::size_t i = 0; i < all.size(); ++i) {
+    for (std::size_t i = 0; i < all.size(); i++) {
         bool duplicate = false;
-        for (std::size_t j = 0; j < kept.size(); ++j) {
+        for (std::size_t j = 0; j < kept.size(); j++) {
             if (kept[j] == all[i]) { duplicate = true; break; }
         }
         if (!duplicate) kept.push_back(all[i]);
@@ -76,12 +76,12 @@ int main() {
     long long sum_val = 0;
     long long prod_val = 1;
     const long long MOD = 1000000007LL;
-    for (std::size_t i = 0; i < kept.size(); ++i) {
+    for (std::size_t i = 0; i < kept.size(); i++) {
         sum_val += kept[i];
         prod_val = (prod_val * kept[i]) % MOD;
     }
 
-    std::cout << "SUM " << sum_val << '\n';
-    std::cout << "PROD " << prod_val << '\n';
+    std::cout << "SUM " << sum_val << std::endl;
+    std::cout << "PROD " << prod_val << std::endl;
     return 0;
 }

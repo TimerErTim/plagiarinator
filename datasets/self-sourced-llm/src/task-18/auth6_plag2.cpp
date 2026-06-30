@@ -1,42 +1,49 @@
-#include <string>
-#include <memory>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
 
 class Parser;
 
-class State {
+class State
+{
 public:
     virtual ~State() = default;
     virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
 };
 
-class Parser {
+class Parser
+{
 public:
     std::unique_ptr<State> state;
     int info_n = 0, warn_n = 0, error_n = 0, bad_n = 0;
 };
 
-class HeaderState : public State {
+class HeaderState : public State
+{
 public:
     std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-class BodyState : public State {
+class BodyState : public State
+{
 public:
     std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-class DoneState : public State {
+class DoneState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser&, const std::string&) override {
+    std::unique_ptr<State> handle(Parser&, const std::string&) override
+    {
         return std::unique_ptr<State>(new DoneState());
     }
 };
 
-namespace logparse {
+namespace logparse
+{
 
-bool level_of(const std::string& line, std::string& out) {
+bool level_of(const std::string& line, std::string& out)
+{
     if (line.size() < 3 || line.front() != '[') return false;
     std::size_t idx = line.find(']');
     if (idx == std::string::npos) return false;
@@ -44,34 +51,37 @@ bool level_of(const std::string& line, std::string& out) {
     return out == "INFO" || out == "WARN" || out == "ERROR";
 }
 
-void bump(Parser& ctx, const std::string& lvl) {
+void bump(Parser& ctx, const std::string& lvl)
+{
     if (lvl == "INFO") ++ctx.info_n;
     else if (lvl == "WARN") ++ctx.warn_n;
     else ++ctx.error_n;
 }
 
-}  // namespace logparse
-
-std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line) {
+std::unique_ptr<State> transition(Parser& ctx, const std::string& line, bool in_body)
+{
     if (line == "END") return std::make_unique<DoneState>();
     std::string lvl;
-    if (logparse::level_of(line, lvl)) {
-        logparse::bump(ctx, lvl);
+    if (level_of(line, lvl))
+    {
+        bump(ctx, lvl);
         return std::make_unique<BodyState>();
     }
     ++ctx.bad_n;
+    if (in_body) return std::make_unique<BodyState>();
     return std::make_unique<HeaderState>();
 }
 
-std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (logparse::level_of(line, lvl)) {
-        logparse::bump(ctx, lvl);
-        return std::make_unique<BodyState>();
-    }
-    ++ctx.bad_n;
-    return std::make_unique<BodyState>();
+}  // namespace logparse
+
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line)
+{
+    return logparse::transition(ctx, line, false);
+}
+
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line)
+{
+    return logparse::transition(ctx, line, true);
 }
 
 int main()

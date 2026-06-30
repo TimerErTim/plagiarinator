@@ -1,10 +1,9 @@
+#include <string>
+#include <vector>
+#include <memory>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <memory>
-#include <vector>
-#include <string>
-// quick submit
 
 class Vehicle {
 public:
@@ -14,11 +13,11 @@ public:
 };
 
 class Car : public Vehicle {
-    double elemRate_;
+    double consumption_;
 public:
-    explicit Car(double c) : elemRate_(c) {}
+    explicit Car(double c) : consumption_(c) {}
     double fuel_needed(double distance_km) const override {
-        return elemRate_ * distance_km / 100.0;
+        return consumption_ * distance_km / 100.0;
     }
     std::string type() const override { return "CAR"; }
 };
@@ -59,13 +58,13 @@ int main() {
 
     std::vector<std::unique_ptr<Vehicle>> fleet;
     std::vector<double> distances;
-    std::string str;
-    while (std::getline(input, str)) {
-        if (str.empty()) continue;
-        std::istringstream rowStream(str);
-        std::string opt;
-        rowStream >> opt;
-        auto vehicle = create_vehicle(opt, rowStream);
+    std::string row;
+    while (std::getline(input, row)) {
+        if (row.empty()) continue;
+        std::istringstream rowStream(row);
+        std::string kind;
+        rowStream >> kind;
+        auto vehicle = create_vehicle(kind, rowStream);
         if (!vehicle) {
             std::cout << "ERROR" << std::endl;
             continue;

@@ -1,75 +1,85 @@
 #include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// adapted from classmate submission
 
-class StringBuilder {
-    std::string pool_;
+class StringBuilder
+{
+    std::string heap_;
 
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& rhs) noexcept : pool_(std::exchange(rhs.pool_, {})) {}
+    StringBuilder(StringBuilder&& donor) noexcept : heap_(std::exchange(donor.heap_, {})) {}
 
-    StringBuilder& operator=(StringBuilder&& rhs) noexcept {
-        if (this != &rhs) pool_ = std::exchange(rhs.pool_, {});
+    StringBuilder& operator=(StringBuilder&& donor) noexcept
+    {
+        if (this != &donor) heap_ = std::exchange(donor.heap_, {});
         return *this;
     }
 
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& chunk) {
-        pool_.append(chunk);
+    StringBuilder& append(const std::string& piece)
+    {
+        heap_.append(piece);
         return *this;
     }
 
-    StringBuilder& append(std::string&& chunk) {
-        pool_.append(std::move(chunk));
+    StringBuilder& append(std::string&& piece)
+    {
+        heap_.append(std::move(piece));
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& line) {
-        append(line);
-        pool_.push_back('\n');
+    StringBuilder& append_line(const std::string& row)
+    {
+        append(row);
+        heap_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return pool_; }
+    const std::string& str() const { return heap_; }
 
-    void clear() { pool_.clear(); }
+    void clear() { heap_.clear(); }
 };
 
-static StringBuilder read_section(std::istream& in) {
+static StringBuilder load_part(std::istream& in)
+{
     std::string title_line;
     std::getline(in, title_line);
     if (!title_line.empty() && title_line.front() == ' ')
         title_line.erase(0, 1);
 
-    StringBuilder part;
-    part.append("# ").append(title_line).append_line("");
+    StringBuilder segment;
+    segment.append("# ").append(title_line).append_line("");
 
     std::string content;
-    while (std::getline(in, content)) {
+    while (std::getline(in, content))
+    {
         if (content.empty()) break;
-        part.append_line(content);
+        segment.append_line(content);
     }
-    part.append_line("");
-    return part;
+    segment.append_line("");
+    return segment;
 }
 
-int main() {
-    StringBuilder full;
-    std::string keyword;
+int main()
+{
+    StringBuilder manuscript;
+    std::string verb;
 
-    while (std::cin >> keyword) {
-        if (keyword == "END") break;
-        if (keyword == "SECTION") {
-            StringBuilder sec = read_section(std::cin);
-            full.append(std::move(sec.str()));
+    while (std::cin >> verb)
+    {
+        if (verb == "END") break;
+        if (verb == "SECTION")
+        {
+            StringBuilder sec = load_part(std::cin);
+            manuscript.append(std::move(sec.str()));
         }
     }
 
-    std::cout << full.str();
+    std::cout << manuscript.str();
     return 0;
 }

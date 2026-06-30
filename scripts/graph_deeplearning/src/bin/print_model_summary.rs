@@ -1,11 +1,11 @@
-use burn::backend::NdArray;
+use burn::backend::Flex;
 use burn::tensor::{backend::Backend as _, Device};
 use graph_deeplearning::get_model_config;
 
 fn main() {
-    // Choose the backend (e.g., Wgpu, NdArray, LibTorch, etc.)
-    // Here, we'll use NdArray as an example.
-    type B = NdArray<f32>;
+    // Choose the backend (e.g., Wgpu, Flex, LibTorch, etc.)
+    // Here, we'll use Flex as an example.
+    type B = Flex;
 
     // Set the device (CPU or GPU)
     let device = Device::<B>::default();

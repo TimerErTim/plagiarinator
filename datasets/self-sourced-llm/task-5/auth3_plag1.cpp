@@ -1,7 +1,7 @@
+#include <unordered_map>
 #include <iostream>
 #include <list>
 #include <string>
-#include <unordered_map>
 // cleaned up version
 
 template <typename Key, typename Value>
@@ -10,54 +10,54 @@ class LRUCache {
     using List = std::list<Entry>;
     using Iter = typename List::iterator;
 
-    std::size_t capacity_;
-    List items_;
-    std::unordered_map<Key, Iter> lookup_;
+    std::size_t maxCap;
+    List nodes_;
+    std::unordered_map<Key, Iter> table_;
 
     void promote(Iter pos) {
-        items_.splice(items_.begin(), items_, pos);
+        nodes_.splice(nodes_.begin(), nodes_, pos);
     }
 
     void evictIfNeeded() {
-        if (items_.size() <= capacity_) return;
-        lookup_.erase(items_.back().first);
-        items_.pop_back();
+        if (nodes_.size() <= maxCap) return;
+        table_.erase(nodes_.back().first);
+        nodes_.pop_back();
     }
 
 public:
-    explicit LRUCache(std::size_t capacity) : capacity_(capacity) {}
+    explicit LRUCache(std::size_t capacity) : maxCap(capacity) {}
 
     bool get(const Key& key, Value& out) {
-        auto found = lookup_.find(key);
-        if (found == lookup_.end()) return false;
+        auto found = table_.find(key);
+        if (found == table_.end()) return false;
         out = found->second->second;
         promote(found->second);
         return true;
     }
 
     void put(const Key& key, const Value& value) {
-        auto found = lookup_.find(key);
-        if (found != lookup_.end()) {
+        auto found = table_.find(key);
+        if (found != table_.end()) {
             found->second->second = value;
             promote(found->second);
             return;
         }
-        items_.emplace_front(key, value);
-        lookup_[key] = items_.begin();
+        nodes_.emplace_front(key, value);
+        table_[key] = nodes_.begin();
         evictIfNeeded();
     }
 };
 
 int main() {
-    std::string label;
+    std::string header;
     std::size_t n;
-    std::cin >> label >> n;
+    std::cin >> header >> n;
     LRUCache<std::string, int> cache(n);
 
-    std::string op;
-    while (std::cin >> op) {
-        if (op == "END") break;
-        if (op == "GET") {
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd == "GET") {
             std::string k;
             std::cin >> k;
             int v;
@@ -65,7 +65,7 @@ int main() {
                 std::cout << "HIT " << v << std::endl;
             else
                 std::cout << "MISS" << std::endl;
-        } else if (op == "PUT") {
+        } else if (cmd == "PUT") {
             std::string k;
             int v;
             std::cin >> k >> v;

@@ -1,9 +1,9 @@
-#include <iomanip>
-#include <iostream>
-#include <string>
-#include <variant>
+#include <cstdio>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <iostream>
+#include <iomanip>
 
 template <typename Derived>
 class Printable {
@@ -45,25 +45,25 @@ struct Temperature : Printable<Temperature> {
 
 template <typename T>
 void print_metric(const Printable<T>& m) {
-    std::cout << m.to_string() << std::endl;
+    std::cout << m.to_string() << '\n';
 }
 
 using Metric = std::variant<Distance, Mass, Temperature>;
 
 int main() {
-    std::vector<Metric> list;
-    std::string tag;
-    double n;
+    std::vector<Metric> rows;
+    std::string label;
+    double num;
 
-    while (std::cin >> tag) {
-        if (tag == "END") break;
-        if (!(std::cin >> n)) break;
-        if (tag == "DIST") list.push_back(Distance(n));
-        else if (tag == "MASS") list.push_back(Mass(n));
-        else if (tag == "TEMP") list.push_back(Temperature(n));
+    while (std::cin >> label) {
+        if (label == "END") break;
+        if (!(std::cin >> num)) break;
+        if (label == "DIST") rows.emplace_back(Distance(num));
+        else if (label == "MASS") rows.emplace_back(Mass(num));
+        else if (label == "TEMP") rows.emplace_back(Temperature(num));
     }
 
-    for (const Metric& entry : list) {
+    for (const Metric& entry : rows) {
         std::visit([](const auto& typed) { print_metric(typed); }, entry);
     }
     return 0;

@@ -1,24 +1,28 @@
-#include <vector>
-#include <type_traits>
-#include <string>
-#include <iostream>
 #include <algorithm>
-// adapted from classmate submission
+#include <iostream>
+#include <string>
+#include <type_traits>
+#include <vector>
 
-namespace util {
+namespace util
+{
 
 template <typename T, bool IsArithmetic = std::is_arithmetic<T>::value>
 struct Sorter;
 
 template <typename T>
-struct Sorter<T, true> {
+struct Sorter<T, true>
+{
     static void run(std::vector<T>& data) { std::sort(data.begin(), data.end()); }
 };
 
 template <typename T>
-struct Sorter<T, false> {
-    static void run(std::vector<T>& data) {
-        std::sort(data.begin(), data.end(), [](const T& x, const T& y) {
+struct Sorter<T, false>
+{
+    static void run(std::vector<T>& data)
+    {
+        std::sort(data.begin(), data.end(), [](const T& x, const T& y)
+        {
             if (x.length() != y.length()) return x.length() < y.length();
             return x < y;
         });
@@ -27,43 +31,49 @@ struct Sorter<T, false> {
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
+sort_values(std::vector<T>& data)
+{
     Sorter<T, true>::run(data);
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
+sort_values(std::vector<T>& data)
+{
     Sorter<T, false>::run(data);
 }
 
 }  // namespace util
 
 template <typename T>
-void print_vec(const std::vector<T>& v) {
-    for (std::size_t i = 0; i < v.size(); ++i) {
+void print_vec(const std::vector<T>& v)
+{
+    for (std::size_t i = 0; i < v.size(); ++i)
+    {
         if (i) std::cout << ' ';
         std::cout << v[i];
     }
     std::cout << '\n';
 }
 
+template <typename T>
+void readSortPrint(std::size_t count)
+{
+    std::vector<T> vals(count);
+    for (auto& entry : vals) std::cin >> entry;
+    util::sort_values(vals);
+    print_vec(vals);
+}
+
 int main()
 {
-    std::string tag;
+    std::string mode;
     std::size_t count;
-    std::cin >> tag >> count;
+    std::cin >> mode >> count;
 
-    if (tag == "NUM") {
-        std::vector<int> vals(count);
-        for (auto& x : vals) std::cin >> x;
-        util::sort_values(vals);
-        print_vec(vals);
-    } else {
-        std::vector<std::string> vals(count);
-        for (auto& s : vals) std::cin >> s;
-        util::sort_values(vals);
-        print_vec(vals);
-    }
+    if (mode == "NUM")
+        readSortPrint<int>(count);
+    else
+        readSortPrint<std::string>(count);
     return 0;
 }

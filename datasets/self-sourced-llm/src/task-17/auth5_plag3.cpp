@@ -1,54 +1,66 @@
 #include <vector>
-#include <algorithm>
+#include <utility>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+#include <algorithm>
+// found online
 
-namespace util {
+namespace ranker
+{
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), std::less<>());
+template <typename Cell>
+typename std::enable_if<std::is_arithmetic<Cell>::value, void>::type
+sort_values(std::vector<Cell>& lane)
+{
+    std::sort(lane.begin(), lane.end(), std::less<>());
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    struct LenLex {
-        bool operator()(const T& u, const T& v) const {
-            return std::make_pair(u.size(), u) < std::make_pair(v.size(), v);
+template <typename Cell>
+typename std::enable_if<!std::is_arithmetic<Cell>::value, void>::type
+sort_values(std::vector<Cell>& lane)
+{
+    struct SizeThenWord
+    {
+        bool operator()(const Cell& front, const Cell& back) const
+        {
+            return std::make_pair(front.size(), front) < std::make_pair(back.size(), back);
         }
     };
-    std::sort(data.begin(), data.end(), LenLex{});
+    std::sort(lane.begin(), lane.end(), SizeThenWord{});
 }
 
-}  // namespace util
+}  // namespace ranker
 
-int main() {
-    std::string tag;
-    int qty;
-    std::cin >> tag >> qty;
+int main()
+{
+    std::string marker;
+    int span;
+    std::cin >> marker >> span;
 
-    if (tag == "NUM") {
-        std::vector<double> buf(static_cast<std::size_t>(qty));
-        for (int i = 0; i < qty; ++i) std::cin >> buf[static_cast<std::size_t>(i)];
-        util::sort_values(buf);
-        for (int i = 0; i < qty; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << buf[static_cast<std::size_t>(i)];
-        }
-    } else {
-        std::vector<std::string> buf(static_cast<std::size_t>(qty));
-        for (int i = 0; i < qty; ++i) std::cin >> buf[static_cast<std::size_t>(i)];
-        util::sort_values(buf);
-        for (int i = 0; i < qty; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << buf[static_cast<std::size_t>(i)];
+    if (marker == "NUM")
+    {
+        std::vector<double> lane(static_cast<std::size_t>(span));
+        for (int step = 0; step < span; ++step) std::cin >> lane[static_cast<std::size_t>(step)];
+        ranker::sort_values(lane);
+        for (int step = 0; step < span; ++step)
+        {
+            if (step) std::cout << ' ';
+            std::cout << lane[static_cast<std::size_t>(step)];
         }
     }
-    std::cout << '\n';
+    else
+    {
+        std::vector<std::string> lane(static_cast<std::size_t>(span));
+        for (int step = 0; step < span; ++step) std::cin >> lane[static_cast<std::size_t>(step)];
+        ranker::sort_values(lane);
+        for (int step = 0; step < span; ++step)
+        {
+            if (step) std::cout << ' ';
+            std::cout << lane[static_cast<std::size_t>(step)];
+        }
+    }
+    std::cout << std::endl;
     return 0;
 }

@@ -1,8 +1,7 @@
-#include <iomanip>
-#include <iostream>
-#include <string>
 #include <unordered_map>
-// cleaned up version
+#include <iostream>
+#include <iomanip>
+#include <string>
 
 struct ConfigStore {
     std::unordered_map<std::string, std::string> values;
@@ -41,54 +40,54 @@ template <typename... Args>
 void log_line(std::ostream& out, Args&&... args) {
     LogWriter w{out};
     (w.step(std::forward<Args>(args)), ...);
-    out << '\n';
+    out << std::endl;
 }
 
-bool is_numeric(const std::string& s) {
+bool numeric_token(const std::string& s) {
     if (s.empty()) return false;
     std::size_t k = 0;
     if (s[0] == '-' || s[0] == '+') k = 1;
     if (k >= s.size()) return false;
-    for (; k < s.size(); ++k)
+    for (; k < s.size(); k++)
         if (s[k] < '0' || s[k] > '9') return false;
     return true;
 }
 
 int main() {
-    ConfigStore conf;
+    ConfigStore cfg;
     {
-        std::string s;
-        while (std::getline(std::cin, s) && !s.empty()) {
-            auto p = s.find('=');
-            conf.values[s.substr(0, p)] = s.substr(p + 1);
+        std::string line;
+        while (std::getline(std::cin, line) && !line.empty()) {
+            auto p = line.find('=');
+            cfg.values[line.substr(0, p)] = line.substr(p + 1);
         }
     }
 
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") break;
-        if (piece == "GET") {
-            std::string id;
-            std::cin >> id;
-            log_line(std::cout, conf.has(id) ? conf.get(id) : std::string("MISSING"));
-        } else if (piece == "LOG") {
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "GET") {
+            std::string k;
+            std::cin >> k;
+            log_line(std::cout, cfg.has(k) ? cfg.get(k) : std::string("MISSING"));
+        } else if (verb == "LOG") {
             std::string t1, t2, t3;
             if (!(std::cin >> t1)) continue;
             if (std::cin >> t2) {
                 if (std::cin >> t3) {
-                    if (is_numeric(t2))
+                    if (numeric_token(t2))
                         log_line(std::cout, t1, std::stoi(t2), t3);
                     else
                         log_line(std::cout, t1, t2, t3);
                 } else {
-                    if (is_numeric(t2))
+                    if (numeric_token(t2))
                         log_line(std::cout, t1, std::stoi(t2));
                     else
                         log_line(std::cout, t1, t2);
                     std::cin.clear();
                 }
             } else {
-                if (is_numeric(t1)) log_line(std::cout, std::stoi(t1));
+                if (numeric_token(t1)) log_line(std::cout, std::stoi(t1));
                 else log_line(std::cout, t1);
             }
         }

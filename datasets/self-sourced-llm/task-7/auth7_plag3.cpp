@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// found this online lol
 
 class Vehicle {
 public:
@@ -12,51 +12,51 @@ public:
     virtual std::string type() const = 0;
 };
 
-class Car : public Vehicle {
-    double r;
+class Roadster : public Vehicle {
+    double burn;
 public:
-    Car(double x): r(x) {}
-    double fuel_needed(double d) const override { return r*d/100.0; }
+    Roadster(double x): burn(x) {}
+    double fuel_needed(double d) const override { return burn*d/100.0; }
     std::string type() const override { return "CAR"; }
 };
 
-class Truck : public Vehicle {
-    double r;
+class Lorry : public Vehicle {
+    double burn;
 public:
-    Truck(double x): r(x) {}
-    double fuel_needed(double d) const override { return r*d; }
+    Lorry(double x): burn(x) {}
+    double fuel_needed(double d) const override { return burn*d; }
     std::string type() const override { return "TRUCK"; }
 };
 
-class Bike : public Vehicle {
+class Cycle : public Vehicle {
 public:
     double fuel_needed(double) const override { return 0; }
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& in) {
-    if (kind=="CAR"){double x;in>>x;return std::make_unique<Car>(x);}
-    if (kind=="TRUCK"){double x;in>>x;return std::make_unique<Truck>(x);}
-    if (kind=="BIKE") return std::make_unique<Bike>();
+std::unique_ptr<Vehicle> spawnRide(const std::string& tag, std::istream& src) {
+    if (tag=="CAR"){double x;src>>x;return std::make_unique<Roadster>(x);}
+    if (tag=="TRUCK"){double x;src>>x;return std::make_unique<Lorry>(x);}
+    if (tag=="BIKE") return std::make_unique<Cycle>();
     return nullptr;
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> V;
-    std::vector<double> D;
-    std::string k;
-    while(std::cin>>k) {
-        auto p=create_vehicle(k,std::cin);
-        if(!p){std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR\n";continue;}
-        double d;std::cin>>d;
-        V.push_back(std::move(p)); D.push_back(d);
+    std::vector<std::unique_ptr<Vehicle>> deck;
+    std::vector<double> kmList;
+    std::string tag;
+    while(std::cin>>tag) {
+        auto ride=spawnRide(tag,std::cin);
+        if(!ride){std::string junk;std::getline(std::cin,junk);std::cout<<"ERROR\n";continue;}
+        double km;std::cin>>km;
+        deck.push_back(std::move(ride)); kmList.push_back(km);
     }
-    double s=0;
-    for(size_t i=0;i<V.size();++i){
-        double f=V[i]->fuel_needed(D[i]); s+=f;
-        std::cout<<"Trip "<<i+1<<": "<<V[i]->type()
+    double acc=0;
+    for(size_t slot=0;slot<deck.size();++slot){
+        double f=deck[slot]->fuel_needed(kmList[slot]); acc+=f;
+        std::cout<<"Trip "<<slot+1<<": "<<deck[slot]->type()
                  <<" needs "<<std::fixed<<std::setprecision(2)<<f<<" liters\n";
     }
-    std::cout<<"TOTAL "<<std::fixed<<std::setprecision(2)<<s<<" liters\n";
+    std::cout<<"TOTAL "<<std::fixed<<std::setprecision(2)<<acc<<" liters\n";
     return 0;
 }

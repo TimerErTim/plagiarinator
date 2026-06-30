@@ -1,7 +1,6 @@
-#include <iostream>
 #include <cstddef>
+#include <iostream>
 #include <utility>
-// quick submit
 
 template <typename T>
 class Vector {
@@ -20,7 +19,6 @@ class Vector {
 
 public:
     Vector() = default;
-
     ~Vector() { delete[] data_; }
 
     Vector(const Vector& other) : len_(other.len_), cap_(other.cap_) {
@@ -58,10 +56,10 @@ public:
 };
 
 int main() {
-    std::size_t n;
-    std::cin >> n;
+    std::size_t count;
+    std::cin >> count;
     Vector<int> v;
-    for (std::size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < count; ++i) {
         int x;
         std::cin >> x;
         v.push_back(x);

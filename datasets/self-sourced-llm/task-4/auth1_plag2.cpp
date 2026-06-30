@@ -1,47 +1,55 @@
-#include <vector>
 #include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
+#include <vector>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 // adapted from classmate submission
 
-class FileWriter {
-    std::ofstream stream_;
-    std::string fname_;
+class FileWriter
+{
+    std::ofstream out_;
+    std::string path_;
 
 public:
-    explicit FileWriter(const std::string& path) : fname_(path) {
-        stream_.open(fname_);
+    explicit FileWriter(const std::string& path) : path_(path)
+    {
+        out_.open(path_);
     }
 
-    ~FileWriter() {
-        if (stream_.is_open()) stream_.close();
+    ~FileWriter()
+    {
+        if (out_.is_open()) out_.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& other) noexcept
-        : stream_(std::move(other.stream_)), fname_(std::move(other.fname_)) {}
+        : out_(std::move(other.out_)), path_(std::move(other.path_)) {}
 
-    FileWriter& operator=(FileWriter&& other) noexcept {
+    FileWriter& operator=(FileWriter&& other) noexcept
+    {
         if (this != &other)
-{
-            if (stream_.is_open()) stream_.close();
-            stream_ = std::move(other.stream_);
-            fname_ = std::move(other.fname_);
+        {
+            if (out_.is_open()) out_.close();
+            out_ = std::move(other.out_);
+            path_ = std::move(other.path_);
         }
         return *this;
     }
 
-    void write_line(const std::string& line) {
-        stream_ << line << '\n';
+    void write_line(const std::string& line)
+    {
+        out_ << line << '\n';
     }
 };
 
-static char gradeFor(int score) {
+struct Record { std::string name; int score; };
+
+static char gradeFor(int score)
+{
     if (score >= 90) return 'A';
     if (score >= 80) return 'B';
     if (score >= 70) return 'C';
@@ -49,35 +57,42 @@ static char gradeFor(int score) {
     return 'F';
 }
 
+static bool parseRecord(const std::string& line, Record& out)
+{
+    if (line.empty()) return false;
+    std::size_t comma = line.find(',');
+    if (comma == std::string::npos) return false;
+    out.name = line.substr(0, comma);
+    out.score = std::stoi(line.substr(comma + 1));
+    return true;
+}
+
 int main()
 {
-    struct Record { std::string name; int score; };
-    std::vector<Record> data;
-    std::string ln;
-    while (std::getline(std::cin, ln)) {
-        if (ln.empty()) continue;
-        std::size_t comma = ln.find(',');
-        if (comma == std::string::npos) continue;
-        Record r;
-        r.name = ln.substr(0, comma);
-        r.score = std::stoi(ln.substr(comma + 1));
-        data.push_back(r);
+    std::vector<Record> records;
+    std::string line;
+    while (std::getline(std::cin, line))
+    {
+        Record rec;
+        if (parseRecord(line, rec))
+            records.push_back(rec);
     }
 
-    FileWriter fw("report.txt");
-    fw.write_line("Student Report");
-    fw.write_line("--------------");
-    double tot = 0.0;
-    for (const auto& row : data)
-{
-        tot += row.score;
+    FileWriter writer("report.txt");
+    writer.write_line("Student Report");
+    writer.write_line("--------------");
+    double runningSum = 0.0;
+    for (std::size_t i = 0; i < records.size(); ++i)
+    {
+        runningSum += records[i].score;
         std::ostringstream oss;
-        oss << row.name << ": " << row.score << " [" << gradeFor(row.score) << "]";
-        fw.write_line(oss.str());
+        oss << records[i].name << ": " << records[i].score
+            << " [" << gradeFor(records[i].score) << "]";
+        writer.write_line(oss.str());
     }
     std::ostringstream avg;
-    avg << std::fixed << std::setprecision(1) << "Average: " << (tot / data.size());
-    fw.write_line(avg.str());
+    avg << std::fixed << std::setprecision(1) << "Average: " << (runningSum / records.size());
+    writer.write_line(avg.str());
 
     std::cout << "Report written to report.txt\n";
     return 0;

@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <memory>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <vector>
 
 const double PI = 3.141592653589793;
 
@@ -43,33 +42,55 @@ public:
     std::string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& x) {
+void print_shape(const Shape& x)
+{
     std::cout<<std::fixed<<std::setprecision(4)
              <<x.name()<<": area="<<x.area()
              <<", perimeter="<<x.perimeter()<<"\n";
 }
 
-void accumulate(const Shape& x,double& u,double& v) {
+void accumulate(const Shape& x,double& u,double& v)
+{
     u+=x.area(); v+=x.perimeter();
+}
+
+std::unique_ptr<Shape> extract(const std::string& k, std::istream& in)
+{
+    if (k == "CIRCLE")
+    {
+        double r; in >> r;
+        return std::make_unique<Circle>(r);
+    }
+    if (k == "RECT")
+    {
+        double w, h; in >> w >> h;
+        return std::make_unique<Rectangle>(w, h);
+    }
+    if (k == "TRI")
+    {
+        double s; in >> s;
+        return std::make_unique<Triangle>(s);
+    }
+    return nullptr;
 }
 
 int main()
 {
     std::vector<std::unique_ptr<Shape>> data;
     std::string k;
-    while(std::cin>>k&&k!="DONE")
-{
-        if(k=="CIRCLE")
-{double r;std::cin>>r;data.push_back(std::make_unique<Circle>(r));}
-        else if(k=="RECT")
-{double w,h;std::cin>>w>>h;data.push_back(std::make_unique<Rectangle>(w,h));}
-        else if(k=="TRI")
-{double s;std::cin>>s;data.push_back(std::make_unique<Triangle>(s));}
+    while (std::cin >> k)
+    {
+        if (k == "DONE") break;
+        auto e = extract(k, std::cin);
+        if (e) data.push_back(std::move(e));
     }
-    double a=0,p=0;
-    for(auto& e:data)
-{print_shape(*e);accumulate(*e,a,p);}
+    double ta = 0, tp = 0;
+    for (std::size_t idx = 0; idx < data.size(); ++idx)
+    {
+        print_shape(*data[idx]);
+        accumulate(*data[idx], ta, tp);
+    }
     std::cout<<std::fixed<<std::setprecision(4)
-             <<"TOTAL area="<<a<<"\n"<<"TOTAL perimeter="<<p<<"\n";
+             <<"TOTAL area="<<ta<<"\n"<<"TOTAL perimeter="<<tp<<"\n";
     return 0;
 }

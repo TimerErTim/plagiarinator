@@ -1,7 +1,6 @@
-#include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <iostream>
 
 class StringBuilder {
 public:
@@ -43,17 +42,17 @@ StringBuilder& StringBuilder::append(std::string&& s) {
 
 StringBuilder& StringBuilder::append_line(const std::string& s) {
     content_ += s;
-    content_ += '\n';
+    content_.push_back('\n');
     return *this;
 }
 
 int main() {
     StringBuilder output;
-    std::string token;
+    std::string cmd;
 
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token != "SECTION") continue;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
+        if (cmd != "SECTION") continue;
 
         std::string name;
         std::getline(std::cin, name);
@@ -62,9 +61,9 @@ int main() {
         StringBuilder chunk;
         chunk.append("# ").append(name).append("\n");
 
-        std::string s;
-        while (std::getline(std::cin, s) && !s.empty())
-            chunk.append_line(s);
+        std::string line;
+        while (std::getline(std::cin, line) && !line.empty())
+            chunk.append_line(line);
         chunk.append("\n");
 
         output.append(std::move(chunk.str()));

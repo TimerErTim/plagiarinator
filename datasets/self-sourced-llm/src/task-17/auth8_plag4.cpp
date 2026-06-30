@@ -1,9 +1,8 @@
-#include <iostream>
 #include <algorithm>
-#include <type_traits>
+#include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
-// quick submit
 
 namespace util {
 
@@ -36,14 +35,14 @@ int main() {
         util::sort_values(tokens);
         for (std::size_t i = 0; i < n; ++i)
             std::cout << (i ? " " : "") << tokens[i];
-        std::cout << '\n';
+        std::cout << std::endl;
     } else {
         std::vector<double> nums(n);
         for (std::size_t i = 0; i < n; ++i) std::cin >> nums[i];
         util::sort_values(nums);
         for (std::size_t i = 0; i < n; ++i)
             std::cout << (i ? " " : "") << nums[i];
-        std::cout << '\n';
+        std::cout << std::endl;
     }
     return 0;
 }

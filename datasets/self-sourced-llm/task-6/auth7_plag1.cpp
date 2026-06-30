@@ -1,10 +1,9 @@
+#include <vector>
+#include <memory>
+#include <string>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 const double PI = 3.141592653589793;
 
@@ -46,7 +45,7 @@ public:
 void print_shape(const Shape& x) {
     std::cout<<std::fixed<<std::setprecision(4)
              <<x.name()<<": area="<<x.area()
-             <<", perimeter="<<x.perimeter()<<"\n";
+             <<", perimeter="<<x.perimeter()<<std::endl;
 }
 
 void accumulate(const Shape& x,double& u,double& v) {
@@ -54,16 +53,16 @@ void accumulate(const Shape& x,double& u,double& v) {
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> items;
+    std::vector<std::unique_ptr<Shape>> data;
     std::string k;
     while(std::cin>>k&&k!="DONE") {
-        if(k=="CIRCLE"){double r;std::cin>>r;items.emplace_back(std::make_unique<Circle>(r));}
-        else if(k=="RECT"){double w,h;std::cin>>w>>h;items.emplace_back(std::make_unique<Rectangle>(w,h));}
-        else if(k=="TRI"){double s;std::cin>>s;items.emplace_back(std::make_unique<Triangle>(s));}
+        if(k=="CIRCLE"){double r;std::cin>>r;data.emplace_back(std::make_unique<Circle>(r));}
+        else if(k=="RECT"){double w,h;std::cin>>w>>h;data.emplace_back(std::make_unique<Rectangle>(w,h));}
+        else if(k=="TRI"){double s;std::cin>>s;data.emplace_back(std::make_unique<Triangle>(s));}
     }
-    double areaSum=0,periSum=0;
-    for(auto& e:items){print_shape(*e);accumulate(*e,areaSum,periSum);}
+    double ta=0,tp=0;
+    for(size_t i=0;i<data.size();i++){print_shape(*data[i]);accumulate(*data[i],ta,tp);}
     std::cout<<std::fixed<<std::setprecision(4)
-             <<"TOTAL area="<<areaSum<<"\n"<<"TOTAL perimeter="<<periSum<<"\n";
+             <<"TOTAL area="<<ta<<std::endl<<"TOTAL perimeter="<<tp<<std::endl;
     return 0;
 }

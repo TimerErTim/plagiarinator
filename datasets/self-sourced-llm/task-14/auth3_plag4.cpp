@@ -1,6 +1,5 @@
-#include <utility>
 #include <iostream>
-// quick submit
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -64,19 +63,19 @@ bool contains(const Vector<int>& vec, int target) {
 }
 
 int main() {
-    std::size_t n;
-    std::cin >> n;
-    Vector<int> str;
-    for (std::size_t i = 0; i < n; ++i) {
+    std::size_t count;
+    std::cin >> count;
+    Vector<int> input;
+    for (std::size_t i = 0; i < count; ++i) {
         int x;
         std::cin >> x;
-        str.push_back(x);
+        input.push_back(x);
     }
 
     Vector<int> filtered;
-    for (std::size_t i = 0; i < str.size(); ++i) {
-        if (!contains(filtered, str[i]))
-            filtered.push_back(str[i]);
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        if (!contains(filtered, input[i]))
+            filtered.push_back(input[i]);
     }
 
     long long total = 0, mult = 1;

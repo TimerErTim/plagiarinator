@@ -1,92 +1,92 @@
-#include <vector>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <thread>
-// TODO: refactor later
+#include <vector>
+// borrowed from roommate's homework
 
-namespace sync {
+namespace pipes {
 
-template <typename T>
-class BlockingQueue {
-    std::queue<T> inner_;
-    std::size_t max_;
-    mutable std::mutex m_;
-    std::condition_variable can_push_;
-    std::condition_variable can_pop_;
+template <typename Elem>
+class SyncQueue {
+    std::queue<Elem> bucket_;
+    std::size_t bound_;
+    mutable std::mutex guard_;
+    std::condition_variable pushOk_;
+    std::condition_variable popOk_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : max_(capacity) {}
+    explicit SyncQueue(std::size_t bound) : bound_(bound) {}
 
-    void push(T value) {
-        std::unique_lock<std::mutex> ul(m_);
-        can_push_.wait(ul, [&] { return inner_.size() < max_; });
-        inner_.push(std::move(value));
-        can_pop_.notify_one();
+    void push(Elem val) {
+        std::unique_lock<std::mutex> ul(guard_);
+        pushOk_.wait(ul, [&] { return bucket_.size() < bound_; });
+        bucket_.push(std::move(val));
+        popOk_.notify_one();
     }
 
-    T pop() {
-        std::unique_lock<std::mutex> ul(m_);
-        can_pop_.wait(ul, [&] { return !inner_.empty(); });
-        T v = std::move(inner_.front());
-        inner_.pop();
-        can_push_.notify_one();
+    Elem pop() {
+        std::unique_lock<std::mutex> ul(guard_);
+        popOk_.wait(ul, [&] { return !bucket_.empty(); });
+        Elem v = std::move(bucket_.front());
+        bucket_.pop();
+        pushOk_.notify_one();
         return v;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> g(m_);
-        return inner_.size();
+        std::lock_guard<std::mutex> g(guard_);
+        return bucket_.size();
     }
 };
 
-}  // namespace sync
+}  // namespace pipes
 
 int main() {
-    using sync::BlockingQueue;
+    using pipes::SyncQueue;
 
-    std::size_t P = 0, C = 0, N = 0;
-    std::string s;
-    std::cin >> s >> P >> s >> C >> s >> N;
+    std::size_t prodN = 0, consN = 0, itemN = 0;
+    std::string tok;
+    std::cin >> tok >> prodN >> tok >> consN >> tok >> itemN;
 
-    BlockingQueue<int> box(N + 1);
-    std::vector<std::thread> threads;
-    std::mutex stop_mu;
-    std::size_t got = 0;
+    SyncQueue<int> hub(itemN + 1);
+    std::vector<std::thread> crew;
+    std::mutex tallyMu;
+    std::size_t recv = 0;
 
-    int val = 0;
-    for (std::size_t i = 0; i < P; ++i) {
-        std::size_t cnt = N / P + (i < N % P ? 1 : 0);
-        int from = val;
-        val += static_cast<int>(cnt);
-        threads.emplace_back([&, cnt, from]() {
-            for (std::size_t j = 0; j < cnt; ++j)
-                box.push(from + static_cast<int>(j));
+    int seq = 0;
+    for (std::size_t i = 0; i < prodN; ++i) {
+        std::size_t amt = itemN / prodN + (i < itemN % prodN ? 1 : 0);
+        int base = seq;
+        seq += static_cast<int>(amt);
+        crew.emplace_back([&, amt, base]() {
+            for (std::size_t j = amt; j-- > 0;)
+                hub.push(base + static_cast<int>(j));
         });
     }
 
-    for (std::size_t i = 0; i < C; ++i) {
-        threads.emplace_back([&]() {
+    for (std::size_t i = 0; i < consN; ++i) {
+        crew.emplace_back([&]() {
             for (;;) {
-                int v = box.pop();
+                int v = hub.pop();
                 if (v == -1) return;
                 std::cout << "got " << v << '\n';
-                bool last = false;
+                bool finished = false;
                 {
-                    std::lock_guard<std::mutex> lk(stop_mu);
-                    ++got;
-                    last = (got == N);
+                    std::lock_guard<std::mutex> lk(tallyMu);
+                    ++recv;
+                    finished = (recv == itemN);
                 }
-                if (last) {
-                    for (std::size_t t = 0; t < C; ++t)
-                        box.push(-1);
+                if (finished) {
+                    for (std::size_t t = consN; t-- > 0;)
+                        hub.push(-1);
                 }
             }
         });
     }
 
-    for (auto& th : threads) th.join();
+    for (auto& th : crew) th.join();
     std::cout << "DONE\n";
     return 0;
 }

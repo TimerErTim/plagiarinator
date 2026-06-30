@@ -1,68 +1,81 @@
-#include <vector>
-#include <algorithm>
 #include <iostream>
+#include <vector>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+#include <algorithm>
+// found online
 
-namespace util {
+namespace ordering
+{
 
-template <typename T, bool IsArithmetic = std::is_arithmetic<T>::value>
-struct Sorter;
+template <typename Item, bool Numeric = std::is_arithmetic<Item>::value>
+struct Dispatch;
 
-template <typename T>
-struct Sorter<T, true> {
-    static void run(std::vector<T>& data) { std::sort(data.begin(), data.end()); }
+template <typename Item>
+struct Dispatch<Item, true>
+{
+    static void arrange(std::vector<Item>& store) { std::sort(store.begin(), store.end()); }
 };
 
-template <typename T>
-struct Sorter<T, false> {
-    static void run(std::vector<T>& data) {
-        std::sort(data.begin(), data.end(), [](const T& x, const T& y) {
-            if (x.length() != y.length()) return x.length() < y.length();
-            return x < y;
+template <typename Item>
+struct Dispatch<Item, false>
+{
+    static void arrange(std::vector<Item>& store)
+    {
+        std::sort(store.begin(), store.end(), [](const Item& alpha, const Item& beta)
+        {
+            if (alpha.length() != beta.length()) return alpha.length() < beta.length();
+            return alpha < beta;
         });
     }
 };
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    Sorter<T, true>::run(data);
+template <typename Item>
+typename std::enable_if<std::is_arithmetic<Item>::value, void>::type
+sort_values(std::vector<Item>& store)
+{
+    Dispatch<Item, true>::arrange(store);
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    Sorter<T, false>::run(data);
+template <typename Item>
+typename std::enable_if<!std::is_arithmetic<Item>::value, void>::type
+sort_values(std::vector<Item>& store)
+{
+    Dispatch<Item, false>::arrange(store);
 }
 
-}  // namespace util
+}  // namespace ordering
 
-template <typename T>
-void print_vec(const std::vector<T>& v) {
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+template <typename Item>
+void dumpRow(const std::vector<Item>& store)
+{
+    for (std::size_t slot = 0; slot < store.size(); ++slot)
+    {
+        if (slot) std::cout << ' ';
+        std::cout << store[slot];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
-int main() {
-    std::string typ;
-    std::size_t count;
-    std::cin >> typ >> count;
+int main()
+{
+    std::string selector;
+    std::size_t amount;
+    std::cin >> selector >> amount;
 
-    if (typ == "NUM") {
-        std::vector<int> vals(count);
-        for (auto& x : vals) std::cin >> x;
-        util::sort_values(vals);
-        print_vec(vals);
-    } else {
-        std::vector<std::string> vals(count);
-        for (auto& s : vals) std::cin >> s;
-        util::sort_values(vals);
-        print_vec(vals);
+    if (selector == "NUM")
+    {
+        std::vector<int> store(amount);
+        for (auto& cell : store) std::cin >> cell;
+        ordering::sort_values(store);
+        dumpRow(store);
+    }
+    else
+    {
+        std::vector<std::string> store(amount);
+        for (auto& cell : store) std::cin >> cell;
+        ordering::sort_values(store);
+        dumpRow(store);
     }
     return 0;
 }

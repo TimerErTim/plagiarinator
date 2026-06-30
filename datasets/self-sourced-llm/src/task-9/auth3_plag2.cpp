@@ -1,55 +1,63 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <functional>
-// adapted from classmate submission
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 class Sensor {
-    double temp_;
-    std::vector<std::pair<std::string, std::function<void(double)>>> observers_;
+    double currentValue_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> subscribers_;
 
-    void notifyAll() {
-        for (const auto& entry : observers_)
-{
-            std::cout << std::fixed << std::setprecision(1)
-                      << "[" << entry.first << "] temp=" << temp_
-                      << std::endl;
+    void printLine(const std::string& name, double value) const
+    {
+        std::cout << std::fixed << std::setprecision(1)
+                  << "[" << name << "] temp=" << value << std::endl;
+    }
+
+    void notifyAll()
+    {
+        for (const auto& entry : subscribers_)
+        {
+            printLine(entry.first, currentValue_);
             if (entry.second)
-                entry.second(temp_);
+                entry.second(currentValue_);
         }
     }
 
 public:
-    void subscribe(const std::string& name, std::function<void(double)> callback) {
-        observers_.push_back({name, std::move(callback)});
+    void subscribe(const std::string& name, std::function<void(double)> callback)
+    {
+        subscribers_.push_back({name, std::move(callback)});
     }
 
-    void set_value(double celsius) {
-        temp_ = celsius;
+    void set_value(double celsius)
+    {
+        currentValue_ = celsius;
         notifyAll();
     }
 
-    double value() const { return temp_; }
+    double value() const { return currentValue_; }
 };
 
 int main()
 {
-    Sensor s;
+    Sensor temperatureSensor;
     std::string command;
     while (std::cin >> command)
-{
+    {
         if (command == "END") break;
         if (command == "SUB")
-{
+        {
             std::string observerName;
             std::cin >> observerName;
-            s.subscribe(observerName, [](double) {});
-        } else if (command == "SET") {
+            temperatureSensor.subscribe(observerName, [](double) {});
+        }
+        else if (command == "SET")
+        {
             double reading;
             std::cin >> reading;
-            s.set_value(reading);
+            temperatureSensor.set_value(reading);
         }
     }
     return 0;

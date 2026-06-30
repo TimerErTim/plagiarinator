@@ -51,9 +51,9 @@ public:
 
 int main()
 {
-    string word;
+    string token;
     size_t cap;
-    cin >> word >> cap;
+    cin >> token >> cap;
     LRUCache<string, int> lru(cap);
     string elem;
     while (cin >> elem) {

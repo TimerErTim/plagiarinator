@@ -1,6 +1,5 @@
-#include <utility>
 #include <iostream>
-// adapted from classmate submission
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -59,35 +58,40 @@ private:
     }
 };
 
-int main()
-
+static void load_nums(Vector<int>& nums, std::size_t n)
 {
-    std::size_t n;
-    std::cin >> n;
-    Vector<int> nums;
-    for (std::size_t i = 0; i < n; ++i) 
-{
+    for (std::size_t i = 0; i < n; ++i) {
         int v;
         std::cin >> v;
         nums.push_back(v);
     }
+}
+
+static void first_occurrence_only(const Vector<int>& nums, Vector<int>& result)
+{
+    for (std::size_t i = 0; i < nums.size(); ++i) {
+        const int& val = nums[i];
+        bool skip = false;
+        for (std::size_t j = 0; j < result.size(); ++j) {
+            if (result[j] == val) { skip = true; break; }
+        }
+        if (!skip) result.push_back(val);
+    }
+}
+
+int main()
+{
+    std::size_t n;
+    std::cin >> n;
+    Vector<int> nums;
+    load_nums(nums, n);
 
     Vector<int> result;
-    for (std::size_t i = 0; i < nums.size(); ++i) 
-{
-        const int& x = nums[i];
-        bool skip = false;
-        for (std::size_t j = 0; j < result.size(); ++j) 
-{
-            if (result[j] == x) { skip = true; break; }
-        }
-        if (!skip) result.push_back(x);
-    }
+    first_occurrence_only(nums, result);
 
     long long s = 0, p = 1;
     const long long MOD = 1e9 + 7;
-    for (std::size_t i = 0; i < result.size(); ++i) 
-{
+    for (std::size_t i = 0; i < result.size(); ++i) {
         s += result[i];
         p = (p * result[i]) % MOD;
     }

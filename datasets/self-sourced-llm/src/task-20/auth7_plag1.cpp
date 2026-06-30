@@ -1,8 +1,7 @@
-#include <array>
 #include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <array>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -50,8 +49,8 @@ bool closing_matches(char open, char close) {
 
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> brackets;
-    for (unsigned char raw : s) {
-        char c = static_cast<char>(raw);
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        char c = static_cast<char>(static_cast<unsigned char>(s[i]));
         if (c == '(' || c == '[' || c == '{') {
             if (!brackets.push(c)) return false;
         } else if (c == ')' || c == ']' || c == '}') {
@@ -64,9 +63,9 @@ bool is_balanced(const std::string& s) {
 }
 
 int main() {
-    for (std::string s; std::getline(std::cin, s);) {
-        if (s == "END") break;
-        std::cout << (is_balanced(s) ? "OK" : "FAIL") << std::endl;
+    for (std::string line; std::getline(std::cin, line);) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << std::endl;
     }
     return 0;
 }

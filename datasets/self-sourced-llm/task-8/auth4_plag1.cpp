@@ -1,6 +1,5 @@
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
 
 template <typename T>
 class Matrix {
@@ -15,7 +14,7 @@ public:
 
     Matrix operator+(const Matrix& o) const {
         Matrix m(nrows, ncols);
-        for (std::size_t i = 0; i < vals.size(); ++i) m.vals[i] = vals[i] + o.vals[i];
+        for (std::size_t i = 0; i < vals.size(); i++) m.vals[i] = vals[i] + o.vals[i];
         return m;
     }
 
@@ -37,7 +36,7 @@ public:
                 if (j) os << ' ';
                 os << m(i, j);
             }
-            os << '\n';
+            os << std::endl;
         }
         return os;
     }

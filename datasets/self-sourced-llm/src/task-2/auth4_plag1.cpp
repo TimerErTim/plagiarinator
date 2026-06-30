@@ -1,7 +1,6 @@
-#include <iostream>
 #include <sstream>
 #include <string>
-// cleaned up version
+#include <iostream>
 
 template <typename T>
 class LinkedList {
@@ -13,30 +12,32 @@ private:
         T value;
         Node* next;
     };
-    Node* head;
+    Node* front;
     std::size_t n;
 
 public:
-    LinkedList() : head(nullptr), n(0) {}
+    LinkedList() : front(nullptr), n(0) {}
 
     ~LinkedList() {
-        while (head) {
-            Node* t = head;
-            head = head->next;
+        while (front) {
+            Node* t = front;
+            front = front->next;
             delete t;
         }
     }
 
     void push_back(const T& v) {
         Node* node = new Node{v, nullptr};
-        if (!head) head = node;
+        if (!front) front = node;
         else {
-            Node* p = head;
+            Node* p = front;
             while (p->next) p = p->next;
             p->next = node;
         }
-        ++n;
+        n++;
     }
+
+    void emplace_back(const T& v) { push_back(v); }
 
     std::size_t size() const { return n; }
 
@@ -48,12 +49,13 @@ public:
         T& operator*() { return cur->value; }
         const T& operator*() const { return cur->value; }
         Iterator& operator++() { cur = cur->next; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
         bool operator!=(const Iterator& o) const { return cur != o.cur; }
     };
 
-    Iterator begin() { return Iterator(head); }
+    Iterator begin() { return Iterator(front); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(head); }
+    Iterator begin() const { return Iterator(front); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -62,11 +64,11 @@ LinkedList<T> merge_sorted(const LinkedList<T>& left, const LinkedList<T>& right
     LinkedList<T> dst;
     auto li = left.begin(), ri = right.begin();
     while (li != left.end() && ri != right.end()) {
-        if (*li <= *ri) { dst.push_back(*li); ++li; }
+        if (*li <= *ri) { dst.emplace_back(*li); ++li; }
         else { dst.push_back(*ri); ++ri; }
     }
-    while (li != left.end()) { dst.push_back(*li); ++li; }
-    while (ri != right.end()) { dst.push_back(*ri); ++ri; }
+    for (; li != left.end(); ++li) dst.emplace_back(*li);
+    for (; ri != right.end(); ri++) dst.push_back(*ri);
     return dst;
 }
 
@@ -74,7 +76,7 @@ static void fillFromLine(LinkedList<int>& list, const std::string& line) {
     std::istringstream ss(line);
     int v;
     while (ss >> v)
-        list.push_back(v);
+        list.emplace_back(v);
 }
 
 int main() {
@@ -93,6 +95,6 @@ int main() {
         std::cout << *it;
         first = false;
     }
-    std::cout << std::endl;
+    std::cout << '\n';
     return 0;
 }

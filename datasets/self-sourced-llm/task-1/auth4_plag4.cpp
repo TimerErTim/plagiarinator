@@ -1,84 +1,64 @@
-#include <cctype>
-#include <algorithm>
-#include <iostream>
 #include <cstring>
+#include <cctype>
 #include <vector>
-// quick submit
+#include <iostream>
+#include <algorithm>
 
 class StringBuffer {
 private:
-    char* word_;
-    std::size_t tmp_;
+    char* m_data;
+    std::size_t m_len;
 
     void allocateCopy(const char* s, std::size_t n) {
-        word_ = new char[n + 1];
-        std::strncpy(word_, s, n);
-        word_[n] = '\0';
-        tmp_ = n;
+        m_data = new char[n + 1];
+        std::strncpy(m_data, s, n);
+        m_data[n] = '\0';
+        m_len = n;
     }
 
 public:
-    StringBuffer(const char* s) {
-        allocateCopy(s, std::strlen(s));
-    }
-
-    ~StringBuffer() {
-        delete[] word_;
-    }
-
-    StringBuffer(const StringBuffer& other) {
-        allocateCopy(other.word_, other.tmp_);
-    }
-
+    StringBuffer(const char* s) { allocateCopy(s, std::strlen(s)); }
+    ~StringBuffer() { delete[] m_data; }
+    StringBuffer(const StringBuffer& other) { allocateCopy(other.m_data, other.m_len); }
     StringBuffer& operator=(const StringBuffer& other) {
         if (&other != this) {
-            delete[] word_;
-            allocateCopy(other.word_, other.tmp_);
+            delete[] m_data;
+            allocateCopy(other.m_data, other.m_len);
         }
         return *this;
     }
 
     void trim() {
         int left = 0;
-        int right = static_cast<int>(tmp_) - 1;
-        while (left <= right && std::isspace(word_[left])) left++;
-        while (right >= left && std::isspace(word_[right])) right--;
+        int right = static_cast<int>(m_len) - 1;
+        while (left <= right && std::isspace(m_data[left])) left++;
+        while (right >= left && std::isspace(m_data[right])) right--;
         int newLen = right - left + 1;
         if (newLen < 0) newLen = 0;
         for (int i = 0; i < newLen; i++)
-            word_[i] = word_[left + i];
-        word_[newLen] = '\0';
-        tmp_ = static_cast<std::size_t>(newLen);
+            m_data[i] = m_data[left + i];
+        m_data[newLen] = '\0';
+        m_len = static_cast<std::size_t>(newLen);
     }
 
-    const char* c_str() const { return word_; }
-    std::size_t size() const { return tmp_; }
-
+    const char* c_str() const { return m_data; }
+    std::size_t size() const { return m_len; }
     bool operator<(const StringBuffer& rhs) const {
-        return std::strcmp(word_, rhs.word_) < 0;
+        return std::strcmp(m_data, rhs.m_data) < 0;
     }
 };
 
 int main() {
-    std::vector<StringBuffer> students;
+    std::vector<StringBuffer> rows;
     char buffer[256];
-    while (std::cin.getline(buffer, 256)) {
-        students.emplace_back(buffer);
-    }
+    while (std::cin.getline(buffer, 256))
+        rows.emplace_back(buffer);
 
-    for (auto& name : students) {
-        name.trim();
-    }
-
-    students.erase(
-        std::remove_if(students.begin(), students.end(),
-            [](const StringBuffer& sb) { return sb.size() == 0; }),
-        students.end());
-
-    std::sort(students.begin(), students.end());
-
-    for (const StringBuffer& name : students) {
-        std::cout << name.c_str() << '\n';
-    }
+    for (auto& row : rows) row.trim();
+    rows.erase(std::remove_if(rows.begin(), rows.end(),
+            [](const StringBuffer& sb) { return sb.size() == 0; }), rows.end());
+    std::sort(rows.begin(), rows.end());
+    for (const StringBuffer& row : rows)
+        std::cout << row.c_str() << '\n';
     return 0;
 }

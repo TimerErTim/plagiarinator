@@ -1,8 +1,7 @@
-#include <unordered_map>
-#include <string>
-#include <memory>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -10,34 +9,44 @@ struct Image {
 };
 
 class ImageCache {
-    std::unordered_map<std::string, std::weak_ptr<Image>> table_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> data_;
 
-    std::shared_ptr<Image> create(const std::string& key, int pixels) {
+    std::shared_ptr<Image> build(const std::string& key, int pixels)
+    {
         return std::make_shared<Image>(Image{key, pixels});
     }
 
-public:
-    std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        std::weak_ptr<Image>& weak = table_[key];
+    std::shared_ptr<Image> resolve(const std::string& key, int pixels)
+    {
+        std::weak_ptr<Image>& weak = data_[key];
         std::shared_ptr<Image> strong = weak.lock();
         if (strong) return strong;
-        strong = create(key, pixels);
+        strong = build(key, pixels);
         weak = strong;
         return strong;
     }
 
-    std::size_t size() const {
+public:
+    std::shared_ptr<Image> load(const std::string& key, int pixels)
+    {
+        return resolve(key, pixels);
+    }
+
+    std::size_t size() const
+    {
         std::size_t s = 0;
-        for (auto const& e : table_)
+        for (auto const& e : data_)
             if (!e.second.expired()) ++s;
         return s;
     }
 
-    void drop_all() { table_.clear(); }
+    void drop_all() { data_.clear(); }
 
-    void print_query(const std::string& key) const {
-        auto it = table_.find(key);
-        if (it == table_.end()) {
+    void print_query(const std::string& key) const
+    {
+        auto it = data_.find(key);
+        if (it == data_.end())
+        {
             std::cout << "EXPIRED\n";
             return;
         }
@@ -49,22 +58,28 @@ public:
 
 int main()
 {
-    ImageCache store;
-    std::string input;
-    while (std::cin >> input) {
-        if (input == "END") break;
-        if (input == "LOAD") {
+    ImageCache cache;
+    std::string line;
+    while (std::cin >> line)
+    {
+        if (line == "END") break;
+        if (line == "LOAD")
+        {
             std::string k;
             int p;
             std::cin >> k >> p;
-            std::shared_ptr<Image> tmp = store.load(k, p);
+            std::shared_ptr<Image> tmp = cache.load(k, p);
             std::cout << "loaded " << tmp->name << " pixels=" << tmp->pixel_count << '\n';
-        } else if (input == "QUERY") {
+        }
+        else if (line == "QUERY")
+        {
             std::string k;
             std::cin >> k;
-            store.print_query(k);
-        } else if (input == "DROP_ALL") {
-            store.drop_all();
+            cache.print_query(k);
+        }
+        else if (line == "DROP_ALL")
+        {
+            cache.drop_all();
         }
     }
     return 0;

@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <cstring>
+#include <cctype>
+#include <algorithm>
 
 class StringBuffer {
     char* text;
@@ -42,7 +41,7 @@ public:
         while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])))
             end--;
         len = end - start;
-        for (std::size_t i = 0; i < len; ++i)
+        for (std::size_t i = 0; i < len; i++)
             text[i] = text[start + i];
         text[len] = '\0';
     }
@@ -56,16 +55,16 @@ public:
 };
 
 int main() {
-    std::vector<StringBuffer> entries;
-    for (std::string buf; std::getline(std::cin, buf);)
-        entries.emplace_back(buf.c_str());
+    std::vector<StringBuffer> names;
+    for (std::string line; std::getline(std::cin, line);)
+        names.emplace_back(line.c_str());
 
-    for (auto& n : entries) n.trim();
-    entries.erase(std::remove_if(entries.begin(), entries.end(),
+    for (auto& n : names) n.trim();
+    names.erase(std::remove_if(names.begin(), names.end(),
                                [](const StringBuffer& n) { return n.size() == 0; }),
-                entries.end());
-    std::sort(entries.begin(), entries.end());
-    for (const auto& n : entries)
+                names.end());
+    std::sort(names.begin(), names.end());
+    for (const auto& n : names)
         std::cout << n.c_str() << std::endl;
     return 0;
 }

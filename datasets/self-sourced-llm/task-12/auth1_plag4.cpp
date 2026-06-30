@@ -1,10 +1,9 @@
-#include <sstream>
 #include <iostream>
-#include <string>
+#include <sstream>
 #include <stdexcept>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 struct Number { int value; };
 struct Add { std::size_t left, right; };
@@ -75,10 +74,10 @@ bool process_line(const std::string& line) {
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str.empty()) break;
-        process_line(str);
+    std::string input_line;
+    while (std::getline(std::cin, input_line)) {
+        if (input_line.empty()) break;
+        process_line(input_line);
     }
     return 0;
 }

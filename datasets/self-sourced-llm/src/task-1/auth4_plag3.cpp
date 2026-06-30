@@ -1,84 +1,74 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <iostream>
-// from lab partner
+#include <cctype>
+// borrowed from roommate's homework
 
 class StringBuffer {
 private:
-    char* ref_;
-    std::size_t cnt_;
+    char* textBuf;
+    std::size_t textLen;
 
-    void allocateCopy(const char* s, std::size_t n) {
-        ref_ = new char[n + 1];
-        std::strncpy(ref_, s, n);
-        ref_[n] = '\0';
-        cnt_ = n;
+    void cloneFrom(const char* s, std::size_t n) {
+        textBuf = new char[n + 1];
+        std::strncpy(textBuf, s, n);
+        textBuf[n] = '\0';
+        textLen = n;
     }
 
 public:
-    StringBuffer(const char* s) {
-        allocateCopy(s, std::strlen(s));
-    }
+    StringBuffer(const char* s) { cloneFrom(s, std::strlen(s)); }
 
-    ~StringBuffer() {
-        delete[] ref_;
-    }
+    ~StringBuffer() { delete[] textBuf; }
 
-    StringBuffer(const StringBuffer& other) {
-        allocateCopy(other.ref_, other.cnt_);
-    }
+    StringBuffer(const StringBuffer& other) { cloneFrom(other.textBuf, other.textLen); }
 
     StringBuffer& operator=(const StringBuffer& other) {
         if (&other != this) {
-            delete[] ref_;
-            allocateCopy(other.ref_, other.cnt_);
+            delete[] textBuf;
+            cloneFrom(other.textBuf, other.textLen);
         }
         return *this;
     }
 
     void trim() {
-        int left = 0;
-        int right = static_cast<int>(cnt_) - 1;
-        while (left <= right && std::isspace(ref_[left])) left++;
-        while (right >= left && std::isspace(ref_[right])) right--;
-        int newLen = right - left + 1;
-        if (newLen < 0) newLen = 0;
-        for (int i = 0; i < newLen; i++)
-            ref_[i] = ref_[left + i];
-        ref_[newLen] = '\0';
-        cnt_ = static_cast<std::size_t>(newLen);
+        int lo = 0;
+        int hi = static_cast<int>(textLen) - 1;
+        while (lo <= hi && std::isspace(textBuf[lo])) lo++;
+        while (hi >= lo && std::isspace(textBuf[hi])) hi--;
+        int span = hi - lo + 1;
+        if (span < 0) span = 0;
+        for (int k = span; k-- > 0;)
+            textBuf[k] = textBuf[lo + k];
+        textBuf[span] = '\0';
+        textLen = static_cast<std::size_t>(span);
     }
 
-    const char* c_str() const { return ref_; }
-    std::size_t size() const { return cnt_; }
+    const char* c_str() const { return textBuf; }
+    std::size_t size() const { return textLen; }
 
     bool operator<(const StringBuffer& rhs) const {
-        return std::strcmp(ref_, rhs.ref_) < 0;
+        return std::strcmp(textBuf, rhs.textBuf) < 0;
     }
 };
 
 int main() {
-    std::vector<StringBuffer> students;
-    char buffer[256];
-    while (std::cin.getline(buffer, 256)) {
-        students.emplace_back(buffer);
-    }
+    std::vector<StringBuffer> roster;
+    char lineBuf[256];
+    while (std::cin.getline(lineBuf, 256))
+        roster.emplace_back(lineBuf);
 
-    for (auto& name : students) {
-        name.trim();
-    }
+    for (auto& entry : roster) entry.trim();
 
-    students.erase(
-        std::remove_if(students.begin(), students.end(),
+    roster.erase(
+        std::remove_if(roster.begin(), roster.end(),
             [](const StringBuffer& sb) { return sb.size() == 0; }),
-        students.end());
+        roster.end());
 
-    std::sort(students.begin(), students.end());
+    std::sort(roster.begin(), roster.end());
 
-    for (const StringBuffer& name : students) {
-        std::cout << name.c_str() << '\n';
-    }
+    for (const StringBuffer& entry : roster)
+        std::cout << entry.c_str() << std::endl;
     return 0;
 }

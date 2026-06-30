@@ -1,80 +1,84 @@
-#include <thread>
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <string>
-// TODO: refactor later
+#include <thread>
+#include <vector>
+// borrowed from roommate's homework
 
-template <typename T>
-class BlockingQueue {
-    std::queue<T> q;
-    std::size_t cap;
-    mutable std::mutex mu;
-    std::condition_variable full_cv, empty_cv;
+template <typename ItemTy>
+class WorkQueue {
+    std::queue<ItemTy> backlog_;
+    std::size_t maxDepth_;
+    mutable std::mutex gate_;
+    std::condition_variable hasSpace_, hasItem_;
 
 public:
-    BlockingQueue(std::size_t capacity) : cap(capacity) {}
+    WorkQueue(std::size_t maxDepth) : maxDepth_(maxDepth) {}
 
-    void push(T value) {
-        std::unique_lock<std::mutex> lk(mu);
-        full_cv.wait(lk, [&] { return q.size() < cap; });
-        q.push(std::move(value));
-        empty_cv.notify_one();
+    void push(ItemTy val) {
+        std::unique_lock<std::mutex> lk(gate_);
+        hasSpace_.wait(lk, [&] { return backlog_.size() < maxDepth_; });
+        backlog_.push(std::move(val));
+        hasItem_.notify_one();
     }
 
-    T pop() {
-        std::unique_lock<std::mutex> lk(mu);
-        empty_cv.wait(lk, [&] { return !q.empty(); });
-        T x = std::move(q.front());
-        q.pop();
-        full_cv.notify_one();
+    ItemTy pop() {
+        std::unique_lock<std::mutex> lk(gate_);
+        hasItem_.wait(lk, [&] { return !backlog_.empty(); });
+        ItemTy x = std::move(backlog_.front());
+        backlog_.pop();
+        hasSpace_.notify_one();
         return x;
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> lk(mu);
-        return q.size();
+        std::lock_guard<std::mutex> lk(gate_);
+        return backlog_.size();
     }
 };
 
-static void spawn_producers(BlockingQueue<int>& bq, std::size_t p, std::size_t n, std::vector<std::thread>& out) {
-    std::size_t each = n / p, rem = n % p, cur = 0;
-    for (std::size_t i = 0; i < p; ++i) {
-        std::size_t k = each + (i < rem);
-        std::size_t start = cur;
-        cur += k;
-        out.emplace_back([&, k, start] {
-            for (std::size_t j = 0; j < k; ++j) bq.push(static_cast<int>(start + j));
+static void boot_producers(WorkQueue<int>& wq, std::size_t prodCnt, std::size_t itemCnt,
+                           std::vector<std::thread>& pool) {
+    std::size_t share = itemCnt / prodCnt, extra = itemCnt % prodCnt, pos = 0;
+    for (std::size_t idx = 0; idx < prodCnt; ++idx) {
+        std::size_t batch = share + (idx < extra);
+        std::size_t origin = pos;
+        pos += batch;
+        pool.emplace_back([&, batch, origin] {
+            for (std::size_t step = batch; step-- > 0;)
+                wq.push(static_cast<int>(origin + step));
         });
     }
 }
 
 int main() {
-    std::size_t p, c, n;
-    std::string tag;
-    std::cin >> tag >> p >> tag >> c >> tag >> n;
+    std::size_t prodCnt, consCnt, itemCnt;
+    std::string lbl;
+    std::cin >> lbl >> prodCnt >> lbl >> consCnt >> lbl >> itemCnt;
 
-    BlockingQueue<int> bq(n);
-    std::vector<std::thread> ts;
-    std::atomic<std::size_t> count{0};
+    WorkQueue<int> wq(itemCnt);
+    std::vector<std::thread> pool;
+    std::atomic<std::size_t> done{0};
 
-    spawn_producers(bq, p, n, ts);
+    boot_producers(wq, prodCnt, itemCnt, pool);
 
-    for (std::size_t i = 0; i < c; ++i) {
-        ts.emplace_back([&] {
+    for (std::size_t i = 0; i < consCnt; ++i) {
+        pool.emplace_back([&] {
             while (true) {
-                int v = bq.pop();
+                int v = wq.pop();
                 if (v < 0) break;
                 std::cout << "got " << v << '\n';
-                if (count.fetch_add(1) + 1 == n)
-                    for (std::size_t j = 0; j < c; ++j) bq.push(-1);
+                if (done.fetch_add(1) + 1 == itemCnt)
+                    for (std::size_t j = consCnt; j-- > 0;)
+                        wq.push(-1);
             }
         });
     }
 
-    for (auto& t : ts) t.join();
+    for (auto& t : pool) t.join();
     std::cout << "DONE\n";
     return 0;
 }

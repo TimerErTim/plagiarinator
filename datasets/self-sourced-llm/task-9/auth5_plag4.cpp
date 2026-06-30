@@ -1,30 +1,29 @@
 #include <iomanip>
 #include <functional>
-#include <string>
 #include <iostream>
-#include <vector>
 #include <utility>
-// quick submit
+#include <vector>
+#include <string>
 
 class Sensor {
-    double word_{0.0};
-    std::vector<std::pair<std::string, std::function<void(double)>>> ref_;
+    double reading_{0.0};
+    std::vector<std::pair<std::string, std::function<void(double)>>> obs_;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> cb) {
-        ref_.emplace_back(name, std::move(cb));
+        obs_.emplace_back(name, std::move(cb));
     }
 
     void set_value(double celsius) {
-        word_ = celsius;
-        for (const auto& o : ref_) {
+        reading_ = celsius;
+        for (const auto& o : obs_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << o.first << "] temp=" << word_ << '\n';
-            if (o.second) o.second(word_);
+                      << "[" << o.first << "] temp=" << reading_ << '\n';
+            if (o.second) o.second(reading_);
         }
     }
 
-    double value() const { return word_; }
+    double value() const { return reading_; }
 };
 
 int main() {

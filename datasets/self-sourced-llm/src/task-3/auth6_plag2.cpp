@@ -1,54 +1,66 @@
-#include <vector>
-#include <unordered_set>
 #include <unordered_map>
-#include <string>
-#include <queue>
-#include <memory>
+#include <unordered_set>
+#include <vector>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <queue>
+#include <string>
 
-struct GraphNode {
+struct GraphNode
+{
     std::string label;
     std::vector<std::shared_ptr<GraphNode>> edges;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> table_;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> table;
 
-    std::shared_ptr<GraphNode> touch(const std::string& id) {
-        auto iter = table_.find(id);
-        if (iter != table_.end()) return iter->second;
+    std::shared_ptr<GraphNode> touch(const std::string& id)
+    {
+        auto iter = table.find(id);
+        if (iter != table.end()) return iter->second;
         std::shared_ptr<GraphNode> created = std::make_shared<GraphNode>();
         created->label = id;
-        table_[id] = created;
+        table[id] = created;
         return created;
+    }
+
+    void pushUnvisited(const std::shared_ptr<GraphNode>& active,
+                       std::queue<std::shared_ptr<GraphNode>>& pending,
+                       std::unordered_set<std::string>& visited) const
+    {
+        for (const std::shared_ptr<GraphNode>& neighbor : active->edges)
+        {
+            if (visited.insert(neighbor->label).second)
+                pending.push(neighbor);
+        }
     }
 
 public:
     void addNode(const std::string& id) { touch(id); }
 
-    void addEdge(const std::string& src, const std::string& dst) {
+    void addEdge(const std::string& src, const std::string& dst)
+    {
         touch(src)->edges.emplace_back(touch(dst));
     }
 
-    bool query(const std::string& src, const std::string& dst) const {
-        auto startIt = table_.find(src);
-        if (startIt == table_.end()) return false;
+    bool query(const std::string& src, const std::string& dst) const
+    {
+        auto startIt = table.find(src);
+        if (startIt == table.end()) return false;
 
         std::queue<std::shared_ptr<GraphNode>> pending;
         std::unordered_set<std::string> visited;
         pending.push(startIt->second);
         visited.insert(src);
 
-        while (!pending.empty()) {
+        while (!pending.empty())
+        {
             std::shared_ptr<GraphNode> active = pending.front();
             pending.pop();
             if (active->label == dst) return true;
-            for (const std::shared_ptr<GraphNode>& neighbor : active->edges)
-{
-                if (visited.insert(neighbor->label).second)
-                    pending.push(neighbor);
-            }
+            pushUnvisited(active, pending, visited);
         }
         return false;
     }
@@ -57,21 +69,23 @@ public:
 int main()
 {
     Graph g;
-    for (std::string verb; std::cin >> verb;)
-{
-        if (verb == "END") break;
-        if (verb == "ADD_NODE")
-{
+    for (std::string token; std::cin >> token;)
+    {
+        if (token == "END") break;
+        if (token == "ADD_NODE")
+        {
             std::string name;
             std::cin >> name;
             g.addNode(name);
-        } else if (verb == "ADD_EDGE") {
-            std::string u, v;
-            std::cin >> u >> v;
+        } else if (token == "ADD_EDGE")
+        {
+            std::string v, u;
+            std::cin >> v >> u;
             g.addEdge(u, v);
-        } else if (verb == "QUERY") {
-            std::string u, v;
-            std::cin >> u >> v;
+        } else if (token == "QUERY")
+        {
+            std::string v, u;
+            std::cin >> v >> u;
             std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
         }
     }

@@ -1,22 +1,21 @@
-#include <iomanip>
-#include <functional>
 #include <string>
 #include <iostream>
+#include <functional>
+#include <iomanip>
 #include <vector>
-// quick submit
 
 class Sensor {
     double temp;
-    std::vector<std::pair<std::string, std::function<void(double)>>> list;
+    std::vector<std::pair<std::string, std::function<void(double)>>> registry;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> fn) {
-        list.push_back({name, fn});
+        registry.push_back({name, fn});
     }
 
     void set_value(double celsius) {
         temp = celsius;
-        for (auto& p : list) {
+        for (auto& p : registry) {
             std::cout << std::fixed << std::setprecision(1)
                       << "[" << p.first << "] temp=" << temp << '\n';
             p.second(temp);
@@ -28,13 +27,13 @@ public:
 
 int main() {
     Sensor s;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "SUB") {
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op == "SUB") {
             std::string n; std::cin >> n;
             s.subscribe(n, [](double) {});
-        } else if (elem == "SET") {
+        } else if (op == "SET") {
             double v; std::cin >> v;
             s.set_value(v);
         }

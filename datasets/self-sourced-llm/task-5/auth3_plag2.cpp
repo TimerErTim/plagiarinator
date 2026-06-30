@@ -5,7 +5,8 @@
 // adapted from classmate submission
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     using Entry = std::pair<Key, Value>;
     using List = std::list<Entry>;
     using Iter = typename List::iterator;
@@ -14,11 +15,13 @@ class LRUCache {
     List chain_;
     std::unordered_map<Key, Iter> idx_;
 
-    void promote(Iter idx_) {
-        chain_.splice(chain_.begin(), chain_, idx_);
+    void promote(Iter pos)
+    {
+        chain_.splice(chain_.begin(), chain_, pos);
     }
 
-    void evictIfNeeded() {
+    void evictIfNeeded()
+    {
         if (chain_.size() <= limit_) return;
         idx_.erase(chain_.back().first);
         chain_.pop_back();
@@ -27,7 +30,8 @@ class LRUCache {
 public:
     explicit LRUCache(std::size_t capacity) : limit_(capacity) {}
 
-    bool get(const Key& key, Value& out) {
+    bool get(const Key& key, Value& out)
+    {
         auto found = idx_.find(key);
         if (found == idx_.end()) return false;
         out = found->second->second;
@@ -35,7 +39,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto found = idx_.find(key);
         if (found != idx_.end()) {
             found->second->second = value;
@@ -57,10 +62,10 @@ int main()
 
     std::string verb;
     while (std::cin >> verb)
-{
+    {
         if (verb == "END") break;
         if (verb == "GET")
-{
+        {
             std::string k;
             std::cin >> k;
             int v;

@@ -1,70 +1,85 @@
 #include <vector>
-#include <iostream>
 #include <string>
-// TODO: refactor later
+#include <iostream>
+// saw this on stackoverflow kinda
 
 class IntBST {
-    struct Node { int val; Node* l; Node* r; Node(int v): val(v), l(0), r(0) {} };
-    Node* root;
+    struct Link { int num; Link* down; Link* up; Link(int n): num(n), down(0), up(0) {} };
+    Link* peak;
 
-    void clear(Node* n) {
-        if (!n) return;
-        clear(n->l); clear(n->r); delete n;
+    void scrub(Link* ln) {
+        if (!ln) return;
+        std::vector<Link*> bag;
+        std::vector<Link*> stack;
+        stack.push_back(ln);
+        while (!stack.empty()) {
+            Link* cur = stack.back();
+            stack.pop_back();
+            bag.push_back(cur);
+            if (cur->down) stack.push_back(cur->down);
+            if (cur->up) stack.push_back(cur->up);
+        }
+        for (std::size_t k = bag.size(); k-- > 0;)
+            delete bag[k];
     }
 
-    Node* add(Node* n, int v) {
-        if (!n) return new Node(v);
-        if (v < n->val) n->l = add(n->l, v);
-        else if (v > n->val) n->r = add(n->r, v);
-        return n;
+    Link* tuck(Link* ln, int n) {
+        if (!ln) return new Link(n);
+        if (n < ln->num) ln->down = tuck(ln->down, n);
+        else if (n > ln->num) ln->up = tuck(ln->up, n);
+        return ln;
     }
 
-    bool find(const Node* n, int v) const {
-        if (!n) return false;
-        if (v == n->val) return true;
-        return v < n->val ? find(n->l, v) : find(n->r, v);
+    bool test(const Link* ln, int n) const {
+        if (!ln) return false;
+        if (n == ln->num) return true;
+        if (n < ln->num) return test(ln->down, n);
+        return test(ln->up, n);
     }
 
-    void seq(const Node* n, std::vector<int>& o) const {
-        if (!n) return;
-        seq(n->l, o); o.push_back(n->val); seq(n->r, o);
+    void spill(const Link* ln, std::vector<int>& pot) const {
+        if (!ln) return;
+        spill(ln->down, pot);
+        pot.push_back(ln->num);
+        spill(ln->up, pot);
     }
 
-    Node* smallest(Node* n) const {
-        while (n && n->l) n = n->l;
-        return n;
+    Link* base(Link* ln) const {
+        while (ln && ln->down) ln = ln->down;
+        return ln;
     }
 
 public:
-    IntBST() : root(0) {}
-    ~IntBST() { clear(root); }
+    IntBST() : peak(0) {}
+    ~IntBST() { scrub(peak); }
 
-    void insert(int v) { root = add(root, v); }
-    bool contains(int v) const { return find(root, v); }
-    void inorder(std::vector<int>& o) const { seq(root, o); }
-    int& min() { return smallest(root)->val; }
-    const int& min() const { return smallest(root)->val; }
-    bool empty() const { return !root; }
+    void insert(int v) { peak = tuck(peak, v); }
+    bool contains(int v) const { return test(peak, v); }
+    void inorder(std::vector<int>& o) const { spill(peak, o); }
+    int& min() { return base(peak)->num; }
+    const int& min() const { return base(peak)->num; }
+    bool empty() const { return !peak; }
 };
 
 int main() {
-    IntBST hold;
-    std::string s;
-    while (std::cin >> s && s != "DONE")
-        hold.insert(std::stoi(s));
+    IntBST crate;
+    std::string bit;
+    while (std::cin >> bit && bit != "DONE")
+        crate.insert(std::stoi(bit));
 
-    while (std::cin >> s) {
-        if (s == "DONE") break;
-        if (s == "CONTAINS") {
+    while (std::cin >> bit) {
+        if (bit == "DONE") break;
+        if (bit == "CONTAINS") {
             int x; std::cin >> x;
-            std::cout << (hold.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (s == "MIN") {
-            std::cout << (hold.empty() ? "EMPTY" : std::to_string(hold.min())) << std::endl;
-        } else if (s == "PRINT") {
-            std::vector<int> v; hold.inorder(v);
-            for (size_t i = 0; i < v.size(); ++i) {
-                if (i) std::cout << ' ';
-                std::cout << v[i];
+            std::cout << (crate.contains(x) ? "YES" : "NO") << std::endl;
+        } else if (bit == "MIN") {
+            std::cout << (crate.empty() ? "EMPTY" : std::to_string(crate.min())) << std::endl;
+        } else if (bit == "PRINT") {
+            std::vector<int> v;
+            crate.inorder(v);
+            for (size_t idx = 0; idx < v.size(); ++idx) {
+                if (idx) std::cout << ' ';
+                std::cout << v[idx];
             }
             std::cout << std::endl;
         }

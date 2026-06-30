@@ -1,10 +1,9 @@
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <queue>
-#include <thread>
 #include <vector>
-// cleaned up version
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <iostream>
+#include <condition_variable>
 
 template <typename Item>
 class BlockingQueue {
@@ -14,7 +13,7 @@ public:
     void push(Item value) {
         std::unique_lock<std::mutex> lock(mutex_);
         room_available_.wait(lock, [this] { return queue_.size() < max_items_; });
-        queue_.emplace(std::move(value));
+        queue_.push(std::move(value));
         item_ready_.notify_one();
     }
 
@@ -44,7 +43,7 @@ struct SimConfig {
     std::size_t producers, consumers, items;
 };
 
-SimConfig read_config() {
+SimConfig load_config() {
     SimConfig cfg{};
     std::string key;
     std::cin >> key >> cfg.producers >> key >> cfg.consumers >> key >> cfg.items;
@@ -52,20 +51,20 @@ SimConfig read_config() {
 }
 
 int main() {
-    SimConfig conf = read_config();
-    BlockingQueue<int> queue(conf.items);
+    SimConfig cfg = load_config();
+    BlockingQueue<int> queue(cfg.items);
     std::vector<std::thread> threads;
 
-    std::size_t per = conf.items / conf.producers;
-    std::size_t extra = conf.items % conf.producers;
+    std::size_t per = cfg.items / cfg.producers;
+    std::size_t extra = cfg.items % cfg.producers;
     int next_id = 0;
 
-    for (std::size_t pi = 0; pi < conf.producers; ++pi) {
+    for (std::size_t pi = 0; pi < cfg.producers; pi++) {
         std::size_t batch = per + (pi < extra ? 1 : 0);
         int start = next_id;
         next_id += static_cast<int>(batch);
         threads.emplace_back([&, batch, start] {
-            for (std::size_t i = 0; i < batch; ++i)
+            for (std::size_t i = 0; i < batch; i++)
                 queue.push(start + static_cast<int>(i));
         });
     }
@@ -73,20 +72,20 @@ int main() {
     std::mutex done_lock;
     std::size_t consumed = 0;
 
-    for (std::size_t ci = 0; ci < conf.consumers; ++ci) {
+    for (std::size_t ci = 0; ci < cfg.consumers; ci++) {
         threads.emplace_back([&] {
             while (true) {
                 int value = queue.pop();
                 if (value < 0) break;
-                std::cout << "got " << value << '\n';
+                std::cout << "got " << value << std::endl;
                 bool finished = false;
                 {
                     std::lock_guard<std::mutex> guard(done_lock);
                     ++consumed;
-                    finished = (consumed == conf.items);
+                    finished = (consumed == cfg.items);
                 }
                 if (finished) {
-                    for (std::size_t id = 0; id < conf.consumers; ++id)
+                    for (std::size_t k = 0; k < cfg.consumers; k++)
                         queue.push(-1);
                 }
             }
@@ -94,6 +93,6 @@ int main() {
     }
 
     for (auto& th : threads) th.join();
-    std::cout << "DONE\n";
+    std::cout << "DONE" << std::endl;
     return 0;
 }

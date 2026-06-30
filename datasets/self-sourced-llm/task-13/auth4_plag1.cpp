@@ -1,10 +1,9 @@
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <queue>
 #include <thread>
 #include <vector>
-// cleaned up version
+#include <queue>
+#include <mutex>
+#include <iostream>
+#include <condition_variable>
 
 namespace sync {
 
@@ -12,7 +11,7 @@ template <typename T>
 class BlockingQueue {
     std::queue<T> inner_;
     std::size_t max_;
-    mutable std::mutex map_;
+    mutable std::mutex m_;
     std::condition_variable can_push_;
     std::condition_variable can_pop_;
 
@@ -20,14 +19,14 @@ public:
     explicit BlockingQueue(std::size_t capacity) : max_(capacity) {}
 
     void push(T value) {
-        std::unique_lock<std::mutex> ul(map_);
+        std::unique_lock<std::mutex> ul(m_);
         can_push_.wait(ul, [&] { return inner_.size() < max_; });
-        inner_.push(std::move(value));
+        inner_.emplace(std::move(value));
         can_pop_.notify_one();
     }
 
     T pop() {
-        std::unique_lock<std::mutex> ul(map_);
+        std::unique_lock<std::mutex> ul(m_);
         can_pop_.wait(ul, [&] { return !inner_.empty(); });
         T v = std::move(inner_.front());
         inner_.pop();
@@ -36,7 +35,7 @@ public:
     }
 
     std::size_t size() const {
-        std::lock_guard<std::mutex> g(map_);
+        std::lock_guard<std::mutex> g(m_);
         return inner_.size();
     }
 };
@@ -56,22 +55,22 @@ int main() {
     std::size_t got = 0;
 
     int id = 0;
-    for (std::size_t i = 0; i < P; ++i) {
+    for (std::size_t i = 0; i < P; i++) {
         std::size_t cnt = N / P + (i < N % P ? 1 : 0);
         int from = id;
         id += static_cast<int>(cnt);
         threads.emplace_back([&, cnt, from]() {
-            for (std::size_t j = 0; j < cnt; ++j)
+            for (std::size_t j = 0; j < cnt; j++)
                 box.push(from + static_cast<int>(j));
         });
     }
 
-    for (std::size_t i = 0; i < C; ++i) {
+    for (std::size_t i = 0; i < C; i++) {
         threads.emplace_back([&]() {
             for (;;) {
-                int n = box.pop();
-                if (n == -1) return;
-                std::cout << "got " << n << '\n';
+                int v = box.pop();
+                if (v == -1) return;
+                std::cout << "got " << v << std::endl;
                 bool last = false;
                 {
                     std::lock_guard<std::mutex> lk(stop_mu);
@@ -79,7 +78,7 @@ int main() {
                     last = (got == N);
                 }
                 if (last) {
-                    for (std::size_t piece = 0; piece < C; ++piece)
+                    for (std::size_t t = 0; t < C; t++)
                         box.push(-1);
                 }
             }
@@ -87,6 +86,6 @@ int main() {
     }
 
     for (auto& th : threads) th.join();
-    std::cout << "DONE\n";
+    std::cout << "DONE" << std::endl;
     return 0;
 }

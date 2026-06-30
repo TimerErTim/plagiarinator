@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <iostream>
-// cleaned up version
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -36,14 +36,14 @@ public:
         std::swap(cap, o.cap);
     }
 
-    void push_back(const T& lhs) {
+    void push_back(const T& x) {
         if (n == cap) reserve_more();
-        heap[n++] = lhs;
+        heap[n++] = x;
     }
 
-    void push_back(T&& lhs) {
+    void push_back(T&& x) {
         if (n == cap) reserve_more();
-        heap[n++] = std::move(lhs);
+        heap[n++] = std::move(x);
     }
 
     T& operator[](std::size_t i) { return heap[i]; }
@@ -55,19 +55,19 @@ public:
 };
 
 int main() {
-    std::size_t id;
-    std::cin >> id;
+    std::size_t k;
+    std::cin >> k;
     Vector<int> raw;
-    for (std::size_t i = 0; i < id; ++i) {
-        int n;
-        std::cin >> n;
-        raw.push_back(n);
+    for (std::size_t i = 0; i < k; i++) {
+        int val;
+        std::cin >> val;
+        raw.push_back(val);
     }
 
     Vector<int> out;
-    for (std::size_t i = 0; i < raw.size(); ++i) {
+    for (std::size_t i = 0; i < raw.size(); i++) {
         bool found = false;
-        for (std::size_t j = 0; j < out.size(); ++j) {
+        for (std::size_t j = 0; j < out.size(); j++) {
             if (out[j] == raw[i]) { found = true; break; }
         }
         if (!found) out.push_back(raw[i]);
@@ -76,12 +76,12 @@ int main() {
     long long sum = 0;
     long long prod = 1;
     const long long P = 1000000007LL;
-    for (std::size_t i = 0; i < out.size(); ++i) {
+    for (std::size_t i = 0; i < out.size(); i++) {
         sum += out[i];
         prod = (prod * out[i]) % P;
     }
 
-    std::cout << "SUM " << sum << '\n';
-    std::cout << "PROD " << prod << '\n';
+    std::cout << "SUM " << sum << std::endl;
+    std::cout << "PROD " << prod << std::endl;
     return 0;
 }

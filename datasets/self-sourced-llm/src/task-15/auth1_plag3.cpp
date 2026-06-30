@@ -1,22 +1,22 @@
+#include <variant>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Self>
+class Formattable {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Self*>(this)->format();
     }
 };
 
-struct Distance : Printable<Distance> {
+struct DistReading : Formattable<DistReading> {
     double meters;
-    explicit Distance(double m) : meters(m) {}
+    explicit DistReading(double m) : meters(m) {}
     std::string format() const {
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(1) << "Distance: " << meters << " m";
@@ -24,9 +24,9 @@ struct Distance : Printable<Distance> {
     }
 };
 
-struct Mass : Printable<Mass> {
+struct WeightReading : Formattable<WeightReading> {
     double kg;
-    explicit Mass(double k) : kg(k) {}
+    explicit WeightReading(double k) : kg(k) {}
     std::string format() const {
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(1) << "Mass: " << kg << " kg";
@@ -34,9 +34,9 @@ struct Mass : Printable<Mass> {
     }
 };
 
-struct Temperature : Printable<Temperature> {
+struct HeatReading : Formattable<HeatReading> {
     double celsius;
-    explicit Temperature(double c) : celsius(c) {}
+    explicit HeatReading(double c) : celsius(c) {}
     std::string format() const {
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(1) << "Temp: " << celsius << " C";
@@ -45,23 +45,23 @@ struct Temperature : Printable<Temperature> {
 };
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void emit_line(const Formattable<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> rows;
+    std::vector<std::variant<DistReading, WeightReading, HeatReading>> records;
     std::string kind;
     while (std::cin >> kind && kind != "END") {
         double val;
         std::cin >> val;
-        if (kind == "DIST") rows.emplace_back(Distance{val});
-        else if (kind == "MASS") rows.emplace_back(Mass{val});
-        else if (kind == "TEMP") rows.emplace_back(Temperature{val});
+        if (kind == "DIST") records.emplace_back(DistReading{val});
+        else if (kind == "MASS") records.emplace_back(WeightReading{val});
+        else if (kind == "TEMP") records.emplace_back(HeatReading{val});
     }
 
-    for (const auto& obj : rows) {
-        std::visit([](const auto& m) { print_metric(m); }, obj);
+    for (std::size_t rev = records.size(); rev-- > 0;) {
+        std::visit([](const auto& m) { emit_line(m); }, records[records.size() - 1 - rev]);
     }
     return 0;
 }

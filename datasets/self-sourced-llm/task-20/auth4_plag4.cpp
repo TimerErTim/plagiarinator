@@ -1,8 +1,7 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename Elem, std::size_t Cap>
 class FixedStack {
@@ -60,7 +59,7 @@ bool is_balanced(const std::string& s) {
                 break;
         }
     }
-    return st.size() == 0;
+    return !st.size();
 }
 
 int main() {
@@ -71,3 +70,5 @@ int main() {
     }
     return 0;
 }
+
+#include <cstdio>

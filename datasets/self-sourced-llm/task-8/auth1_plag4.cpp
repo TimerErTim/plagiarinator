@@ -1,32 +1,31 @@
 #include <stdexcept>
-#include <iostream>
 #include <vector>
-// quick submit
+#include <iostream>
 
 template <typename T>
 class Matrix {
     std::size_t rows_, cols_;
-    std::vector<T> word_;
+    std::vector<T> values_;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), word_(r * c, T{}) {}
+    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), values_(r * c, T{}) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return word_[r * cols_ + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return word_[r * cols_ + c]; }
+    T& operator()(std::size_t r, std::size_t c) { return values_[r * cols_ + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return values_[r * cols_ + c]; }
 
     std::size_t rows() const { return rows_; }
     std::size_t cols() const { return cols_; }
 
     Matrix operator+(const Matrix& other) const {
         Matrix out(rows_, cols_);
-        for (std::size_t i = 0; i < word_.size(); ++i)
-            out.word_[i] = word_[i] + other.word_[i];
+        for (std::size_t i = 0; i < values_.size(); ++i)
+            out.values_[i] = values_[i] + other.values_[i];
         return out;
     }
 
     Matrix operator*(const Matrix& other) const {
         if (cols_ != other.rows_)
-            throw std::runtime_error("dim");
+            throw std::runtime_error("bad dims");
         Matrix out(rows_, other.cols_);
         for (std::size_t i = 0; i < rows_; ++i)
             for (std::size_t j = 0; j < other.cols_; ++j) {
@@ -63,10 +62,10 @@ Matrix<T> readMatrix(std::istream& in) {
 
 int main() {
     try {
-        Matrix<int> A = readMatrix<int>(std::cin);
-        Matrix<int> B = readMatrix<int>(std::cin);
-        Matrix<int> C = A * B + A;
-        std::cout << C;
+        Matrix<int> M1 = readMatrix<int>(std::cin);
+        Matrix<int> M2 = readMatrix<int>(std::cin);
+        Matrix<int> Out = M1 * M2 + M1;
+        std::cout << Out;
     } catch (...) {
         std::cout << "ERROR\n";
     }

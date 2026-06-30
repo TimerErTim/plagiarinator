@@ -1,10 +1,10 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// found this online and tweaked it
 
 namespace {
 constexpr double kPi = 3.141592653589793;
@@ -19,70 +19,70 @@ public:
 };
 
 class Circle : public Shape {
-    double ref;
+    double rad_;
 public:
-    explicit Circle(double r) : ref(r) {}
-    double area() const override { return kPi * ref * ref; }
-    double perimeter() const override { return 2.0 * kPi * ref; }
+    explicit Circle(double r) : rad_(r) {}
+    double area() const override { return kPi * rad_ * rad_; }
+    double perimeter() const override { return 2.0 * kPi * rad_; }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double argW, argH;
+    double wLen, hLen;
 public:
-    Rectangle(double w, double h) : argW(w), argH(h) {}
-    double area() const override { return argW * argH; }
-    double perimeter() const override { return 2.0 * (argW + argH); }
+    Rectangle(double w, double h) : wLen(w), hLen(h) {}
+    double area() const override { return wLen * hLen; }
+    double perimeter() const override { return 2.0 * (wLen + hLen); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double val;
+    double sideLen;
 public:
-    explicit Triangle(double e) : val(e) {}
+    explicit Triangle(double e) : sideLen(e) {}
     double area() const override {
-        return std::sqrt(3.0) * val * val / 4.0;
+        return std::sqrt(3.0) * sideLen * sideLen / 4.0;
     }
-    double perimeter() const override { return 3.0 * val; }
+    double perimeter() const override { return 3.0 * sideLen; }
     std::string name() const override { return "Triangle"; }
 };
 
-static void print_shape(const Shape& figure) {
+static void print_shape(const Shape& fig) {
     std::cout << std::fixed << std::setprecision(4)
-              << figure.name() << ": area=" << figure.area()
-              << ", perimeter=" << figure.perimeter() << std::endl;
+              << fig.name() << ": area=" << fig.area()
+              << ", perimeter=" << fig.perimeter() << std::endl;
 }
 
-static void accumulate(const Shape& figure, double& area_sum, double& peri_sum) {
-    area_sum += figure.area();
-    peri_sum += figure.perimeter();
+static void accumulate(const Shape& fig, double& aSum, double& pSum) {
+    aSum += fig.area();
+    pSum += fig.perimeter();
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> gallery;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "DONE") break;
-        if (ln == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> coll;
+    std::string tok;
+    while (std::cin >> tok) {
+        if (tok == "DONE") break;
+        if (tok == "CIRCLE") {
             double r; std::cin >> r;
-            gallery.emplace_back(std::make_unique<Circle>(r));
-        } else if (ln == "RECT") {
+            coll.emplace_back(std::make_unique<Circle>(r));
+        } else if (tok == "RECT") {
             double w, h; std::cin >> w >> h;
-            gallery.emplace_back(std::make_unique<Rectangle>(w, h));
-        } else if (ln == "TRI") {
+            coll.emplace_back(std::make_unique<Rectangle>(w, h));
+        } else if (tok == "TRI") {
             double s; std::cin >> s;
-            gallery.emplace_back(std::make_unique<Triangle>(s));
+            coll.emplace_back(std::make_unique<Triangle>(s));
         }
     }
 
-    double areaTotal = 0.0, periTotal = 0.0;
-    for (const std::unique_ptr<Shape>& shapePtr : gallery) {
-        print_shape(*shapePtr);
-        accumulate(*shapePtr, areaTotal, periTotal);
+    double totA = 0.0, totP = 0.0;
+    for (std::size_t j = 0; j < coll.size(); ++j) {
+        print_shape(*coll[j]);
+        accumulate(*coll[j], totA, totP);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << areaTotal << std::endl
-              << "TOTAL perimeter=" << periTotal << std::endl;
+              << "TOTAL area=" << totA << std::endl
+              << "TOTAL perimeter=" << totP << std::endl;
     return 0;
 }

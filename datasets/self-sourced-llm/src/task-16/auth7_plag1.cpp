@@ -1,8 +1,7 @@
-#include <iostream>
 #include <memory>
+#include <iostream>
 #include <string>
 #include <unordered_map>
-// cleaned up version
 
 struct Image {
     std::string name;
@@ -14,25 +13,25 @@ public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
         if (auto sp = lookup(key)) return sp;
         auto img = std::shared_ptr<Image>(new Image{key, pixels});
-        content_[key] = img;
+        slots_[key] = img;
         return img;
     }
 
     std::size_t size() const {
         std::size_t n = 0;
-        for (const auto& kv : content_)
-            if (!kv.second.expired()) ++n;
+        for (const auto& kv : slots_)
+            if (!kv.second.expired()) n++;
         return n;
     }
 
-    void drop_all() { content_.clear(); }
+    void drop_all() { slots_.clear(); }
 
 private:
-    std::unordered_map<std::string, std::weak_ptr<Image>> content_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> slots_;
 
     std::shared_ptr<Image> lookup(const std::string& key) const {
-        auto it = content_.find(key);
-        if (it == content_.end()) return {};
+        auto it = slots_.find(key);
+        if (it == slots_.end()) return {};
         return it->second.lock();
     }
 
@@ -47,24 +46,24 @@ public:
 
 int main() {
     ImageCache c;
-    std::string token;
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token == "LOAD") {
-            std::string id;
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op == "LOAD") {
+            std::string k;
             int v;
-            std::cin >> id >> v;
+            std::cin >> k >> v;
             {
-                auto handle = c.load(id, v);
-                std::cout << "loaded " << handle->name << " pixels=" << handle->pixel_count << std::endl;
+                auto im = c.load(k, v);
+                std::cout << "loaded " << im->name << " pixels=" << im->pixel_count << std::endl;
             }
-        } else if (token == "QUERY") {
-            std::string id;
-            std::cin >> id;
-            int n;
-            if (c.query(id, n)) std::cout << "pixels=" << n << std::endl;
+        } else if (op == "QUERY") {
+            std::string k;
+            std::cin >> k;
+            int px;
+            if (c.query(k, px)) std::cout << "pixels=" << px << std::endl;
             else std::cout << "EXPIRED\n";
-        } else if (token == "DROP_ALL") {
+        } else if (op == "DROP_ALL") {
             c.drop_all();
         }
     }

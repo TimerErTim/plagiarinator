@@ -1,6 +1,5 @@
-#include <utility>
 #include <iostream>
-// adapted from classmate submission
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -57,31 +56,34 @@ public:
     const T* data() const { return storage; }
 };
 
-bool includes(const Vector<int>& vec, int target) {
+static bool has_value(const Vector<int>& vec, int target)
+{
     for (std::size_t i = 0; i < vec.size(); ++i)
         if (vec[i] == target) return true;
     return false;
 }
 
-int main()
+static void filter_unique(const Vector<int>& src, Vector<int>& dst)
+{
+    for (std::size_t i = 0; i < src.size(); ++i) {
+        if (!has_value(dst, src[i]))
+            dst.push_back(src[i]);
+    }
+}
 
+int main()
 {
     std::size_t n;
     std::cin >> n;
     Vector<int> input;
-    for (std::size_t i = 0; i < n; ++i) 
-{
+    for (std::size_t i = 0; i < n; ++i) {
         int x;
         std::cin >> x;
         input.push_back(x);
     }
 
     Vector<int> filtered;
-    for (std::size_t i = 0; i < input.size(); ++i) 
-{
-        if (!includes(filtered, input[i]))
-            filtered.push_back(input[i]);
-    }
+    filter_unique(input, filtered);
 
     long long total = 0, mult = 1;
     const long long MOD = 1'000'000'007LL;

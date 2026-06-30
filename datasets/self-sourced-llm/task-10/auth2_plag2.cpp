@@ -1,7 +1,6 @@
-#include <vector>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <vector>
 
 using std::cin;
 using std::cout;
@@ -19,7 +18,8 @@ class IntBST
     void freeTree(Node* n)
     {
         if (!n) return;
-        freeTree(n->L); freeTree(n->R);
+        freeTree(n->L);
+        freeTree(n->R);
         delete n;
     }
 
@@ -31,11 +31,12 @@ class IntBST
         return n;
     }
 
-    bool has(const Node* n, int x) const
+    bool probe(const Node* n, int x) const
     {
         if (!n) return false;
         if (x == n->v) return true;
-        return x < n->v ? has(n->L, x) : has(n->R, x);
+        if (x < n->v) return probe(n->L, x);
+        return probe(n->R, x);
     }
 
     void walk(const Node* n, vector<int>& out) const
@@ -46,14 +47,18 @@ class IntBST
         walk(n->R, out);
     }
 
-    Node* leftmost(Node* n) const { while (n && n->L) n = n->L; return n; }
+    Node* leftmost(Node* n) const
+    {
+        while (n && n->L) n = n->L;
+        return n;
+    }
 
 public:
     IntBST(): root(0) {}
     ~IntBST() { freeTree(root); }
 
     void insert(int x) { root = ins(root, x); }
-    bool contains(int x) const { return has(root, x); }
+    bool contains(int x) const { return probe(root, x); }
     void inorder(vector<int>& out) const { walk(root, out); }
 
     int& min() { return leftmost(root)->v; }
@@ -64,29 +69,36 @@ public:
 int main()
 {
     IntBST t;
-    string s;
-    while (cin >> s)
-{
-        if (s == "DONE") break;
-        t.insert(stoi(s));
+    string cmd;
+    while (cin >> cmd)
+    {
+        if (cmd == "DONE") break;
+        t.insert(stoi(cmd));
     }
-    while (cin >> s)
-{
-        if (s == "DONE") break;
-        if (s == "CONTAINS")
-{
+    while (cin >> cmd)
+    {
+        if (cmd == "DONE") break;
+        if (cmd == "CONTAINS")
+        {
             int x; cin >> x;
-            cout << (t.contains(x) ? "YES" : "NO") << endl;
-        } else if (s == "MIN") {
-            if (t.empty()) cout << "EMPTY" << endl;
-            else cout << t.min() << endl;
-        } else if (s == "PRINT") {
-            vector<int> v; t.inorder(v);
-            for (size_t i = 0; i < v.size(); ++i) {
-                if (i) cout << ' ';
-                cout << v[i];
+            if (t.contains(x)) cout << "YES\n";
+            else cout << "NO\n";
+        }
+        else if (cmd == "MIN")
+        {
+            if (t.empty()) cout << "EMPTY\n";
+            else cout << t.min() << '\n';
+        }
+        else if (cmd == "PRINT")
+        {
+            vector<int> v;
+            t.inorder(v);
+            for (size_t j = 0; j < v.size(); ++j)
+            {
+                if (j) cout << ' ';
+                cout << v[j];
             }
-            cout << endl;
+            cout << '\n';
         }
     }
     return 0;

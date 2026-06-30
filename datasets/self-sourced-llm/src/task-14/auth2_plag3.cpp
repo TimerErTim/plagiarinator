@@ -1,11 +1,11 @@
+#include <utility>
 #include <iostream>
-// TODO: refactor later
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
 public:
-    Vector() : body_(nullptr), sz_(0), cap_(0) {}
-
+    Vector() : buf_(nullptr), sz_(0), cap_(0) {}
     ~Vector() { release(); }
 
     Vector(const Vector& rhs) { copy_from(rhs); }
@@ -20,36 +20,36 @@ public:
 
     void push_back(const T& val) {
         ensure(capacity_needed());
-        body_[sz_++] = val;
+        buf_[sz_++] = val;
     }
 
     void push_back(T&& val) {
         ensure(capacity_needed());
-        body_[sz_++] = std::move(val);
+        buf_[sz_++] = std::move(val);
     }
 
-    T& operator[](std::size_t idx) { return body_[idx]; }
-    const T& operator[](std::size_t idx) const { return body_[idx]; }
+    T& operator[](std::size_t idx) { return buf_[idx]; }
+    const T& operator[](std::size_t idx) const { return buf_[idx]; }
 
     std::size_t size() const { return sz_; }
-    T* data() { return body_; }
-    const T* data() const { return body_; }
+    T* data() { return buf_; }
+    const T* data() const { return buf_; }
 
 private:
-    T* body_;
+    T* buf_;
     std::size_t sz_, cap_;
 
     void release() {
-        delete[] body_;
-        body_ = nullptr;
+        delete[] buf_;
+        buf_ = nullptr;
         sz_ = cap_ = 0;
     }
 
     void copy_from(const Vector& rhs) {
         sz_ = rhs.sz_;
         cap_ = rhs.cap_;
-        body_ = new T[cap_];
-        for (std::size_t i = 0; i < sz_; ++i) body_[i] = rhs.body_[i];
+        buf_ = new T[cap_];
+        for (std::size_t i = sz_; i-- > 0;) buf_[i] = rhs.buf_[i];
     }
 
     std::size_t capacity_needed() const { return sz_ == cap_ ? (cap_ ? cap_ * 2 : 4) : cap_; }
@@ -57,9 +57,9 @@ private:
     void ensure(std::size_t need) {
         if (need == cap_) {
             T* next = new T[need];
-            for (std::size_t i = 0; i < sz_; ++i) next[i] = body_[i];
-            delete[] body_;
-            body_ = next;
+            for (std::size_t i = 0; i < sz_; ++i) next[i] = buf_[i];
+            delete[] buf_;
+            buf_ = next;
             cap_ = need;
         }
     }
@@ -79,7 +79,7 @@ int main() {
     for (std::size_t i = 0; i < nums.size(); ++i) {
         const int& cur = nums[i];
         bool dup = false;
-        for (std::size_t j = 0; j < deduped.size(); ++j) {
+        for (std::size_t j = deduped.size(); j-- > 0;) {
             if (deduped[j] == cur) { dup = true; break; }
         }
         if (!dup) deduped.push_back(cur);
@@ -91,6 +91,7 @@ int main() {
         s += deduped[i];
         p = (p * deduped[i]) % M;
     }
-    std::cout << "SUM " << s << "\nPROD " << p << '\n';
+    std::cout << "SUM " << s << '\n';
+    std::cout << "PROD " << p << '\n';
     return 0;
 }

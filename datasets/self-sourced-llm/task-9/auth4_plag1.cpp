@@ -1,9 +1,8 @@
-#include <functional>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
-// cleaned up version
+#include <functional>
 
 class Sensor {
     double temp;
@@ -11,14 +10,15 @@ class Sensor {
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> fn) {
-        list.push_back({name, fn});
+        list.emplace_back(name, fn);
     }
 
     void set_value(double celsius) {
         temp = celsius;
-        for (auto& p : list) {
+        for (std::size_t i = 0; i < list.size(); i++) {
+            auto& p = list[i];
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << p.first << "] temp=" << temp << '\n';
+                      << "[" << p.first << "] temp=" << temp << std::endl;
             p.second(temp);
         }
     }
@@ -28,13 +28,13 @@ public:
 
 int main() {
     Sensor s;
-    std::string token;
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token == "SUB") {
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op == "SUB") {
             std::string n; std::cin >> n;
             s.subscribe(n, [](double) {});
-        } else if (token == "SET") {
+        } else if (op == "SET") {
             double v; std::cin >> v;
             s.set_value(v);
         }

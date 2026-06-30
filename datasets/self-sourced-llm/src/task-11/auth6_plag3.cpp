@@ -1,47 +1,47 @@
+#include <string>
 #include <unordered_map>
 #include <iostream>
 #include <iomanip>
-#include <string>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 struct ConfigStore {
-    std::unordered_map<std::string, std::string> values;
+    std::unordered_map<std::string, std::string> vals;
 
-    bool has(const std::string& key) const {
-        return values.find(key) != values.end();
+    bool has(const std::string& k) const {
+        return vals.find(k) != vals.end();
     }
 
-    const std::string& get(const std::string& key) const {
-        return values.at(key);
+    const std::string& get(const std::string& k) const {
+        return vals.at(k);
     }
 };
 
-void print_one(std::ostream& out, double v) {
-    out << std::fixed << std::setprecision(2) << v;
+void print_one(std::ostream& sink, double v) {
+    sink << std::fixed << std::setprecision(2) << v;
 }
 
 template <typename T>
-void print_one(std::ostream& out, T&& v) {
-    out << std::forward<T>(v);
+void print_one(std::ostream& sink, T&& v) {
+    sink << std::forward<T>(v);
 }
 
 struct LogWriter {
     std::ostream& os;
-    bool sep = false;
+    bool gap = false;
 
     template <typename U>
     void step(U&& u) {
-        if (sep) os << ' ';
-        else sep = true;
+        if (gap) os << ' ';
+        else gap = true;
         print_one(os, std::forward<U>(u));
     }
 };
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    LogWriter w{out};
-    (w.step(std::forward<Args>(args)), ...);
-    out << '\n';
+void log_line(std::ostream& sink, Args&&... args) {
+    LogWriter lw{sink};
+    (lw.step(std::forward<Args>(args)), ...);
+    sink << std::endl;
 }
 
 bool numeric_token(const std::string& s) {
@@ -49,29 +49,29 @@ bool numeric_token(const std::string& s) {
     std::size_t k = 0;
     if (s[0] == '-' || s[0] == '+') k = 1;
     if (k >= s.size()) return false;
-    for (; k < s.size(); ++k)
-        if (s[k] < '0' || s[k] > '9') return false;
+    for (std::size_t n = s.size(); n-- > k;)
+        if (s[n] < '0' || s[n] > '9') return false;
     return true;
 }
 
 int main() {
-    ConfigStore box;
+    ConfigStore cfg;
     {
-        std::string buf;
-        while (std::getline(std::cin, buf) && !buf.empty()) {
-            auto p = buf.find('=');
-            box.values[buf.substr(0, p)] = buf.substr(p + 1);
+        std::string row;
+        while (std::getline(std::cin, row) && !row.empty()) {
+            auto eq = row.find('=');
+            cfg.vals[row.substr(0, eq)] = row.substr(eq + 1);
         }
     }
 
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            log_line(std::cout, box.has(val) ? box.get(val) : std::string("MISSING"));
-        } else if (ln == "LOG") {
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "GET") {
+            std::string k;
+            std::cin >> k;
+            log_line(std::cout, cfg.has(k) ? cfg.get(k) : std::string("MISSING"));
+        } else if (verb == "LOG") {
             std::string t1, t2, t3;
             if (!(std::cin >> t1)) continue;
             if (std::cin >> t2) {

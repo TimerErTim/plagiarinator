@@ -1,7 +1,6 @@
+#include <string>
 #include <iostream>
 #include <memory>
-#include <string>
-// cleaned up version
 
 class Parser;
 
@@ -70,15 +69,14 @@ std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
 }
 
 int main() {
-    Parser p;
-    p.state = std::make_unique<HeaderState>();
-    std::string s;
-    while (std::getline(std::cin, s))
-        p.state = p.state->handle(p, s);
+    Parser machine;
+    machine.state = std::make_unique<HeaderState>();
+    for (std::string raw; std::getline(std::cin, raw);)
+        machine.state = machine.state->handle(machine, raw);
 
-    std::cout << "INFO: " << p.info_count << std::endl;
-    std::cout << "WARN: " << p.warn_count << std::endl;
-    std::cout << "ERROR: " << p.error_count << std::endl;
-    std::cout << "REJECTED: " << p.rejected << std::endl;
+    std::cout << "INFO: " << machine.info_count << std::endl;
+    std::cout << "WARN: " << machine.warn_count << std::endl;
+    std::cout << "ERROR: " << machine.error_count << std::endl;
+    std::cout << "REJECTED: " << machine.rejected << std::endl;
     return 0;
 }

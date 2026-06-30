@@ -1,9 +1,8 @@
-#include <iomanip>
-#include <iostream>
-#include <string>
-#include <unordered_map>
 #include <vector>
-// cleaned up version
+#include <unordered_map>
+#include <string>
+#include <iostream>
+#include <iomanip>
 
 template<typename T>
 struct LogFmt {
@@ -25,35 +24,35 @@ void log_line(std::ostream& out, Ts&&... xs) {
         LogFmt<std::decay_t<Ts>>::write(out, std::forward<Ts>(xs));
         sp = " ";
     }(), ...);
-    out << '\n';
+    out << std::endl;
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> map_;
+    std::unordered_map<std::string, std::string> m_;
 
 public:
     void load(std::istream& src) {
-        std::string lhs;
-        while (std::getline(src, lhs) && lhs.length())
-            map_[lhs.substr(0, lhs.find('='))] = lhs.substr(lhs.find('=') + 1);
+        std::string l;
+        while (std::getline(src, l) && l.length())
+            m_[l.substr(0, l.find('='))] = l.substr(l.find('=') + 1);
     }
 
-    bool has(const std::string& key) const { return map_.find(key) != map_.end(); }
+    bool has(const std::string& key) const { return m_.find(key) != m_.end(); }
 
-    const std::string& get(const std::string& key) const { return map_.find(key)->second; }
+    const std::string& get(const std::string& key) const { return m_.find(key)->second; }
 };
 
-bool all_digits(const std::string& s, size_t rhs) {
-    for (; rhs < s.size(); ++rhs) if (s[rhs] < '0' || s[rhs] > '9') return false;
-    return rhs > 0;
+bool digit_run(const std::string& s, size_t b) {
+    for (; b < s.size(); b++) if (s[b] < '0' || s[b] > '9') return false;
+    return b > 0;
 }
 
-bool is_intish(const std::string& s) {
+bool intish(const std::string& s) {
     size_t i = (!s.empty() && (s[0] == '-' || s[0] == '+')) ? 1 : 0;
-    return all_digits(s, i);
+    return digit_run(s, i);
 }
 
-void handle_log(std::istream& in) {
+void process_log(std::istream& in) {
     std::vector<std::string> parts;
     std::string w;
     while (in >> w) {
@@ -62,20 +61,20 @@ void handle_log(std::istream& in) {
                 in.putback(w[static_cast<std::size_t>(i)]);
             break;
         }
-        parts.push_back(w);
+        parts.emplace_back(w);
     }
     if (parts.size() == 3) {
-        if (is_intish(parts[1]))
+        if (intish(parts[1]))
             log_line(std::cout, parts[0], std::stoi(parts[1]), parts[2]);
         else
             log_line(std::cout, parts[0], parts[1], parts[2]);
     } else if (parts.size() == 2) {
-        if (is_intish(parts[1]))
+        if (intish(parts[1]))
             log_line(std::cout, parts[0], std::stoi(parts[1]));
         else
             log_line(std::cout, parts[0], parts[1]);
     } else if (parts.size() == 1) {
-        if (is_intish(parts[0])) log_line(std::cout, std::stoi(parts[0]));
+        if (intish(parts[0])) log_line(std::cout, std::stoi(parts[0]));
         else log_line(std::cout, parts[0]);
     } else {
         log_line(std::cout);
@@ -83,19 +82,19 @@ void handle_log(std::istream& in) {
 }
 
 int main() {
-    Config conf;
-    conf.load(std::cin);
+    Config c;
+    c.load(std::cin);
 
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") return 0;
-        if (piece == "GET") {
-            std::string id;
-            std::cin >> id;
-            if (conf.has(id)) std::cout << conf.get(id) << '\n';
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") return 0;
+        if (op == "GET") {
+            std::string k;
+            std::cin >> k;
+            if (c.has(k)) std::cout << c.get(k) << std::endl;
             else std::cout << "MISSING\n";
-        } else if (piece == "LOG") {
-            handle_log(std::cin);
+        } else if (op == "LOG") {
+            process_log(std::cin);
         }
     }
     return 0;

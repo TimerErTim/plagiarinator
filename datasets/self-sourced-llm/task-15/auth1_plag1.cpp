@@ -1,10 +1,9 @@
+#include <vector>
+#include <variant>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
-#include <vector>
-// cleaned up version
 
 template <typename Derived>
 class Printable {
@@ -15,11 +14,11 @@ public:
 };
 
 struct Distance : Printable<Distance> {
-    double value_m;
-    explicit Distance(double m) : value_m(m) {}
+    double meters;
+    explicit Distance(double m) : meters(m) {}
     std::string format() const {
         std::ostringstream oss;
-        oss << std::fixed << std::setprecision(1) << "Distance: " << value_m << " m";
+        oss << std::fixed << std::setprecision(1) << "Distance: " << meters << " m";
         return oss.str();
     }
 };
@@ -35,33 +34,33 @@ struct Mass : Printable<Mass> {
 };
 
 struct Temperature : Printable<Temperature> {
-    double value_c;
-    explicit Temperature(double c) : value_c(c) {}
+    double celsius;
+    explicit Temperature(double c) : celsius(c) {}
     std::string format() const {
         std::ostringstream oss;
-        oss << std::fixed << std::setprecision(1) << "Temp: " << value_c << " C";
+        oss << std::fixed << std::setprecision(1) << "Temp: " << celsius << " C";
         return oss.str();
     }
 };
 
 template <typename T>
 void print_metric(const Printable<T>& metric) {
-    std::cout << metric.to_string() << '\n';
+    std::cout << metric.to_string() << std::endl;
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> items;
-    std::string kind;
-    while (std::cin >> kind && kind != "END") {
-        double n;
-        std::cin >> n;
-        if (kind == "DIST") items.emplace_back(Distance{n});
-        else if (kind == "MASS") items.emplace_back(Mass{n});
-        else if (kind == "TEMP") items.emplace_back(Temperature{n});
+    std::vector<std::variant<Distance, Mass, Temperature>> entries;
+    std::string label;
+    while (std::cin >> label && label != "END") {
+        double num;
+        std::cin >> num;
+        if (label == "DIST") entries.push_back(Distance{num});
+        else if (label == "MASS") entries.push_back(Mass{num});
+        else if (label == "TEMP") entries.push_back(Temperature{num});
     }
 
-    for (const auto& elem : items) {
-        std::visit([](const auto& m) { print_metric(m); }, elem);
+    for (const auto& row : entries) {
+        std::visit([](const auto& m) { print_metric(m); }, row);
     }
     return 0;
 }

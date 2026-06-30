@@ -1,58 +1,65 @@
-#include <vector>
-#include <utility>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <functional>
-// adapted from classmate submission
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 class Sensor {
-    double tempVal;
+    double celsiusReading;
     std::vector<std::pair<std::string, std::function<void(double)>>> callbacks;
 
-    void dispatch(double value) const {
+    void emitLine(const std::pair<std::string, std::function<void(double)>>& pair, double value) const
+    {
+        std::cout << std::fixed << std::setprecision(1)
+                  << "[" << pair.first << "] temp=" << value << std::endl;
+        if (pair.second)
+            pair.second(value);
+    }
+
+    void dispatch(double value) const
+    {
         for (const auto& pair : callbacks)
-{
-            std::cout << std::fixed << std::setprecision(1)
-                      << "[" << pair.first << "] temp=" << value << std::endl;
-            if (pair.second)
-                pair.second(value);
-        }
+            emitLine(pair, value);
     }
 
 public:
-    void subscribe(const std::string& name, std::function<void(double)> callback) {
+    void subscribe(const std::string& name, std::function<void(double)> callback)
+    {
         callbacks.emplace_back(name, std::move(callback));
     }
 
-    void set_value(double celsius) {
-        tempVal = celsius;
-        dispatch(tempVal);
+    void set_value(double celsius)
+    {
+        celsiusReading = celsius;
+        dispatch(celsiusReading);
     }
 
-    double value() const { return tempVal; }
+    double value() const { return celsiusReading; }
 };
 
 int main()
 {
-    Sensor s;
+    Sensor sensor;
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    std::string op;
-    while (input >> op)
-{
-        if (op == "END") break;
-        if (op == "SUB")
-{
+    std::string token;
+    while (input >> token)
+    {
+        if (token == "END") break;
+        if (token == "SUB")
+        {
             std::string name;
             input >> name;
-            s.subscribe(name, [](double) {});
-        } else if (op == "SET") {
+            sensor.subscribe(name, [](double) {});
+        }
+        else if (token == "SET")
+        {
             double temp;
             input >> temp;
-            s.set_value(temp);
+            sensor.set_value(temp);
         }
     }
     return 0;

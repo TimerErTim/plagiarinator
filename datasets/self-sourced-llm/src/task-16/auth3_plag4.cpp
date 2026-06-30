@@ -1,8 +1,7 @@
-#include <memory>
 #include <iostream>
-#include <unordered_map>
+#include <memory>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 struct Image {
     std::string name;
@@ -10,33 +9,33 @@ struct Image {
 };
 
 class ImageCache {
-    mutable std::unordered_map<std::string, std::weak_ptr<Image>> data_;
+    mutable std::unordered_map<std::string, std::weak_ptr<Image>> map_;
 
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        auto it = data_.find(key);
-        if (it != data_.end()) {
+        auto it = map_.find(key);
+        if (it != map_.end()) {
             if (auto sp = it->second.lock()) return sp;
-            if (it->second.expired()) data_.erase(it);
+            if (it->second.expired()) map_.erase(it);
         }
-        if (auto sp = data_[key].lock()) return sp;
+        if (auto sp = map_[key].lock()) return sp;
         auto created = std::shared_ptr<Image>(new Image{key, pixels});
-        data_[key] = created;
+        map_[key] = created;
         return created;
     }
 
     std::size_t size() const {
         std::size_t c = 0;
-        for (auto& e : data_)
+        for (auto& e : map_)
             if (!e.second.expired()) ++c;
         return c;
     }
 
-    void drop_all() { data_.clear(); }
+    void drop_all() { map_.clear(); }
 
     bool alive(const std::string& key, int& pixels_out) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) return false;
+        auto it = map_.find(key);
+        if (it == map_.end()) return false;
         if (auto sp = it->second.lock()) {
             pixels_out = sp->pixel_count;
             return true;
@@ -47,24 +46,24 @@ public:
 
 int main() {
     ImageCache ic;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "LOAD") {
+    std::string tok;
+    while (std::cin >> tok) {
+        if (tok == "END") break;
+        if (tok == "LOAD") {
             std::string id;
-            int num;
-            std::cin >> id >> num;
+            int px;
+            std::cin >> id >> px;
             {
-                std::shared_ptr<Image> msg = ic.load(id, num);
-                std::cout << "loaded " << msg->name << " pixels=" << msg->pixel_count << '\n';
+                std::shared_ptr<Image> img = ic.load(id, px);
+                std::cout << "loaded " << img->name << " pixels=" << img->pixel_count << '\n';
             }
-        } else if (elem == "QUERY") {
+        } else if (tok == "QUERY") {
             std::string id;
             std::cin >> id;
-            int num;
-            if (ic.alive(id, num)) std::cout << "pixels=" << num << '\n';
+            int px;
+            if (ic.alive(id, px)) std::cout << "pixels=" << px << '\n';
             else std::cout << "EXPIRED\n";
-        } else if (elem == "DROP_ALL") {
+        } else if (tok == "DROP_ALL") {
             ic.drop_all();
         }
     }

@@ -1,32 +1,36 @@
-#include <vector>
-#include <unordered_map>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <iostream>
 #include <functional>
-// adapted from classmate submission
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-class Config {
-    std::unordered_map<std::string, std::string> dict;
+class Config
+{
+    std::unordered_map<std::string, std::string> kv;
 
 public:
-    void readUntilBlank(std::istream& in) {
+    void readUntilBlank(std::istream& in)
+    {
         std::string s;
-        while (std::getline(in, s) && !s.empty()) {
+        while (std::getline(in, s) && !s.empty())
+        {
             std::size_t i = s.find('=');
-            dict[s.substr(0, i)] = s.substr(i + 1);
+            kv[s.substr(0, i)] = s.substr(i + 1);
         }
     }
 
-    bool has(const std::string& key) const { return dict.count(key); }
+    bool has(const std::string& key) const { return kv.count(key); }
 
-    const std::string& get(const std::string& key) const { return dict.at(key); }
+    const std::string& get(const std::string& key) const { return kv.at(key); }
 };
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    auto emit = [&](auto&& v) {
+void log_line(std::ostream& out, Args&&... args)
+{
+    auto emit = [&](auto&& v)
+    {
         using V = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<V, double>)
             out << std::fixed << std::setprecision(2) << v;
@@ -38,7 +42,8 @@ void log_line(std::ostream& out, Args&&... args) {
     out << '\n';
 }
 
-bool isSignedInteger(const std::string& text) {
+static bool isSignedInteger(const std::string& text)
+{
     std::size_t idx = 0;
     if (!text.empty() && (text[0] == '+' || text[0] == '-')) idx = 1;
     if (idx >= text.size()) return false;
@@ -47,76 +52,86 @@ bool isSignedInteger(const std::string& text) {
     return true;
 }
 
-void dispatchLog(const std::vector<std::string>& tokens) {
+static void log_small(const std::vector<std::string>& args)
+{
+    if (args.size() == 3)
+    {
+        if (isSignedInteger(args[1]))
+            log_line(std::cout, args[0], std::stoi(args[1]), args[2]);
+        else
+            log_line(std::cout, args[0], args[1], args[2]);
+    }
+    else if (args.size() == 2)
+    {
+        if (isSignedInteger(args[1]))
+            log_line(std::cout, args[0], std::stoi(args[1]));
+        else
+            log_line(std::cout, args[0], args[1]);
+    }
+    else if (args.size() == 1)
+    {
+        if (isSignedInteger(args[0])) log_line(std::cout, std::stoi(args[0]));
+        else log_line(std::cout, args[0]);
+    }
+    else log_line(std::cout);
+}
+
+void dispatchLog(const std::vector<std::string>& tokens)
+{
     std::vector<std::function<void(std::ostream&)>> printers;
-    for (const auto& t : tokens) {
-        if (isSignedInteger(t)) {
+    for (const auto& t : tokens)
+    {
+        if (isSignedInteger(t))
+        {
             int v = std::stoi(t);
             printers.push_back([v](std::ostream& o) { o << v; });
-        } else {
+        }
+        else
+        {
             printers.push_back([t](std::ostream& o) { o << t; });
         }
     }
-    for (std::size_t i = 0; i < printers.size(); ++i) {
-        if (i) std::cout << ' ';
-        printers[i](std::cout);
+    for (std::size_t k = printers.size(); k-- > 0;)
+    {
+        if (k + 1 < printers.size()) std::cout << ' ';
+        printers[k](std::cout);
     }
     std::cout << '\n';
 }
 
 int main()
+{
+    Config config;
+    config.readUntilBlank(std::cin);
 
-{
-    Config settings;
-    settings.readUntilBlank(std::cin);
-
-    std::string op;
-    while (std::cin >> op) 
-{
-        if (op == "END") break;
-        if (op == "GET") 
-{
-            std::string k;
-            std::cin >> k;
-            if (settings.has(k)) log_line(std::cout, settings.get(k));
+    std::string command;
+    while (std::cin >> command)
+    {
+        if (command == "END") break;
+        if (command == "GET")
+        {
+            std::string key;
+            std::cin >> key;
+            if (config.has(key)) log_line(std::cout, config.get(key));
             else log_line(std::cout, "MISSING");
-        } else if (op == "LOG") 
-{
+        }
+        else if (command == "LOG")
+        {
             std::vector<std::string> args;
-            std::string sym;
-            while (std::cin >> sym) 
-{
-                if (sym == "GET" || sym == "LOG" || sym == "END") 
-{
+            std::string piece;
+            while (std::cin >> piece)
+            {
+                if (piece == "GET" || piece == "LOG" || piece == "END")
+                {
                     std::cin.unget();
-                    for (std::size_t j = 0; j < sym.size(); ++j)
-                        std::cin.putback(sym[sym.size() - 1 - j]);
+                    for (std::size_t j = 0; j < piece.size(); ++j)
+                        std::cin.putback(piece[piece.size() - 1 - j]);
                     break;
                 }
-                args.push_back(sym);
+                args.push_back(piece);
             }
-            if (args.size() <= 3) 
-{
-                if (args.size() == 3) 
-{
-                    if (isSignedInteger(args[1]))
-                        log_line(std::cout, args[0], std::stoi(args[1]), args[2]);
-                    else
-                        log_line(std::cout, args[0], args[1], args[2]);
-                } else if (args.size() == 2) 
-{
-                    if (isSignedInteger(args[1]))
-                        log_line(std::cout, args[0], std::stoi(args[1]));
-                    else
-                        log_line(std::cout, args[0], args[1]);
-                } else if (args.size() == 1) 
-{
-                    if (isSignedInteger(args[0])) log_line(std::cout, std::stoi(args[0]));
-                    else log_line(std::cout, args[0]);
-                } else log_line(std::cout);
-            } else {
-                dispatchLog(args);
-            }
+            if (args.size() <= 3) log_small(args);
+            else dispatchLog(args);
         }
     }
     return 0;

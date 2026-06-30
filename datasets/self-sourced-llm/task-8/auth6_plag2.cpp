@@ -1,85 +1,71 @@
-#include <vector>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <vector>
 
-template <typename T>
+template<typename T>
 class Matrix {
-    std::size_t numRows;
-    std::size_t numCols;
-    std::vector<T> storage;
+    std::size_t rows, cols;
+    std::vector<T> data;
+
+    T dot(const Matrix& o, std::size_t i, std::size_t j) const {
+        T s = T{};
+        for (std::size_t k = 0; k < cols; ++k)
+            s += (*this)(i, k) * o(k, j);
+        return s;
+    }
 
 public:
-    Matrix(std::size_t rows, std::size_t cols)
-        : numRows(rows), numCols(cols), storage(rows * cols, T{}) {}
+    Matrix(std::size_t x, std::size_t y): rows(x), cols(y), data(x * y) {}
 
-    T& operator()(std::size_t row, std::size_t col) {
-        return storage[row * numCols + col];
+    T& operator()(std::size_t i, std::size_t j) { return data[i * cols + j]; }
+    const T& operator()(std::size_t i, std::size_t j) const { return data[i * cols + j]; }
+
+    std::size_t rows_count() const { return rows; }
+    std::size_t cols_count() const { return cols; }
+    std::size_t rows() const { return rows; }
+    std::size_t cols() const { return cols; }
+
+    Matrix operator+(const Matrix& o) const {
+        Matrix m(rows, cols);
+        for (std::size_t i = 0; i < data.size(); ++i)
+            m.data[i] = data[i] + o.data[i];
+        return m;
     }
 
-    const T& operator()(std::size_t row, std::size_t col) const {
-        return storage[row * numCols + col];
+    Matrix operator*(const Matrix& o) const {
+        Matrix m(rows, o.cols);
+        for (std::size_t i = 0; i < rows; ++i)
+            for (std::size_t j = 0; j < o.cols; ++j)
+                m(i, j) = dot(o, i, j);
+        return m;
     }
 
-    std::size_t rows() const { return numRows; }
-    std::size_t cols() const { return numCols; }
-
-    Matrix operator+(const Matrix& other) const {
-        Matrix sum(numRows, numCols);
-        for (std::size_t i = 0; i < storage.size(); ++i)
-            sum.storage[i] = storage[i] + other.storage[i];
-        return sum;
-    }
-
-    Matrix operator*(const Matrix& other) const {
-        Matrix product(numRows, other.numCols);
-        for (std::size_t i = 0; i < numRows; ++i)
-{
-            for (std::size_t j = 0; j < other.numCols; ++j)
-{
-                T total = T{};
-                for (std::size_t k = 0; k < numCols; ++k)
-                    total += (*this)(i, k) * other(k, j);
-                product(i, j) = total;
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+        for (std::size_t i = 0; i < m.rows; ++i)
+        {
+            for (std::size_t j = 0; j < m.cols; ++j)
+            {
+                if (j) os << ' ';
+                os << m(i, j);
             }
+            os << '\n';
         }
-        return product;
-    }
-
-    friend std::ostream& operator<<(std::ostream& stream, const Matrix& matrix) {
-        for (std::size_t i = 0; i < matrix.numRows; ++i)
-{
-            for (std::size_t j = 0; j < matrix.numCols; ++j)
-{
-                if (j > 0) stream << ' ';
-                stream << matrix(i, j);
-            }
-            stream << '\n';
-        }
-        return stream;
+        return os;
     }
 };
 
-template <typename T>
-Matrix<T> readFromStream(std::istream& in) {
-    std::size_t r, c;
-    in >> r >> c;
-    Matrix<T> m(r, c);
-    for (std::size_t i = 0; i < r; ++i)
-        for (std::size_t j = 0; j < c; ++j)
-            in >> m(i, j);
-    return m;
-}
-
-int main()
-{
-    Matrix<int> matA = readFromStream<int>(std::cin);
-    Matrix<int> matB = readFromStream<int>(std::cin);
-    if (matA.cols() != matB.rows()) {
-        std::cout << "ERROR" << std::endl;
-        return 0;
-    }
-    Matrix<int> result = matA * matB + matA;
-    std::cout << result;
+int main() {
+    std::size_t ra, ca, rb, cb;
+    std::cin >> ra >> ca;
+    Matrix<int> A(ra, ca);
+    for (std::size_t j = 0; j < ca; ++j)
+        for (std::size_t i = 0; i < ra; ++i)
+            std::cin >> A(i, j);
+    std::cin >> rb >> cb;
+    if (ca != rb) { std::cout << "ERROR\n"; return 0; }
+    Matrix<int> B(rb, cb);
+    for (std::size_t i = 0; i < rb; ++i)
+        for (std::size_t j = 0; j < cb; ++j)
+            std::cin >> B(i, j);
+    std::cout << A * B + A;
     return 0;
 }

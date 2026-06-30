@@ -1,7 +1,6 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
     std::string data_;
@@ -41,13 +40,13 @@ public:
 };
 
 static StringBuilder read_section(std::istream& in) {
-    std::string title_line;
-    std::getline(in, title_line);
-    if (!title_line.empty() && title_line.front() == ' ')
-        title_line.erase(0, 1);
+    std::string title_ln;
+    std::getline(in, title_ln);
+    if (!title_ln.empty() && title_ln.front() == ' ')
+        title_ln.erase(0, 1);
 
     StringBuilder part;
-    part.append("# ").append(title_line).append_line("");
+    part.append("# ").append(title_ln).append_line("");
 
     std::string content;
     while (std::getline(in, content)) {
@@ -60,11 +59,11 @@ static StringBuilder read_section(std::istream& in) {
 
 int main() {
     StringBuilder full;
-    std::string keyword;
+    std::string key;
 
-    while (std::cin >> keyword) {
-        if (keyword == "END") break;
-        if (keyword == "SECTION") {
+    while (std::cin >> key) {
+        if (key == "END") break;
+        if (key == "SECTION") {
             StringBuilder sec = read_section(std::cin);
             full.append(std::move(sec.str()));
         }

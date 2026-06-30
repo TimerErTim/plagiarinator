@@ -1,74 +1,84 @@
 #include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// borrowed from roommate's homework
 
-class StringBuilder {
+class StringBuilder
+{
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : body_(std::move(other.body_)) {
-        other.body_.clear();
+    StringBuilder(StringBuilder&& donor) noexcept : heap_(std::move(donor.heap_))
+    {
+        donor.heap_.clear();
     }
 
-    StringBuilder& operator=(StringBuilder&& other) noexcept {
-        body_ = std::move(other.body_);
-        other.body_.clear();
+    StringBuilder& operator=(StringBuilder&& donor) noexcept
+    {
+        heap_ = std::move(donor.heap_);
+        donor.heap_.clear();
         return *this;
     }
 
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& piece) {
-        body_.append(piece);
+    StringBuilder& append(const std::string& unit)
+    {
+        heap_.append(unit);
         return *this;
     }
 
-    StringBuilder& append(std::string&& piece) {
-        body_.append(std::move(piece));
+    StringBuilder& append(std::string&& unit)
+    {
+        heap_.append(std::move(unit));
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& piece) {
-        body_.append(piece);
-        body_.push_back('\n');
+    StringBuilder& append_line(const std::string& unit)
+    {
+        heap_.append(unit);
+        heap_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return body_; }
-    void clear() { body_.clear(); }
+    const std::string& str() const { return heap_; }
+    void clear() { heap_.clear(); }
 
 private:
-    std::string body_;
+    std::string heap_;
 };
 
-void consume_section(StringBuilder& doc, std::istream& in) {
-    std::string title;
-    std::getline(in, title);
-    if (!title.empty() && title[0] == ' ') title.erase(0, 1);
+static void ingest_block(StringBuilder& rollup, std::istream& in)
+{
+    std::string hdr;
+    std::getline(in, hdr);
+    if (!hdr.empty() && hdr[0] == ' ') hdr.erase(0, 1);
 
     StringBuilder local;
-    local.append("# ").append(title).append("\n");
+    local.append("# ").append(hdr).append("\n");
 
-    std::string line;
-    while (std::getline(in, line)) {
-        if (line.empty()) break;
-        local.append_line(line);
+    std::string row;
+    while (std::getline(in, row))
+    {
+        if (row.empty()) break;
+        local.append_line(row);
     }
     local.append("\n");
-    doc.append(std::move(local.str()));
+    rollup.append(std::move(local.str()));
 }
 
-int main() {
-    StringBuilder document;
-    std::string ln;
+int main()
+{
+    StringBuilder manuscript;
+    std::string opcode;
 
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "SECTION") consume_section(document, std::cin);
+    while (std::cin >> opcode)
+    {
+        if (opcode == "END") break;
+        if (opcode == "SECTION") ingest_block(manuscript, std::cin);
     }
 
-    std::cout << document.str();
+    std::cout << manuscript.str();
     return 0;
 }

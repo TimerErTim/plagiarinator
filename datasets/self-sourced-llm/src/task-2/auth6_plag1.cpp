@@ -1,7 +1,6 @@
+#include <string>
 #include <iostream>
 #include <sstream>
-#include <string>
-// cleaned up version
 
 template <typename T>
 class LinkedList {
@@ -11,14 +10,14 @@ class LinkedList {
         Node(const T& x) : value(x), next(nullptr) {}
     };
 
-    Node* head_;
-    std::size_t length_;
+    Node* front_;
+    std::size_t count_;
 
 public:
-    LinkedList() : head_(nullptr), length_(0) {}
+    LinkedList() : front_(nullptr), count_(0) {}
 
     ~LinkedList() {
-        Node* current = head_;
+        Node* current = front_;
         while (current != nullptr) {
             Node* doomed = current;
             current = current->next;
@@ -28,18 +27,20 @@ public:
 
     void push_back(const T& item) {
         Node* fresh = new Node(item);
-        if (head_ == nullptr)
-            head_ = fresh;
+        if (front_ == nullptr)
+            front_ = fresh;
         else {
-            Node* walker = head_;
-            while (walker->next != nullptr)
-                walker = walker->next;
-            walker->next = fresh;
+            Node* cursor = front_;
+            while (cursor->next != nullptr)
+                cursor = cursor->next;
+            cursor->next = fresh;
         }
-        length_++;
+        count_++;
     }
 
-    std::size_t size() const { return length_; }
+    void emplace_back(const T& item) { push_back(item); }
+
+    std::size_t size() const { return count_; }
 
     class Iterator {
         Node* node_;
@@ -48,12 +49,13 @@ public:
         T& operator*() { return node_->value; }
         const T& operator*() const { return node_->value; }
         Iterator& operator++() { node_ = node_->next; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
         bool operator!=(const Iterator& other) const { return node_ != other.node_; }
     };
 
-    Iterator begin() { return Iterator(head_); }
+    Iterator begin() { return Iterator(front_); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(head_); }
+    Iterator begin() const { return Iterator(front_); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -67,15 +69,15 @@ LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& seco
 
     while (it1 != end1 && it2 != end2) {
         if (*it1 <= *it2) {
-            combined.push_back(*it1);
-            ++it1;
+            combined.emplace_back(*it1);
+            it1++;
         } else {
-            combined.push_back(*it2);
-            ++it2;
+            combined.emplace_back(*it2);
+            it2++;
         }
     }
-    while (it1 != end1) { combined.push_back(*it1); ++it1; }
-    while (it2 != end2) { combined.push_back(*it2); ++it2; }
+    while (it1 != end1) { combined.emplace_back(*it1); ++it1; }
+    while (it2 != end2) { combined.emplace_back(*it2); ++it2; }
     return combined;
 }
 
@@ -87,7 +89,7 @@ namespace io {
         std::istringstream lineStream(buffer);
         int token;
         while (lineStream >> token)
-            seq.push_back(token);
+            seq.emplace_back(token);
         return seq;
     }
 }
@@ -97,12 +99,12 @@ int main() {
     LinkedList<int> seqB = io::readSequence(std::cin);
     LinkedList<int> merged = merge_sorted(seqA, seqB);
 
-    bool leading = true;
-    for (auto iter = merged.begin(); iter != merged.end(); ++iter) {
-        if (!leading) std::cout << ' ';
+    bool firstElem = true;
+    for (auto iter = merged.begin(); iter != merged.end(); iter++) {
+        if (!firstElem) std::cout << ' ';
         std::cout << *iter;
-        leading = false;
+        firstElem = false;
     }
-    std::cout << std::endl;
+    std::cout << '\n';
     return 0;
 }

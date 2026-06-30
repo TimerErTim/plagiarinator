@@ -1,43 +1,50 @@
 #include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <vector>
 
 template <typename T>
-class LinkedList {
-    struct Node {
+class LinkedList
+{
+    struct Node
+    {
         T value;
         Node* next;
         Node(const T& v) : value(v), next(nullptr) {}
     };
-    Node* hd_;
-    std::size_t cnt_;
+    Node* head_;
+    std::size_t count_;
+
+    Node* findLast(Node* start) const
+    {
+        while (start->next) start = start->next;
+        return start;
+    }
 
 public:
-    LinkedList() : hd_(nullptr), cnt_(0) {}
-    ~LinkedList() {
-        while (hd_)
-{
-            Node* tmp = hd_;
-            hd_ = hd_->next;
+    LinkedList() : head_(nullptr), count_(0) {}
+    ~LinkedList()
+    {
+        while (head_)
+        {
+            Node* tmp = head_;
+            head_ = head_->next;
             delete tmp;
         }
     }
 
-    void push_back(const T& v) {
+    void push_back(const T& v)
+    {
         Node* n = new Node(v);
-        if (!hd_) hd_ = n;
-        else {
-            Node* cur = hd_;
-            while (cur->next) cur = cur->next;
-            cur->next = n;
-        }
-        ++cnt_;
+        if (!head_) head_ = n;
+        else findLast(head_)->next = n;
+        ++count_;
     }
 
-    std::size_t size() const { return cnt_; }
+    std::size_t size() const { return count_; }
 
-    class Iterator {
+    class Iterator
+    {
         Node* node_;
     public:
         explicit Iterator(Node* n) : node_(n) {}
@@ -46,45 +53,48 @@ public:
         bool operator!=(const Iterator& o) const { return node_ != o.node_; }
     };
 
-    Iterator begin() const { return Iterator(hd_); }
+    Iterator begin() const { return Iterator(head_); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& a, const LinkedList<T>& b) {
+LinkedList<T> merge_sorted(const LinkedList<T>& a, const LinkedList<T>& b)
+{
     LinkedList<T> result;
     auto ia = a.begin(), ib = b.begin();
     auto ea = a.end(), eb = b.end();
     while (ia != ea && ib != eb)
-{
-        if (*ia <= *ib)
-{ result.push_back(*ia); ++ia; }
+    {
+        if (*ia <= *ib) { result.push_back(*ia); ++ia; }
         else { result.push_back(*ib); ++ib; }
     }
-    while (ia != ea)
-{ result.push_back(*ia); ++ia; }
-    while (ib != eb)
-{ result.push_back(*ib); ++ib; }
+    for (; ia != ea; ++ia) result.push_back(*ia);
+    for (; ib != eb; ++ib) result.push_back(*ib);
     return result;
 }
 
-static LinkedList<int> readLine(std::istream& in) {
+static LinkedList<int> readLine(std::istream& in)
+{
     LinkedList<int> list;
     std::string line;
     if (!std::getline(in, line)) return list;
     std::istringstream ss(line);
+    std::vector<int> vals;
     int x;
-    while (ss >> x) list.push_back(x);
+    while (ss >> x) vals.push_back(x);
+    for (std::size_t i = 0; i < vals.size(); ++i)
+        list.push_back(vals[i]);
     return list;
 }
 
 int main()
 {
-    LinkedList<int> seqLeft = readLine(std::cin);
-    LinkedList<int> seqRight = readLine(std::cin);
-    LinkedList<int> out = merge_sorted(seqLeft, seqRight);
+    LinkedList<int> left = readLine(std::cin);
+    LinkedList<int> right = readLine(std::cin);
+    LinkedList<int> merged = merge_sorted(left, right);
     bool first = true;
-    for (auto it = out.begin(); it != out.end(); ++it) {
+    for (auto it = merged.begin(); it != merged.end(); ++it)
+    {
         if (!first) std::cout << ' ';
         std::cout << *it;
         first = false;

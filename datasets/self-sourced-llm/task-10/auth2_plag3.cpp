@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 using std::cin;
 using std::cout;
@@ -13,75 +13,100 @@ using size_t = std::size_t;
 
 class IntBST
 {
-    struct Node { int v; Node* L; Node* R; Node(int x): v(x), L(0), R(0) {} };
-    Node* root;
+    struct Cell { int payload; Cell* west; Cell* east; Cell(int p): payload(p), west(0), east(0) {} };
+    Cell* apex;
 
-    void freeTree(Node* n)
+    void purge(Cell* c)
     {
-        if (!n) return;
-        freeTree(n->L); freeTree(n->R);
-        delete n;
+        if (!c) return;
+        vector<Cell*> order;
+        vector<Cell*> pending;
+        pending.push_back(c);
+        while (!pending.empty())
+        {
+            Cell* cur = pending.back();
+            pending.pop_back();
+            order.push_back(cur);
+            if (cur->west) pending.push_back(cur->west);
+            if (cur->east) pending.push_back(cur->east);
+        }
+        for (size_t k = order.size(); k-- > 0;)
+            delete order[k];
     }
 
-    Node* ins(Node* n, int x)
+    Cell* graft(Cell* c, int p)
     {
-        if (!n) return new Node(x);
-        if (x < n->v) n->L = ins(n->L, x);
-        else if (x > n->v) n->R = ins(n->R, x);
-        return n;
+        if (!c) return new Cell(p);
+        if (p < c->payload) c->west = graft(c->west, p);
+        else if (p > c->payload) c->east = graft(c->east, p);
+        return c;
     }
 
-    bool has(const Node* n, int x) const
+    bool scan(const Cell* c, int p) const
     {
-        if (!n) return false;
-        if (x == n->v) return true;
-        return x < n->v ? has(n->L, x) : has(n->R, x);
+        if (!c) return false;
+        if (p == c->payload) return true;
+        if (p < c->payload) return scan(c->west, p);
+        return scan(c->east, p);
     }
 
-    void walk(const Node* n, vector<int>& out) const
+    void emit(const Cell* c, vector<int>& buf) const
     {
-        if (!n) return;
-        walk(n->L, out);
-        out.push_back(n->v);
-        walk(n->R, out);
+        if (!c) return;
+        emit(c->west, buf);
+        buf.push_back(c->payload);
+        emit(c->east, buf);
     }
 
-    Node* leftmost(Node* n) const { while (n && n->L) n = n->L; return n; }
+    Cell* floor(Cell* c) const
+    {
+        while (c && c->west) c = c->west;
+        return c;
+    }
 
 public:
-    IntBST(): root(0) {}
-    ~IntBST() { freeTree(root); }
+    IntBST(): apex(0) {}
+    ~IntBST() { purge(apex); }
 
-    void insert(int x) { root = ins(root, x); }
-    bool contains(int x) const { return has(root, x); }
-    void inorder(vector<int>& out) const { walk(root, out); }
+    void insert(int x) { apex = graft(apex, x); }
+    bool contains(int x) const { return scan(apex, x); }
+    void inorder(vector<int>& out) const { emit(apex, out); }
 
-    int& min() { return leftmost(root)->v; }
-    const int& min() const { return leftmost(root)->v; }
-    bool empty() const { return root == 0; }
+    int& min() { return floor(apex)->payload; }
+    const int& min() const { return floor(apex)->payload; }
+    bool empty() const { return apex == 0; }
 };
 
 int main()
 {
-    IntBST hold;
-    string s;
-    while (cin >> s) {
-        if (s == "DONE") break;
-        hold.insert(stoi(s));
+    IntBST holder;
+    string piece;
+    while (cin >> piece)
+    {
+        if (piece == "DONE") break;
+        holder.insert(stoi(piece));
     }
-    while (cin >> s) {
-        if (s == "DONE") break;
-        if (s == "CONTAINS") {
+    while (cin >> piece)
+    {
+        if (piece == "DONE") break;
+        if (piece == "CONTAINS")
+        {
             int x; cin >> x;
-            cout << (hold.contains(x) ? "YES" : "NO") << endl;
-        } else if (s == "MIN") {
-            if (hold.empty()) cout << "EMPTY" << endl;
-            else cout << hold.min() << endl;
-        } else if (s == "PRINT") {
-            vector<int> v; hold.inorder(v);
-            for (size_t i = 0; i < v.size(); ++i) {
-                if (i) cout << ' ';
-                cout << v[i];
+            cout << (holder.contains(x) ? "YES" : "NO") << endl;
+        }
+        else if (piece == "MIN")
+        {
+            if (holder.empty()) cout << "EMPTY" << endl;
+            else cout << holder.min() << endl;
+        }
+        else if (piece == "PRINT")
+        {
+            vector<int> v;
+            holder.inorder(v);
+            for (size_t idx = 0; idx < v.size(); ++idx)
+            {
+                if (idx > 0) cout << ' ';
+                cout << v[idx];
             }
             cout << endl;
         }

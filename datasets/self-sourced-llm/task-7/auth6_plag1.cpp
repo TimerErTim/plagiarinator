@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <iostream>
+#include <vector>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <vector>
-// cleaned up version
+#include <iostream>
+#include <iomanip>
 
 class Vehicle {
 public:
@@ -59,34 +58,34 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
 
 int main() {
     std::vector<std::unique_ptr<Vehicle>> vehicles;
-    std::vector<double> kms;
-    std::string s;
+    std::vector<double> tripDistances;
+    std::string lineBuffer;
 
-    while (std::getline(std::cin, s)) {
-        std::istringstream lineStream(s);
-        std::string mode;
-        lineStream >> mode;
-        std::unique_ptr<Vehicle> vehicle = create_vehicle(mode, lineStream);
+    while (std::getline(std::cin, lineBuffer)) {
+        std::istringstream lineStream(lineBuffer);
+        std::string kindToken;
+        lineStream >> kindToken;
+        std::unique_ptr<Vehicle> vehicle = create_vehicle(kindToken, lineStream);
         if (!vehicle) {
-            std::cout << "ERROR" << std::endl;
+            std::cout << "ERROR\n";
             continue;
         }
         double distanceKm;
         lineStream >> distanceKm;
         vehicles.emplace_back(std::move(vehicle));
-        kms.push_back(distanceKm);
+        tripDistances.push_back(distanceKm);
     }
 
-    double total = 0.0;
-    for (std::size_t i = 0; i < vehicles.size(); ++i) {
-        double liters = vehicles[i]->fuel_needed(kms[i]);
-        total += liters;
-        std::cout << "Trip " << i + 1 << ": "
-                  << vehicles[i]->type()
+    double totalLiters = 0.0;
+    for (std::size_t tripIndex = 0; tripIndex < vehicles.size(); tripIndex++) {
+        double liters = vehicles[tripIndex]->fuel_needed(tripDistances[tripIndex]);
+        totalLiters += liters;
+        std::cout << "Trip " << tripIndex + 1 << ": "
+                  << vehicles[tripIndex]->type()
                   << " needs " << std::fixed << std::setprecision(2)
-                  << liters << " liters" << std::endl;
+                  << liters << " liters\n";
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2)
-              << total << " liters" << std::endl;
+              << totalLiters << " liters\n";
     return 0;
 }

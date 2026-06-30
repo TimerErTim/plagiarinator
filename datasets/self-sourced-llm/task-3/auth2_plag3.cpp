@@ -1,11 +1,11 @@
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-// from lab partner
+#include <vector>
+// borrowed from roommate's homework
 
 using std::cin;
 using std::cout;
@@ -18,21 +18,22 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-struct GraphNode {
-    std::string label;
-    std::vector<std::shared_ptr<GraphNode>> edges;
+struct GraphNode
+{
+    string tag;
+    vector<shared_ptr<GraphNode>> adj;
 };
 
 class Graph
 {
-    unordered_map<string, shared_ptr<GraphNode>> pool;
+    unordered_map<string, shared_ptr<GraphNode>> lookup;
 
     shared_ptr<GraphNode> ensure(const string& id)
     {
-        if (pool.count(id)) return pool[id];
+        if (lookup.count(id)) return lookup[id];
         auto n = make_shared<GraphNode>();
-        n->label = id;
-        pool[id] = n;
+        n->tag = id;
+        lookup[id] = n;
         return n;
     }
 
@@ -41,23 +42,27 @@ public:
 
     void addEdge(const string& a, const string& b)
     {
-        ensure(a)->edges.push_back(ensure(b));
+        ensure(a)->adj.push_back(ensure(b));
     }
 
     bool query(const string& src, const string& dst) const
     {
-        auto it = pool.find(src);
-        if (it == pool.end()) return false;
+        auto it = lookup.find(src);
+        if (it == lookup.end()) return false;
         queue<shared_ptr<GraphNode>> q;
         unordered_set<string> seen;
         q.push(it->second);
         seen.insert(src);
-        while (!q.empty()) {
+        while (!q.empty())
+        {
             auto cur = q.front(); q.pop();
-            if (cur->label == dst) return true;
-            for (auto& n : cur->edges) {
-                if (!seen.count(n->label)) {
-                    seen.insert(n->label);
+            if (cur->tag == dst) return true;
+            for (std::size_t k = cur->adj.size(); k-- > 0;)
+            {
+                auto& n = cur->adj[k];
+                if (!seen.count(n->tag))
+                {
+                    seen.insert(n->tag);
                     q.push(n);
                 }
             }
@@ -68,19 +73,23 @@ public:
 
 int main()
 {
-    Graph obj;
-    string ln;
-    while (cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "ADD_NODE") {
+    Graph dag;
+    string op_v;
+    while (cin >> op_v)
+    {
+        if (op_v == "END") break;
+        if (op_v == "ADD_NODE")
+        {
             string n; cin >> n;
-            obj.addNode(n);
-        } else if (ln == "ADD_EDGE") {
+            dag.addNode(n);
+        } else if (op_v == "ADD_EDGE")
+        {
             string u, v; cin >> u >> v;
-            obj.addEdge(u, v);
-        } else if (ln == "QUERY") {
+            dag.addEdge(u, v);
+        } else if (op_v == "QUERY")
+        {
             string u, v; cin >> u >> v;
-            cout << (obj.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            cout << (dag.query(u, v) ? "REACHABLE" : "UNREACHABLE") << endl;
         }
     }
     return 0;

@@ -14,8 +14,8 @@ class LRUCache {
     List elem_;
     std::unordered_map<Key, Iter> ref_;
 
-    void promote(Iter ref_) {
-        elem_.splice(elem_.begin(), elem_, ref_);
+    void promote(Iter pos) {
+        elem_.splice(elem_.begin(), elem_, pos);
     }
 
     void evictIfNeeded() {

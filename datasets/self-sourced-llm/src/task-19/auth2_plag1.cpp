@@ -1,49 +1,48 @@
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <sstream>
+#include <iostream>
 
 class StringBuilder {
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : content_(std::move(o.content_)) {}
+    StringBuilder(StringBuilder&& o) noexcept : chunks_(std::move(o.chunks_)) {}
     StringBuilder& operator=(StringBuilder&& o) noexcept {
-        content_ = std::move(o.content_);
+        chunks_ = std::move(o.chunks_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s) {
-        content_ += s;
+        chunks_ += s;
         return *this;
     }
 
     StringBuilder& append(std::string&& s) {
-        content_ += std::move(s);
+        chunks_ += std::move(s);
         return *this;
     }
 
     StringBuilder& append_line(const std::string& s) {
-        content_.append(s);
-        content_.push_back('\n');
+        chunks_.append(s);
+        chunks_.emplace_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return content_; }
-    void clear() { content_.clear(); }
+    const std::string& str() const { return chunks_; }
+    void clear() { chunks_.clear(); }
 
 private:
-    std::string content_;
+    std::string chunks_;
 };
 
 int main() {
-    StringBuilder output;
+    StringBuilder document;
 
-    for (std::string token; std::cin >> token;) {
-        if (token == "END") break;
-        if (token != "SECTION") continue;
+    for (std::string cmd; std::cin >> cmd;) {
+        if (cmd == "END") break;
+        if (cmd != "SECTION") continue;
 
         std::string heading;
         std::getline(std::cin, heading);
@@ -52,16 +51,16 @@ int main() {
         std::ostringstream block;
         block << "# " << heading << std::endl;
 
-        std::string s;
-        while (std::getline(std::cin, s)) {
-            if (s.empty()) break;
-            block << s << std::endl;
+        std::string entry;
+        while (std::getline(std::cin, entry)) {
+            if (entry.empty()) break;
+            block << entry << std::endl;
         }
         block << std::endl;
 
-        output.append(std::move(block.str()));
+        document.append(std::move(block.str()));
     }
 
-    std::cout << output.str();
+    std::cout << document.str();
     return 0;
 }

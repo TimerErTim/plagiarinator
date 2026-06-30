@@ -1,63 +1,62 @@
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <sstream>
+#include <iostream>
 
 struct Number { int value; };
-struct Add { int lhs, rhs; };
-struct Sub { int lhs, rhs; };
-struct Mul { int lhs, rhs; };
-struct Div { int lhs, rhs; };
+struct Add { int l, r; };
+struct Sub { int l, r; };
+struct Mul { int l, r; };
+struct Div { int l, r; };
 
 using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
 namespace {
 
-int walk_eval(const Expr& e) {
+int visit_eval(const Expr& e) {
     struct Fn {
         int operator()(Number n) const { return n.value; }
-        int operator()(Add lhs) const { return walk_eval(Expr{Number{lhs.lhs}}) + walk_eval(Expr{Number{lhs.rhs}}); }
-        int operator()(Sub s) const { return s.lhs - s.rhs; }
-        int operator()(Mul m) const { return m.lhs * m.rhs; }
+        int operator()(Add a) const { return visit_eval(Expr{Number{a.l}}) + visit_eval(Expr{Number{a.r}}); }
+        int operator()(Sub s) const { return s.l - s.r; }
+        int operator()(Mul m) const { return m.l * m.r; }
         int operator()(Div d) const {
-            if (d.rhs == 0) return 1 << 30;
-            return d.lhs / d.rhs;
+            if (d.r == 0) return 1 << 30;
+            return d.l / d.r;
         }
     };
     return std::visit(Fn{}, e);
 }
 
-Expr bin_node(int lhs, int rhs, char op) {
+Expr make_bin(int l, int r, char op) {
     switch (op) {
-        case '+': return Add{lhs, rhs};
-        case '-': return Sub{lhs, rhs};
-        case '*': return Mul{lhs, rhs};
-        default: return Div{lhs, rhs};
+        case '+': return Add{l, r};
+        case '-': return Sub{l, r};
+        case '*': return Mul{l, r};
+        default: return Div{l, r};
     }
 }
 
 }  // namespace
 
 int main() {
-    std::string s;
-    while (std::getline(std::cin, s) && !s.empty()) {
-        std::vector<Expr> pile;
-        std::istringstream rd(s);
-        std::string elem;
-        while (rd >> elem) {
-            if (elem == "+" || elem == "-" || elem == "*" || elem == "/") {
-                int rhs = walk_eval(pile.back()); pile.pop_back();
-                int lhs = walk_eval(pile.back()); pile.pop_back();
-                pile.push_back(bin_node(lhs, rhs, elem[0]));
+    std::string text;
+    while (std::getline(std::cin, text) && !text.empty()) {
+        std::vector<Expr> st;
+        std::istringstream rd(text);
+        std::string item;
+        while (rd >> item) {
+            if (item == "+" || item == "-" || item == "*" || item == "/") {
+                int b = visit_eval(st.back()); st.pop_back();
+                int a = visit_eval(st.back()); st.pop_back();
+                st.emplace_back(make_bin(a, b, item[0]));
             } else {
-                pile.emplace_back(Number{std::stoi(elem)});
+                st.emplace_back(Number{std::stoi(item)});
             }
         }
-        int ans = walk_eval(pile.back());
-        if (ans == (1 << 30)) std::cout << "ERROR\n";
-        else std::cout << ans << '\n';
+        int ans = visit_eval(st.back());
+        if (ans == (1 << 30)) std::cout << "ERROR" << std::endl;
+        else std::cout << ans << std::endl;
     }
     return 0;
 }

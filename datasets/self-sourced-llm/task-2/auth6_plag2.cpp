@@ -1,38 +1,42 @@
-#include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
 
 template <typename T>
-class LinkedList {
-    struct Node {
+class LinkedList
+{
+    struct Node
+    {
         T value;
         Node* next;
         Node(const T& x) : value(x), next(nullptr) {}
     };
 
-    Node* hd_;
+    Node* head_;
     std::size_t length_;
 
 public:
-    LinkedList() : hd_(nullptr), length_(0) {}
+    LinkedList() : head_(nullptr), length_(0) {}
 
-    ~LinkedList() {
-        Node* current = hd_;
+    ~LinkedList()
+    {
+        Node* current = head_;
         while (current != nullptr)
-{
+        {
             Node* doomed = current;
             current = current->next;
             delete doomed;
         }
     }
 
-    void push_back(const T& item) {
+    void push_back(const T& item)
+    {
         Node* fresh = new Node(item);
-        if (hd_ == nullptr)
-            hd_ = fresh;
-        else {
-            Node* walker = hd_;
+        if (head_ == nullptr)
+            head_ = fresh;
+        else
+        {
+            Node* walker = head_;
             while (walker->next != nullptr)
                 walker = walker->next;
             walker->next = fresh;
@@ -42,7 +46,8 @@ public:
 
     std::size_t size() const { return length_; }
 
-    class Iterator {
+    class Iterator
+    {
         Node* node_;
     public:
         explicit Iterator(Node* n) : node_(n) {}
@@ -52,14 +57,15 @@ public:
         bool operator!=(const Iterator& other) const { return node_ != other.node_; }
     };
 
-    Iterator begin() { return Iterator(hd_); }
+    Iterator begin() { return Iterator(head_); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(hd_); }
+    Iterator begin() const { return Iterator(head_); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& second) {
+LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& second)
+{
     LinkedList<T> combined;
     auto it1 = first.begin();
     auto it2 = second.begin();
@@ -67,47 +73,45 @@ LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& seco
     auto end2 = second.end();
 
     while (it1 != end1 && it2 != end2)
-{
+    {
         if (*it1 <= *it2)
-{
+        {
             combined.push_back(*it1);
             ++it1;
-        } else {
+        }
+        else
+        {
             combined.push_back(*it2);
             ++it2;
         }
     }
-    while (it1 != end1)
-{ combined.push_back(*it1); ++it1; }
-    while (it2 != end2)
-{ combined.push_back(*it2); ++it2; }
+    while (it1 != end1) { combined.push_back(*it1); ++it1; }
+    while (it2 != end2) { combined.push_back(*it2); ++it2; }
     return combined;
-}
-
-namespace io {
-    LinkedList<int> readSequence(std::istream& stream) {
-        LinkedList<int> seq;
-        std::string buffer;
-        std::getline(stream, buffer);
-        std::istringstream lineStream(buffer);
-        int token;
-        while (lineStream >> token)
-            seq.push_back(token);
-        return seq;
-    }
 }
 
 int main()
 {
-    LinkedList<int> seqLeft = io::readSequence(std::cin);
-    LinkedList<int> seqRight = io::readSequence(std::cin);
-    LinkedList<int> out = merge_sorted(seqLeft, seqRight);
+    LinkedList<int> seqA, seqB;
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        std::string buffer;
+        std::getline(std::cin, buffer);
+        std::istringstream lineStream(buffer);
+        int token;
+        LinkedList<int>& target = pass ? seqB : seqA;
+        while (lineStream >> token)
+            target.push_back(token);
+    }
 
-    bool sp = true;
-    for (auto iter = out.begin(); iter != out.end(); ++iter) {
-        if (!sp) std::cout << ' ';
+    LinkedList<int> merged = merge_sorted(seqA, seqB);
+
+    for (std::size_t idx = 0; idx < merged.size(); ++idx)
+    {
+        if (idx > 0) std::cout << ' ';
+        auto iter = merged.begin();
+        for (std::size_t j = 0; j < idx; ++j) ++iter;
         std::cout << *iter;
-        sp = false;
     }
     std::cout << std::endl;
     return 0;

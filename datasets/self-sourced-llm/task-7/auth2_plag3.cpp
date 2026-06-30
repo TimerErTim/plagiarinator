@@ -4,7 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
-// TODO: refactor later
+// borrowed from lab partner
 
 using std::cin;
 using std::cout;
@@ -29,67 +29,67 @@ public:
     virtual string type() const = 0;
 };
 
-class Car : public Vehicle
+class AutoUnit : public Vehicle
 {
-    double rate;
+    double burnRate;
 public:
-    Car(double r): rate(r) {}
-    double fuel_needed(double km) const override { return rate * km / 100.0; }
+    AutoUnit(double r): burnRate(r) {}
+    double fuel_needed(double km) const override { return burnRate * km / 100.0; }
     string type() const override { return "CAR"; }
 };
 
-class Truck : public Vehicle
+class HaulerUnit : public Vehicle
 {
-    double rate;
+    double burnRate;
 public:
-    Truck(double r): rate(r) {}
-    double fuel_needed(double km) const override { return rate * km; }
+    HaulerUnit(double r): burnRate(r) {}
+    double fuel_needed(double km) const override { return burnRate * km; }
     string type() const override { return "TRUCK"; }
 };
 
-class Bike : public Vehicle
+class PedalUnit : public Vehicle
 {
 public:
     double fuel_needed(double) const override { return 0.0; }
     string type() const override { return "BIKE"; }
 };
 
-unique_ptr<Vehicle> create_vehicle(const string& kind, istream& cfg)
+unique_ptr<Vehicle> buildRide(const string& tag, istream& specStream)
 {
-    if (kind == "CAR") {
-        double x; cfg >> x;
-        return make_unique<Car>(x);
+    if (tag == "CAR") {
+        double x; specStream >> x;
+        return make_unique<AutoUnit>(x);
     }
-    if (kind == "TRUCK") {
-        double x; cfg >> x;
-        return make_unique<Truck>(x);
+    if (tag == "TRUCK") {
+        double x; specStream >> x;
+        return make_unique<HaulerUnit>(x);
     }
-    if (kind == "BIKE")
-        return make_unique<Bike>();
+    if (tag == "BIKE")
+        return make_unique<PedalUnit>();
     return nullptr;
 }
 
 int main()
 {
-    vector<unique_ptr<Vehicle>> trips;
-    vector<double> dists;
-    string buf;
-    while (getline(cin, buf)) {
-        istringstream in(buf);
-        string typ; in >> typ;
-        auto v = create_vehicle(typ, in);
-        if (!v) { cout << "ERROR" << endl; continue; }
-        double d; in >> d;
-        trips.push_back(move(v));
-        dists.push_back(d);
+    vector<unique_ptr<Vehicle>> rideDeck;
+    vector<double> legKm;
+    string rawLine;
+    while (getline(cin, rawLine)) {
+        istringstream parser(rawLine);
+        string tag; parser >> tag;
+        auto unit = buildRide(tag, parser);
+        if (!unit) { cout << "ERROR" << endl; continue; }
+        double leg; parser >> leg;
+        rideDeck.push_back(move(unit));
+        legKm.push_back(leg);
     }
-    double acc = 0;
-    for (size_t i = 0; i < trips.size(); ++i) {
-        double f = trips[i]->fuel_needed(dists[i]);
-        acc += f;
-        cout << "Trip " << i + 1 << ": " << trips[i]->type()
-             << " needs " << fixed << setprecision(2) << f << " liters" << endl;
+    double accLiters = 0;
+    for (size_t slot = 0; slot < rideDeck.size(); ++slot) {
+        double need = rideDeck[slot]->fuel_needed(legKm[slot]);
+        accLiters += need;
+        cout << "Trip " << slot + 1 << ": " << rideDeck[slot]->type()
+             << " needs " << fixed << setprecision(2) << need << " liters" << endl;
     }
-    cout << "TOTAL " << fixed << setprecision(2) << acc << " liters" << endl;
+    cout << "TOTAL " << fixed << setprecision(2) << accLiters << " liters" << endl;
     return 0;
 }

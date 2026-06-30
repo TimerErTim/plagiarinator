@@ -1,10 +1,10 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// copied from stackoverflow mostly
 
 class Shape {
 public:
@@ -15,53 +15,56 @@ public:
 };
 
 class Circle : public Shape {
-    double ref;
+    double rVal;
 public:
-    explicit Circle(double r) : ref(r) {}
-    double area() const override { return 3.141592653589793 * ref * ref; }
-    double perimeter() const override { return 2 * 3.141592653589793 * ref; }
+    explicit Circle(double r) : rVal(r) {}
+    double area() const override { return 3.141592653589793 * rVal * rVal; }
+    double perimeter() const override { return 2 * 3.141592653589793 * rVal; }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double argW, argH;
+    double xLen, yLen;
 public:
-    Rectangle(double w, double h) : argW(w), argH(h) {}
-    double area() const override { return argW * argH; }
-    double perimeter() const override { return 2 * (argW + argH); }
+    Rectangle(double w, double h) : xLen(w), yLen(h) {}
+    double area() const override { return xLen * yLen; }
+    double perimeter() const override { return 2 * (xLen + yLen); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double val;
+    double sLen;
 public:
-    explicit Triangle(double s) : val(s) {}
-    double area() const override { return std::sqrt(3.0) * val * val / 4.0; }
-    double perimeter() const override { return 3 * val; }
+    explicit Triangle(double s) : sLen(s) {}
+    double area() const override { return std::sqrt(3.0) * sLen * sLen / 4.0; }
+    double perimeter() const override { return 3 * sLen; }
     std::string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& s) {
+void print_shape(const Shape& fig) {
     std::cout << std::fixed << std::setprecision(4)
-              << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << fig.name() << ": area=" << fig.area()
+              << ", perimeter=" << fig.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& ar, double& pr) {
-    ar += s.area(); pr += s.perimeter();
+void accumulate(const Shape& fig, double& aOut, double& pOut) {
+    aOut += fig.area(); pOut += fig.perimeter();
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> v;
-    std::string hold;
-    while (std::cin >> hold && hold != "DONE") {
-        if (hold == "CIRCLE") { double r; std::cin >> r; v.push_back(std::make_unique<Circle>(r)); }
-        else if (hold == "RECT") { double w,h; std::cin >> w >> h; v.push_back(std::make_unique<Rectangle>(w,h)); }
-        else if (hold == "TRI") { double s; std::cin >> s; v.push_back(std::make_unique<Triangle>(s)); }
+    std::vector<std::unique_ptr<Shape>> store;
+    std::string cmd;
+    while (std::cin >> cmd && cmd != "DONE") {
+        if (cmd == "CIRCLE") { double r; std::cin >> r; store.push_back(std::make_unique<Circle>(r)); }
+        else if (cmd == "RECT") { double w,h; std::cin >> w >> h; store.push_back(std::make_unique<Rectangle>(w,h)); }
+        else if (cmd == "TRI") { double s; std::cin >> s; store.push_back(std::make_unique<Triangle>(s)); }
     }
-    double A=0,P=0;
-    for (auto& p : v) { print_shape(*p); accumulate(*p,A,P); }
+    double totA = 0, totP = 0;
+    for (std::size_t n = 0; n < store.size(); ++n) {
+        print_shape(*store[n]);
+        accumulate(*store[n], totA, totP);
+    }
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << A << std::endl << "TOTAL perimeter=" << P << std::endl;
+              << "TOTAL area=" << totA << '\n' << "TOTAL perimeter=" << totP << '\n';
     return 0;
 }

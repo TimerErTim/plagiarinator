@@ -1,10 +1,9 @@
-#include <vector>
-#include <variant>
-#include <string>
-#include <sstream>
 #include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -49,23 +48,29 @@ void print_metric(const Printable<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
-int main()
+using MetricVar = std::variant<Distance, Mass, Temperature>;
 
+static void store_metric(const std::string& kind, double val, std::vector<MetricVar>& out)
 {
-    std::vector<std::variant<Distance, Mass, Temperature>> records;
+    if (kind == "DIST") out.emplace_back(Distance{val});
+    else if (kind == "MASS") out.emplace_back(Mass{val});
+    else if (kind == "TEMP") out.emplace_back(Temperature{val});
+}
+
+int main()
+{
+    std::vector<MetricVar> records;
     std::string kind;
-    while (std::cin >> kind && kind != "END") 
-{
-        double x;
-        std::cin >> x;
-        if (kind == "DIST") records.push_back(Distance{x});
-        else if (kind == "MASS") records.push_back(Mass{x});
-        else if (kind == "TEMP") records.push_back(Temperature{x});
+    while (std::cin >> kind && kind != "END")
+    {
+        double val;
+        std::cin >> val;
+        store_metric(kind, val, records);
     }
 
-    for (const auto& entry : records) 
-{
-        std::visit([](const auto& m) { print_metric(m); }, entry);
+    for (std::size_t idx = 0; idx < records.size(); ++idx)
+    {
+        std::visit([](const auto& m) { print_metric(m); }, records[idx]);
     }
     return 0;
 }

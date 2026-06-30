@@ -4,7 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
-// TODO: refactor later
+// modified from tutorial code
 
 class Vehicle {
 public:
@@ -13,77 +13,78 @@ public:
     virtual std::string type() const = 0;
 };
 
-class Car : public Vehicle {
-    double boxRate;
+class SedanRide : public Vehicle {
+    double burnPer100;
 public:
-    explicit Car(double litersPer100) : boxRate(litersPer100) {}
+    explicit SedanRide(double litersPer100) : burnPer100(litersPer100) {}
     double fuel_needed(double distance_km) const override {
-        return boxRate * distance_km / 100.0;
+        return burnPer100 * distance_km / 100.0;
     }
     std::string type() const override { return "CAR"; }
 };
 
-class Truck : public Vehicle {
-    double boxRate;
+class CargoRide : public Vehicle {
+    double burnPerKm;
 public:
-    explicit Truck(double litersPerKm) : boxRate(litersPerKm) {}
+    explicit CargoRide(double litersPerKm) : burnPerKm(litersPerKm) {}
     double fuel_needed(double distance_km) const override {
-        return boxRate * distance_km;
+        return burnPerKm * distance_km;
     }
     std::string type() const override { return "TRUCK"; }
 };
 
-class Bike : public Vehicle {
+class CycleRide : public Vehicle {
 public:
     double fuel_needed(double) const override { return 0.0; }
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config) {
-    if (kind == "CAR") {
-        double param; config >> param;
-        return std::make_unique<Car>(param);
-    } else if (kind == "TRUCK") {
-        double param; config >> param;
-        return std::make_unique<Truck>(param);
-    } else if (kind == "BIKE") {
-        return std::make_unique<Bike>();
+std::unique_ptr<Vehicle> spawnRide(const std::string& tag, std::istream& cfg) {
+    if (tag == "CAR") {
+        double param; cfg >> param;
+        return std::make_unique<SedanRide>(param);
     }
+    if (tag == "TRUCK") {
+        double param; cfg >> param;
+        return std::make_unique<CargoRide>(param);
+    }
+    if (tag == "BIKE")
+        return std::make_unique<CycleRide>();
     return nullptr;
 }
 
 int main() {
-    struct TripRecord {
-        std::unique_ptr<Vehicle> vehicle;
-        double distance;
+    struct LegEntry {
+        std::unique_ptr<Vehicle> ride;
+        double km;
     };
-    std::vector<TripRecord> records;
+    std::vector<LegEntry> ledger;
 
-    std::string buf;
-    while (std::getline(std::cin, buf)) {
-        std::istringstream parser(buf);
-        std::string id;
-        parser >> id;
-        std::unique_ptr<Vehicle> vehicle = create_vehicle(id, parser);
-        if (!vehicle) {
+    std::string rawRow;
+    while (std::getline(std::cin, rawRow)) {
+        std::istringstream rowParser(rawRow);
+        std::string tag;
+        rowParser >> tag;
+        std::unique_ptr<Vehicle> ride = spawnRide(tag, rowParser);
+        if (!ride) {
             std::cout << "ERROR" << std::endl;
             continue;
         }
         double km;
-        parser >> km;
-        records.push_back({std::move(vehicle), km});
+        rowParser >> km;
+        ledger.push_back({std::move(ride), km});
     }
 
-    double acc = 0.0;
-    for (std::size_t idx = 0; idx < records.size(); ++idx) {
-        double liters = records[idx].vehicle->fuel_needed(records[idx].distance);
-        acc += liters;
-        std::cout << "Trip " << (idx + 1) << ": "
-                  << records[idx].vehicle->type()
+    double fuelSum = 0.0;
+    for (std::size_t leg = 0; leg < ledger.size(); ++leg) {
+        double liters = ledger[leg].ride->fuel_needed(ledger[leg].km);
+        fuelSum += liters;
+        std::cout << "Trip " << (leg + 1) << ": "
+                  << ledger[leg].ride->type()
                   << " needs " << std::fixed << std::setprecision(2)
                   << liters << " liters" << std::endl;
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2)
-              << acc << " liters" << std::endl;
+              << fuelSum << " liters" << std::endl;
     return 0;
 }

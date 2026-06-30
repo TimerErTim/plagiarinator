@@ -1,69 +1,69 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <iostream>
-// from lab partner
+#include <cctype>
+// borrowed from roommate's homework
 
 class StringBuffer {
-    char* chars;
-    std::size_t sz;
+    char* body;
+    std::size_t bodyLen;
 
 public:
-    StringBuffer(const char* cstr) : chars(nullptr), sz(0) {
-        sz = std::strlen(cstr);
-        chars = new char[sz + 1];
-        for (std::size_t i = 0; i <= sz; ++i) chars[i] = cstr[i];
+    StringBuffer(const char* cstr) : body(nullptr), bodyLen(0) {
+        bodyLen = std::strlen(cstr);
+        body = new char[bodyLen + 1];
+        std::strcpy(body, cstr);
     }
 
-    ~StringBuffer() { delete[] chars; }
+    ~StringBuffer() { delete[] body; }
 
     StringBuffer(const StringBuffer& x) {
-        sz = x.sz;
-        chars = new char[sz + 1];
-        std::strcpy(chars, x.chars);
+        bodyLen = x.bodyLen;
+        body = new char[bodyLen + 1];
+        std::strcpy(body, x.body);
     }
 
     StringBuffer& operator=(const StringBuffer& x) {
         if (this != &x) {
-            delete[] chars;
-            sz = x.sz;
-            chars = new char[sz + 1];
-            std::strcpy(chars, x.chars);
+            delete[] body;
+            bodyLen = x.bodyLen;
+            body = new char[bodyLen + 1];
+            std::strcpy(body, x.body);
         }
         return *this;
     }
 
     void trim() {
-        std::size_t b = 0, e = sz;
-        while (b < e && std::isspace(static_cast<unsigned char>(chars[b]))) b++;
-        while (e > b && std::isspace(static_cast<unsigned char>(chars[e - 1]))) e--;
-        std::size_t w = 0;
-        for (std::size_t r = b; r < e; ++r) chars[w++] = chars[r];
-        chars[w] = '\0';
-        sz = w;
+        std::size_t b = 0, e = bodyLen;
+        while (b < e && std::isspace(static_cast<unsigned char>(body[b]))) b++;
+        while (e > b && std::isspace(static_cast<unsigned char>(body[e - 1]))) e--;
+        std::size_t w = e - b;
+        for (std::size_t k = w; k-- > 0;)
+            body[k] = body[b + k];
+        body[w] = '\0';
+        bodyLen = w;
     }
 
-    const char* c_str() const { return chars; }
-    std::size_t size() const { return sz; }
-    bool operator<(const StringBuffer& x) const { return std::strcmp(chars, x.chars) < 0; }
+    const char* c_str() const { return body; }
+    std::size_t size() const { return bodyLen; }
+    bool operator<(const StringBuffer& x) const { return std::strcmp(body, x.body) < 0; }
 };
 
 int main() {
-    std::vector<StringBuffer> list;
+    std::vector<StringBuffer> names;
     std::string s;
     while (std::getline(std::cin, s))
-        list.push_back(StringBuffer(s.c_str()));
+        names.emplace_back(s.c_str());
 
-    for (auto it = list.begin(); it != list.end(); ++it)
-        it->trim();
+    for (auto& nm : names) nm.trim();
 
     std::vector<StringBuffer> kept;
-    for (const auto& sb : list)
-        if (sb.size() > 0) kept.push_back(sb);
+    for (const auto& sb : names)
+        if (sb.size() > 0) kept.emplace_back(sb);
 
     std::sort(kept.begin(), kept.end());
     for (const auto& sb : kept)
-        std::cout << sb.c_str() << '\n';
+        std::cout << sb.c_str() << std::endl;
     return 0;
 }

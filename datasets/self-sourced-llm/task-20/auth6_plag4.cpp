@@ -1,8 +1,7 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -52,8 +51,7 @@ bool is_balanced(const std::string& s) {
             if (!good_pair(open, c)) return false;
         }
     }
-    char dummy;
-    return !st.peek(dummy);
+    return st.size() == 0;
 }
 
 int main() {

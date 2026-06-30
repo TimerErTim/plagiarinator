@@ -1,10 +1,10 @@
-#include <vector>
-#include <variant>
-#include <string>
-#include <sstream>
+#include <cstdio>
 #include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -52,25 +52,29 @@ void print_metric(const Printable<T>& metric) {
     std::puts(metric.to_string().c_str());
 }
 
+using MetricBox = std::variant<Distance, Mass, Temperature>;
+
+static void parse_and_store(const std::string& line, double val, std::vector<MetricBox>& store)
+{
+    if (line == "DIST") store.emplace_back(Distance(val));
+    else if (line == "MASS") store.emplace_back(Mass(val));
+    else if (line == "TEMP") store.emplace_back(Temperature(val));
+}
+
 int main()
-
 {
-    std::vector<std::variant<Distance, Mass, Temperature>> store;
-    std::string input;
+    std::vector<MetricBox> store;
+    std::string line;
 
-    while (std::cin >> input) 
-{
-        if (input == "END") break;
-        double x;
-        std::cin >> x;
-        if (input == "DIST") store.push_back(Distance(x));
-        else if (input == "MASS") store.push_back(Mass(x));
-        else if (input == "TEMP") store.push_back(Temperature(x));
+    while (std::cin >> line)
+    {
+        if (line == "END") break;
+        double val;
+        std::cin >> val;
+        parse_and_store(line, val, store);
     }
 
-    for (const auto& rec : store) 
-{
-        std::visit([](const auto& m) { print_metric(m); }, rec);
-    }
+    for (std::size_t p = 0; p < store.size(); ++p)
+        std::visit([](const auto& m) { print_metric(m); }, store[p]);
     return 0;
 }

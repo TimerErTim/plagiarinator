@@ -1,32 +1,40 @@
 #include <vector>
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <string>
-// TODO: refactor later
+#include <iostream>
+#include <iomanip>
+#include <functional>
+// quick copy from github gist
 
-class Sensor {
-    double v;
-    std::vector<std::pair<std::string,std::function<void(double)>>> subs;
+class MicroSensor {
+    double sample_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> hooks_;
 public:
-    void subscribe(const std::string& n,std::function<void(double)> f){subs.push_back({n,f});}
-    void set_value(double c){
-        v=c;
-        for(auto& s:subs){
-            std::cout<<std::fixed<<std::setprecision(1)
-                     <<"["<<s.first<<"] temp="<<v<<"\n";
-            s.second(v);
+    void subscribe(const std::string& tag, std::function<void(double)> cb) {
+        hooks_.push_back({tag, cb});
+    }
+    void set_value(double c) {
+        sample_ = c;
+        for (auto& h : hooks_) {
+            std::cout << std::fixed << std::setprecision(1)
+                      << "[" << h.first << "] temp=" << sample_ << "\n";
+            h.second(sample_);
         }
     }
-    double value()const{return v;}
+    double value() const { return sample_; }
 };
 
-int main(){
-    Sensor s; std::string x;
-    while(std::cin>>x){
-        if(x=="END")break;
-        if(x=="SUB"){std::string n;std::cin>>n;s.subscribe(n,[](double){});}
-        else if(x=="SET"){double hold;std::cin>>hold;s.set_value(hold);}
+int main() {
+    MicroSensor node;
+    std::string x;
+    while (std::cin >> x) {
+        if (x == "END") break;
+        if (x == "SUB") {
+            std::string n; std::cin >> n;
+            node.subscribe(n, [](double) {});
+        } else if (x == "SET") {
+            double t; std::cin >> t;
+            node.set_value(t);
+        }
     }
     return 0;
 }

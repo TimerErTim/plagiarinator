@@ -1,27 +1,30 @@
-#include <vector>
-#include <string>
-#include <sstream>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <vector>
 
-class IntBST {
-    struct Node {
+class IntBST
+{
+    struct Node
+    {
         int data;
         Node* leftChild;
         Node* rightChild;
         explicit Node(int d) : data(d), leftChild(nullptr), rightChild(nullptr) {}
     };
 
-    Node* rootNode_;
+    Node* rootx_;
 
-    void freeNodes(Node* node) {
+    void freeNodes(Node* node)
+    {
         if (!node) return;
         freeNodes(node->leftChild);
         freeNodes(node->rightChild);
         delete node;
     }
 
-    Node* insertHelper(Node* node, int value) {
+    Node* insertHelper(Node* node, int value)
+    {
         if (!node) return new Node(value);
         if (value < node->data)
             node->leftChild = insertHelper(node->leftChild, value);
@@ -30,37 +33,40 @@ class IntBST {
         return node;
     }
 
-    bool containsHelper(const Node* node, int value) const {
+    bool nodeHas(const Node* node, int value) const
+    {
         if (!node) return false;
         if (value == node->data) return true;
-        if (value < node->data) return containsHelper(node->leftChild, value);
-        return containsHelper(node->rightChild, value);
+        if (value < node->data) return nodeHas(node->leftChild, value);
+        return nodeHas(node->rightChild, value);
     }
 
-    void inorderHelper(const Node* node, std::vector<int>& result) const {
+    void inorderHelper(const Node* node, std::vector<int>& result) const
+    {
         if (!node) return;
         inorderHelper(node->leftChild, result);
         result.push_back(node->data);
         inorderHelper(node->rightChild, result);
     }
 
-    Node* minNodeHelper(Node* node) const {
+    Node* minNodeHelper(Node* node) const
+    {
         while (node && node->leftChild) node = node->leftChild;
         return node;
     }
 
 public:
-    IntBST() : rootNode_(nullptr) {}
-    ~IntBST() { freeNodes(rootNode_); }
+    IntBST() : rootx_(nullptr) {}
+    ~IntBST() { freeNodes(rootx_); }
 
-    void insert(int value) { rootNode_ = insertHelper(rootNode_, value); }
-    bool contains(int value) const { return containsHelper(rootNode_, value); }
-    void inorder(std::vector<int>& out) const { inorderHelper(rootNode_, out); }
+    void insert(int value) { rootx_ = insertHelper(rootx_, value); }
+    bool contains(int value) const { return nodeHas(rootx_, value); }
+    void inorder(std::vector<int>& out) const { inorderHelper(rootx_, out); }
 
-    int& min() { return minNodeHelper(rootNode_)->data; }
-    const int& min() const { return minNodeHelper(rootNode_)->data; }
+    int& min() { return minNodeHelper(rootx_)->data; }
+    const int& min() const { return minNodeHelper(rootx_)->data; }
 
-    bool empty() const { return rootNode_ == nullptr; }
+    bool empty() const { return rootx_ == nullptr; }
 };
 
 int main()
@@ -68,35 +74,39 @@ int main()
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    IntBST t;
-    std::string op;
-    while (input >> op)
-{
-        if (op == "DONE") break;
-        t.insert(std::stoi(op));
+    IntBST tree;
+    std::string token;
+    while (input >> token)
+    {
+        if (token == "DONE") break;
+        tree.insert(std::stoi(token));
     }
 
-    while (input >> op)
-{
-        if (op == "DONE") break;
-        if (op == "CONTAINS")
-{
+    while (input >> token)
+    {
+        if (token == "DONE") break;
+        if (token == "CONTAINS")
+        {
             int value;
             input >> value;
-            std::cout << (t.contains(value) ? "YES" : "NO") << std::endl;
-        } else if (op == "MIN") {
-            if (t.empty())
-                std::cout << "EMPTY" << std::endl;
-            else
-                std::cout << t.min() << std::endl;
-        } else if (op == "PRINT") {
+            if (tree.contains(value)) std::cout << "YES\n";
+            else std::cout << "NO\n";
+        }
+        else if (token == "MIN")
+        {
+            if (tree.empty()) std::cout << "EMPTY\n";
+            else std::cout << tree.min() << '\n';
+        }
+        else if (token == "PRINT")
+        {
             std::vector<int> ordered;
-            t.inorder(ordered);
-            for (std::size_t i = 0; i < ordered.size(); ++i) {
-                if (i > 0) std::cout << ' ';
-                std::cout << ordered[i];
+            tree.inorder(ordered);
+            for (std::size_t j = 0; j < ordered.size(); ++j)
+            {
+                if (j > 0) std::cout << ' ';
+                std::cout << ordered[j];
             }
-            std::cout << std::endl;
+            std::cout << '\n';
         }
     }
     return 0;

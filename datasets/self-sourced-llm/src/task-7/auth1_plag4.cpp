@@ -1,10 +1,9 @@
-#include <iostream>
-#include <iomanip>
 #include <sstream>
 #include <memory>
-#include <vector>
 #include <string>
-// quick submit
+#include <vector>
+#include <iomanip>
+#include <iostream>
 
 class Vehicle {
 public:
@@ -14,18 +13,18 @@ public:
 };
 
 class Car : public Vehicle {
-    double elemRate_;
+    double l100_;
 public:
-    explicit Car(double l100) : elemRate_(l100) {}
-    double fuel_needed(double d) const override { return elemRate_ * d / 100.0; }
+    explicit Car(double l100) : l100_(l100) {}
+    double fuel_needed(double d) const override { return l100_ * d / 100.0; }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double elemKm_;
+    double lkm_;
 public:
-    explicit Truck(double lkm) : elemKm_(lkm) {}
-    double fuel_needed(double d) const override { return elemKm_ * d; }
+    explicit Truck(double lkm) : lkm_(lkm) {}
+    double fuel_needed(double d) const override { return lkm_ * d; }
     std::string type() const override { return "TRUCK"; }
 };
 
@@ -52,13 +51,13 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
 int main() {
     std::vector<std::unique_ptr<Vehicle>> fleet;
     std::vector<double> distances;
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str.empty()) continue;
-        std::istringstream ss(str);
-        std::string opt;
-        ss >> opt;
-        auto veh = create_vehicle(opt, ss);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) continue;
+        std::istringstream ss(line);
+        std::string kind;
+        ss >> kind;
+        auto veh = create_vehicle(kind, ss);
         if (!veh) {
             std::cout << "ERROR\n";
             continue;
@@ -69,14 +68,14 @@ int main() {
         distances.push_back(dist);
     }
 
-    double numTotal = 0.0;
+    double total = 0.0;
     for (std::size_t i = 0; i < fleet.size(); ++i) {
         double need = fleet[i]->fuel_needed(distances[i]);
-        numTotal += need;
+        total += need;
         std::cout << "Trip " << (i + 1) << ": " << fleet[i]->type()
                   << " needs " << std::fixed << std::setprecision(2) << need
                   << " liters\n";
     }
-    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << numTotal << " liters\n";
+    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << total << " liters\n";
     return 0;
 }

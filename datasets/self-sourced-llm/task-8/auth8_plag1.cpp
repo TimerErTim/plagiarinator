@@ -1,46 +1,44 @@
-#include <iostream>
-#include <sstream>
 #include <vector>
-// cleaned up version
+#include <sstream>
+#include <iostream>
 
 template <typename T>
 class Matrix {
-    std::size_t rows_;
-    std::size_t cols_;
-    std::vector<T> data_;
+    std::size_t rowLen, colLen;
+    std::vector<T> backing;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), data_(r * c) {}
+    Matrix(std::size_t r, std::size_t c) : rowLen(r), colLen(c), backing(r * c) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return data_[r * cols_ + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return data_[r * cols_ + c]; }
+    T& operator()(std::size_t r, std::size_t c) { return backing[r * colLen + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return backing[r * colLen + c]; }
 
-    std::size_t rows() const { return rows_; }
-    std::size_t cols() const { return cols_; }
+    std::size_t rows() const { return rowLen; }
+    std::size_t cols() const { return colLen; }
 
     Matrix operator+(const Matrix& rhs) const {
-        Matrix out(rows_, cols_);
-        for (std::size_t i = 0; i < data_.size(); ++i)
-            out.data_[i] = data_[i] + rhs.data_[i];
+        Matrix out(rowLen, colLen);
+        for (std::size_t i = 0; i < backing.size(); i++)
+            out.backing[i] = backing[i] + rhs.backing[i];
         return out;
     }
 
     Matrix operator*(const Matrix& rhs) const {
-        Matrix out(rows_, rhs.cols_);
-        for (std::size_t i = 0; i < rows_; ++i)
-            for (std::size_t j = 0; j < rhs.cols_; ++j)
-                for (std::size_t k = 0; k < cols_; ++k)
+        Matrix out(rowLen, rhs.colLen);
+        for (std::size_t i = 0; i < rowLen; ++i)
+            for (std::size_t j = 0; j < rhs.colLen; ++j)
+                for (std::size_t k = 0; k < colLen; ++k)
                     out(i, j) += (*this)(i, k) * rhs(k, j);
         return out;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-        for (std::size_t i = 0; i < m.rows_; ++i) {
-            for (std::size_t j = 0; j < m.cols_; ++j) {
+        for (std::size_t i = 0; i < m.rowLen; ++i) {
+            for (std::size_t j = 0; j < m.colLen; ++j) {
                 if (j) os << ' ';
                 os << m(i, j);
             }
-            os << '\n';
+            os << std::endl;
         }
         return os;
     }

@@ -1,14 +1,12 @@
+#include <vector>
+#include <memory>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <vector>
-// cleaned up version
 
 using std::cin;
 using std::cout;
-using std::endl;
 using std::fixed;
 using std::getline;
 using std::istringstream;
@@ -72,24 +70,24 @@ unique_ptr<Vehicle> create_vehicle(const string& kind, istream& cfg)
 int main()
 {
     vector<unique_ptr<Vehicle>> tripList;
-    vector<double> kms;
-    string s;
-    while (getline(cin, s)) {
-        istringstream in(s);
+    vector<double> mileages;
+    string ln;
+    while (getline(cin, ln)) {
+        istringstream in(ln);
         string mode; in >> mode;
         auto v = create_vehicle(mode, in);
-        if (!v) { cout << "ERROR" << endl; continue; }
+        if (!v) { cout << "ERROR\n"; continue; }
         double d; in >> d;
-        tripList.push_back(move(v));
-        kms.push_back(d);
+        tripList.emplace_back(move(v));
+        mileages.push_back(d);
     }
     double sum = 0;
-    for (size_t i = 0; i < tripList.size(); ++i) {
-        double f = tripList[i]->fuel_needed(kms[i]);
+    for (size_t i = 0; i < tripList.size(); i++) {
+        double f = tripList[i]->fuel_needed(mileages[i]);
         sum += f;
         cout << "Trip " << i + 1 << ": " << tripList[i]->type()
-             << " needs " << fixed << setprecision(2) << f << " liters" << endl;
+             << " needs " << fixed << setprecision(2) << f << " liters\n";
     }
-    cout << "TOTAL " << fixed << setprecision(2) << sum << " liters" << endl;
+    cout << "TOTAL " << fixed << setprecision(2) << sum << " liters\n";
     return 0;
 }

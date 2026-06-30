@@ -1,57 +1,42 @@
-#include <vector>
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <string>
-// TODO: refactor later
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <functional>
+// kinda copied from stackoverflow tbh
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::fixed;
-using std::function;
-using std::move;
-using std::pair;
-using std::setprecision;
-using std::string;
-using std::vector;
-
-class Sensor
-{
-    double val;
-    vector<pair<string, function<void(double)>>> observers;
+class TempSubject {
+    double current_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> watcherTable_;
 
 public:
-    void subscribe(const string& name, function<void(double)> cb)
-    {
-        observers.emplace_back(name, move(cb));
+    void subscribe(const std::string& id, std::function<void(double)> fn) {
+        watcherTable_.emplace_back(id, std::move(fn));
     }
 
-    void set_value(double celsius)
-    {
-        val = celsius;
-        for (auto& ob : observers) {
-            cout << fixed << setprecision(1)
-                 << "[" << ob.first << "] temp=" << val << endl;
-            if (ob.second) ob.second(val);
+    void set_value(double celsius) {
+        current_ = celsius;
+        for (const auto& row : watcherTable_) {
+            std::cout << std::fixed << std::setprecision(1)
+                      << "[" << row.first << "] temp=" << current_ << std::endl;
+            if (row.second) row.second(current_);
         }
     }
 
-    double value() const { return val; }
+    double value() const { return current_; }
 };
 
-int main()
-{
-    Sensor s;
-    string line;
-    while (cin >> line) {
-        if (line == "END") break;
-        if (line == "SUB") {
-            string n; cin >> n;
-            s.subscribe(n, [](double) {});
-        } else if (line == "SET") {
-            double hold; cin >> hold;
-            s.set_value(hold);
+int main() {
+    TempSubject unit;
+    std::string opCode;
+    while (std::cin >> opCode) {
+        if (opCode == "END") break;
+        if (opCode == "SUB") {
+            std::string slot; std::cin >> slot;
+            unit.subscribe(slot, [](double) {});
+        } else if (opCode == "SET") {
+            double deg; std::cin >> deg;
+            unit.set_value(deg);
         }
     }
     return 0;

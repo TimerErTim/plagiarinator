@@ -1,8 +1,7 @@
+#include <utility>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <utility>
-// cleaned up version
 
 template <typename T>
 class LinkedList {
@@ -38,6 +37,8 @@ public:
         itemCount++;
     }
 
+    void emplace_back(const T& value) { push_back(value); }
+
     std::size_t size() const { return itemCount; }
 
     class Iterator {
@@ -47,6 +48,7 @@ public:
         T& operator*() { return current->val; }
         const T& operator*() const { return current->val; }
         Iterator& operator++() { current = current->next; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
         bool operator!=(const Iterator& rhs) const { return current != rhs.current; }
     };
 
@@ -64,17 +66,17 @@ LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
 
     while (leftIt != lhs.end() && rightIt != rhs.end()) {
         if (*leftIt <= *rightIt) {
-            output.push_back(*leftIt);
-            ++leftIt;
+            output.emplace_back(*leftIt);
+            leftIt++;
         } else {
-            output.push_back(*rightIt);
-            ++rightIt;
+            output.emplace_back(*rightIt);
+            rightIt++;
         }
     }
     for (; leftIt != lhs.end(); ++leftIt)
-        output.push_back(*leftIt);
+        output.emplace_back(*leftIt);
     for (; rightIt != rhs.end(); ++rightIt)
-        output.push_back(*rightIt);
+        output.emplace_back(*rightIt);
     return output;
 }
 
@@ -86,7 +88,7 @@ static LinkedList<int> parseLine(std::istream& in) {
     std::istringstream stream(text);
     int number;
     while (stream >> number)
-        list.push_back(number);
+        list.emplace_back(number);
     return list;
 }
 
@@ -96,7 +98,7 @@ int main() {
     LinkedList<int> merged = merge_sorted(listOne, listTwo);
 
     std::size_t idx = 0;
-    for (auto it = merged.begin(); it != merged.end(); ++it, ++idx) {
+    for (auto it = merged.begin(); it != merged.end(); it++, idx++) {
         if (idx > 0) std::cout << ' ';
         std::cout << *it;
     }

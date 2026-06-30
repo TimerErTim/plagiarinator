@@ -1,39 +1,39 @@
+#include <string>
 #include <unordered_map>
 #include <iostream>
 #include <iomanip>
-#include <string>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    int idx = 0;
-    auto put = [&](auto&& item) {
-        if (idx++) out << ' ';
+void log_line(std::ostream& sink, Args&&... args) {
+    int pos = 0;
+    auto emit = [&](auto&& item) {
+        if (pos++) sink << ' ';
         using T = std::decay_t<decltype(item)>;
         if constexpr (std::is_same_v<T, double>)
-            out << std::fixed << std::setprecision(2) << item;
+            sink << std::fixed << std::setprecision(2) << item;
         else
-            out << std::forward<decltype(item)>(item);
+            sink << std::forward<decltype(item)>(item);
     };
-    (put(std::forward<Args>(args)), ...);
-    out << '\n';
+    (emit(std::forward<Args>(args)), ...);
+    sink << std::endl;
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> pool_;
+    std::unordered_map<std::string, std::string> map_;
 
 public:
-    Config(std::istream& in) {
+    Config(std::istream& src) {
         std::string row;
-        while (std::getline(in, row) && row.size() > 0) {
+        while (std::getline(src, row) && row.size() > 0) {
             std::size_t eq = row.find('=');
-            pool_.insert({row.substr(0, eq), row.substr(eq + 1)});
+            map_.insert({row.substr(0, eq), row.substr(eq + 1)});
         }
     }
 
-    bool has(const std::string& key) const { return pool_.count(key) > 0; }
+    bool has(const std::string& k) const { return map_.count(k) > 0; }
 
-    const std::string& get(const std::string& key) const { return pool_.at(key); }
+    const std::string& get(const std::string& k) const { return map_.at(k); }
 };
 
 static bool parse_int_token(const std::string& tok) {
@@ -43,26 +43,26 @@ static bool parse_int_token(const std::string& tok) {
         if (tok.size() == 1) return false;
         start = 1;
     }
-    for (std::size_t i = start; i < tok.size(); ++i)
-        if (tok[i] < '0' || tok[i] > '9') return false;
+    for (std::size_t k = tok.size(); k-- > start;)
+        if (tok[k] < '0' || tok[k] > '9') return false;
     return true;
 }
 
 int main() {
-    Config box(std::cin);
-    std::string ln;
+    Config cfg(std::cin);
+    std::string op;
 
-    while (std::cin >> ln) {
-        if (ln == "END") break;
+    while (std::cin >> op) {
+        if (op == "END") break;
 
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            std::cout << (box.has(val) ? box.get(val) : std::string("MISSING")) << '\n';
+        if (op == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (cfg.has(k) ? cfg.get(k) : std::string("MISSING")) << std::endl;
             continue;
         }
 
-        if (ln != "LOG") continue;
+        if (op != "LOG") continue;
 
         std::string a, b, c;
         std::cin >> a;

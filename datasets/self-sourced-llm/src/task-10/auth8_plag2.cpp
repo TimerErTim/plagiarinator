@@ -1,97 +1,105 @@
-#include <vector>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <vector>
 
-class IntBST {
-    struct TreeNode {
+class IntBST
+{
+    struct TreeNode
+    {
         int value;
         TreeNode* left;
         TreeNode* right;
         explicit TreeNode(int v) : value(v), left(nullptr), right(nullptr) {}
     };
 
-    TreeNode* rootNode_;
+    TreeNode* rootx_;
 
-    static void dispose(TreeNode* node) {
+    static void dispose(TreeNode* node)
+    {
         if (node == nullptr) return;
         dispose(node->left);
         dispose(node->right);
         delete node;
     }
 
-    TreeNode* doInsert(TreeNode* node, int val) {
+    TreeNode* doInsert(TreeNode* node, int val)
+    {
         if (node == nullptr) return new TreeNode(val);
         if (val < node->value) node->left = doInsert(node->left, val);
         else if (val > node->value) node->right = doInsert(node->right, val);
         return node;
     }
 
-    bool doContains(const TreeNode* node, int val) const {
+    bool treeHas(const TreeNode* node, int val) const
+    {
         if (node == nullptr) return false;
         if (val == node->value) return true;
-        return val < node->value
-            ? doContains(node->left, val)
-            : doContains(node->right, val);
+        if (val < node->value) return treeHas(node->left, val);
+        return treeHas(node->right, val);
     }
 
-    void doInorder(const TreeNode* node, std::vector<int>& dest) const {
+    void doInorder(const TreeNode* node, std::vector<int>& dest) const
+    {
         if (node == nullptr) return;
         doInorder(node->left, dest);
         dest.push_back(node->value);
         doInorder(node->right, dest);
     }
 
-    TreeNode* leftmostNode(TreeNode* node) const {
+    TreeNode* leftmostNode(TreeNode* node) const
+    {
         if (node == nullptr) return nullptr;
         while (node->left != nullptr) node = node->left;
         return node;
     }
 
 public:
-    IntBST() : rootNode_(nullptr) {}
-    ~IntBST() { dispose(rootNode_); }
+    IntBST() : rootx_(nullptr) {}
+    ~IntBST() { dispose(rootx_); }
 
-    void insert(int value) { rootNode_ = doInsert(rootNode_, value); }
-    bool contains(int value) const { return doContains(rootNode_, value); }
-    void inorder(std::vector<int>& out) const { doInorder(rootNode_, out); }
+    void insert(int value) { rootx_ = doInsert(rootx_, value); }
+    bool contains(int value) const { return treeHas(rootx_, value); }
+    void inorder(std::vector<int>& out) const { doInorder(rootx_, out); }
 
-    int& min() { return leftmostNode(rootNode_)->value; }
-    const int& min() const { return leftmostNode(rootNode_)->value; }
+    int& min() { return leftmostNode(rootx_)->value; }
+    const int& min() const { return leftmostNode(rootx_)->value; }
 
-    bool empty() const { return rootNode_ == nullptr; }
+    bool empty() const { return rootx_ == nullptr; }
 };
 
 int main()
 {
-    IntBST t;
-    std::string op;
-
-    while (std::cin >> op)
-{
-        if (op == "DONE") break;
-        t.insert(std::stoi(op));
+    IntBST bst;
+    std::string word;
+    while (std::cin >> word)
+    {
+        if (word == "DONE") break;
+        bst.insert(std::stoi(word));
     }
 
-    while (std::cin >> op)
-{
-        if (op == "DONE") break;
-        if (op == "CONTAINS")
-{
+    while (std::cin >> word)
+    {
+        if (word == "DONE") break;
+        if (word == "CONTAINS")
+        {
             int target;
             std::cin >> target;
-            std::cout << (t.contains(target) ? "YES" : "NO") << '\n';
-        } else if (op == "MIN") {
-            if (t.empty())
-                std::cout << "EMPTY\n";
-            else
-                std::cout << t.min() << '\n';
-        } else if (op == "PRINT") {
+            if (bst.contains(target)) std::cout << "YES\n";
+            else std::cout << "NO\n";
+        }
+        else if (word == "MIN")
+        {
+            if (bst.empty()) std::cout << "EMPTY\n";
+            else std::cout << bst.min() << '\n';
+        }
+        else if (word == "PRINT")
+        {
             std::vector<int> sequence;
-            t.inorder(sequence);
-            for (std::size_t idx = 0; idx < sequence.size(); ++idx) {
-                if (idx > 0) std::cout << ' ';
-                std::cout << sequence[idx];
+            bst.inorder(sequence);
+            for (std::size_t j = 0; j < sequence.size(); ++j)
+            {
+                if (j > 0) std::cout << ' ';
+                std::cout << sequence[j];
             }
             std::cout << '\n';
         }

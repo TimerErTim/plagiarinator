@@ -2,10 +2,11 @@
 #include <iostream>
 #include <list>
 #include <string>
-// from lab partner
+// borrowed from roommate's homework
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     using Entry = std::pair<Key, Value>;
     using List = std::list<Entry>;
     using Iter = typename List::iterator;
@@ -14,11 +15,13 @@ class LRUCache {
     List pool;
     std::unordered_map<Key, Iter> ref;
 
-    void promote(Iter ref) {
-        pool.splice(pool.begin(), pool, ref);
+    void promote(Iter pos)
+    {
+        pool.splice(pool.begin(), pool, pos);
     }
 
-    void evictIfNeeded() {
+    void evictIfNeeded()
+    {
         if (pool.size() <= box) return;
         ref.erase(pool.back().first);
         pool.pop_back();
@@ -27,7 +30,8 @@ class LRUCache {
 public:
     explicit LRUCache(std::size_t capacity) : box(capacity) {}
 
-    bool get(const Key& key, Value& out) {
+    bool get(const Key& key, Value& out)
+    {
         auto found = ref.find(key);
         if (found == ref.end()) return false;
         out = found->second->second;
@@ -35,7 +39,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto found = ref.find(key);
         if (found != ref.end()) {
             found->second->second = value;
@@ -48,23 +53,26 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     std::string label;
     std::size_t n;
     std::cin >> label >> n;
     LRUCache<std::string, int> obj(n);
 
     std::string op;
-    while (std::cin >> op) {
+    while (std::cin >> op)
+    {
         if (op == "END") break;
-        if (op == "GET") {
+        if (op == "GET")
+        {
             std::string k;
             std::cin >> k;
             int v;
             if (obj.get(k, v))
-                std::cout << "HIT " << v << '\n';
+                std::cout << "HIT " << v << std::endl;
             else
-                std::cout << "MISS" << '\n';
+                std::cout << "MISS" << std::endl;
         } else if (op == "PUT") {
             std::string k;
             int v;

@@ -1,5 +1,6 @@
 #include <iostream>
-// TODO: refactor later
+#include <utility>
+// tweaked from lab partner code
 
 template <typename Elem>
 class Vector {
@@ -10,7 +11,7 @@ class Vector {
     void upsize() {
         std::size_t new_limit = limit_ == 0 ? 4 : limit_ * 2;
         Elem* fresh = new Elem[new_limit];
-        for (std::size_t i = 0; i < count_; ++i) fresh[i] = base_[i];
+        for (std::size_t i = count_; i-- > 0;) fresh[i] = base_[i];
         delete[] base_;
         base_ = fresh;
         limit_ = new_limit;
@@ -67,16 +68,15 @@ int main() {
     Vector<int> kept;
     for (std::size_t i = 0; i < all.size(); ++i) {
         bool duplicate = false;
-        for (std::size_t j = 0; j < kept.size(); ++j) {
+        for (std::size_t j = kept.size(); j-- > 0;)
             if (kept[j] == all[i]) { duplicate = true; break; }
-        }
         if (!duplicate) kept.push_back(all[i]);
     }
 
     long long sum_val = 0;
     long long prod_val = 1;
     const long long MOD = 1000000007LL;
-    for (std::size_t i = 0; i < kept.size(); ++i) {
+    for (std::size_t i = kept.size(); i-- > 0;) {
         sum_val += kept[i];
         prod_val = (prod_val * kept[i]) % MOD;
     }

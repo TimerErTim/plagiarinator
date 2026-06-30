@@ -1,19 +1,24 @@
-#include <vector>
-#include <iostream>
-#include <cstring>
-#include <cctype>
 #include <algorithm>
-// adapted from classmate submission
+#include <cctype>
+#include <cstring>
+#include <iostream>
+#include <vector>
 
 class StringBuffer {
     char* chars;
     std::size_t sz;
 
+    static void copyAll(char* dst, const char* src, std::size_t n)
+    {
+        for (std::size_t i = 0; i <= n; ++i)
+            dst[i] = src[i];
+    }
+
 public:
     StringBuffer(const char* cstr) : chars(nullptr), sz(0) {
         sz = std::strlen(cstr);
         chars = new char[sz + 1];
-        for (std::size_t i = 0; i <= sz; ++i) chars[i] = cstr[i];
+        copyAll(chars, cstr, sz);
     }
 
     ~StringBuffer() { delete[] chars; }
@@ -21,21 +26,21 @@ public:
     StringBuffer(const StringBuffer& x) {
         sz = x.sz;
         chars = new char[sz + 1];
-        std::strcpy(chars, x.chars);
+        std::memcpy(chars, x.chars, sz + 1);
     }
 
     StringBuffer& operator=(const StringBuffer& x) {
-        if (this != &x)
-{
+        if (this != &x) {
             delete[] chars;
             sz = x.sz;
             chars = new char[sz + 1];
-            std::strcpy(chars, x.chars);
+            std::memcpy(chars, x.chars, sz + 1);
         }
         return *this;
     }
 
-    void trim() {
+    void trim()
+    {
         std::size_t b = 0, e = sz;
         while (b < e && std::isspace(static_cast<unsigned char>(chars[b]))) b++;
         while (e > b && std::isspace(static_cast<unsigned char>(chars[e - 1]))) e--;
@@ -57,8 +62,8 @@ int main()
     while (std::getline(std::cin, s))
         list.push_back(StringBuffer(s.c_str()));
 
-    for (auto it = list.begin(); it != list.end(); ++it)
-        it->trim();
+    for (std::size_t i = 0; i < list.size(); ++i)
+        list[i].trim();
 
     std::vector<StringBuffer> kept;
     for (const auto& sb : list)

@@ -1,73 +1,84 @@
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-// from lab partner
+#include <vector>
+// borrowed from roommate's homework
 
-struct GraphNode {
-    std::string label;
+struct GraphNode
+{
+    std::string tag;
     std::vector<std::shared_ptr<GraphNode>> edges;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> pool;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> nodesx_;
 
-    std::shared_ptr<GraphNode> getOrCreate(const std::string& name) {
-        auto it = pool.find(name);
-        if (it != pool.end()) return it->second;
-        auto node = std::make_shared<GraphNode>();
-        node->label = name;
-        pool[name] = node;
-        return node;
+    std::shared_ptr<GraphNode> getOrCreate(const std::string& name)
+    {
+        auto it = nodesx_.find(name);
+        if (it != nodesx_.end()) return it->second;
+        auto vertex = std::make_shared<GraphNode>();
+        vertex->tag = name;
+        nodesx_[name] = vertex;
+        return vertex;
     }
 
     bool dfsReach(const std::shared_ptr<GraphNode>& cur,
                   const std::string& target,
-                  std::unordered_set<std::string>& seen) const {
-        if (!cur || seen.count(cur->label)) return false;
-        if (cur->label == target) return true;
-        seen.insert(cur->label);
-        for (const auto& nxt : cur->edges)
-            if (dfsReach(nxt, target, seen)) return true;
+                  std::unordered_set<std::string>& seen) const
+    {
+        if (!cur || seen.count(cur->tag)) return false;
+        if (cur->tag == target) return true;
+        seen.insert(cur->tag);
+        for (std::size_t k = cur->edges.size(); k-- > 0;)
+            if (dfsReach(cur->edges[k], target, seen)) return true;
         return false;
     }
 
 public:
     void addNode(const std::string& name) { getOrCreate(name); }
 
-    void addEdge(const std::string& from, const std::string& to) {
+    void addEdge(const std::string& from, const std::string& to)
+    {
         auto a = getOrCreate(from);
         auto b = getOrCreate(to);
         a->edges.push_back(b);
     }
 
-    bool query(const std::string& from, const std::string& to) const {
-        auto it = pool.find(from);
-        if (it == pool.end()) return false;
+    bool query(const std::string& from, const std::string& to) const
+    {
+        auto it = nodesx_.find(from);
+        if (it == nodesx_.end()) return false;
         std::unordered_set<std::string> visited;
         return dfsReach(it->second, to, visited);
     }
 };
 
-int main() {
-    Graph g;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "ADD_NODE") {
+int main()
+{
+    Graph net;
+    std::string token_v;
+    while (std::cin >> token_v)
+    {
+        if (token_v == "END") break;
+        if (token_v == "ADD_NODE")
+        {
             std::string name;
             std::cin >> name;
-            g.addNode(name);
-        } else if (ln == "ADD_EDGE") {
+            net.addNode(name);
+        } else if (token_v == "ADD_EDGE")
+        {
             std::string u, v;
             std::cin >> u >> v;
-            g.addEdge(u, v);
-        } else if (ln == "QUERY") {
+            net.addEdge(u, v);
+        } else if (token_v == "QUERY")
+        {
             std::string u, v;
             std::cin >> u >> v;
-            std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (net.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

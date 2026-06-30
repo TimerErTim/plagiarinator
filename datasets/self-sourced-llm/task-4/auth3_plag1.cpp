@@ -1,10 +1,10 @@
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 // cleaned up version
 
 class FileWriter {
@@ -38,7 +38,7 @@ public:
     }
 
     void write_line(const std::string& text) {
-        file_ << text << std::endl;
+        file_ << text << '\n';
     }
 };
 
@@ -51,10 +51,10 @@ static std::string gradeLabel(int pts) {
 }
 
 int main() {
-    std::vector<std::pair<std::string, int>> lines;
-    for (std::string buf; std::getline(std::cin, buf);) {
-        std::size_t sep = buf.find(',');
-        lines.emplace_back(buf.substr(0, sep), std::stoi(buf.substr(sep + 1)));
+    std::vector<std::pair<std::string, int>> students;
+    for (std::string raw; std::getline(std::cin, raw);) {
+        std::size_t sep = raw.find(',');
+        students.emplace_back(raw.substr(0, sep), std::stoi(raw.substr(sep + 1)));
     }
 
     FileWriter report("report.txt");
@@ -62,7 +62,7 @@ int main() {
     report.write_line("--------------");
 
     double acc = 0.0;
-    for (const auto& entry : lines) {
+    for (const auto& entry : students) {
         acc += entry.second;
         std::ostringstream row;
         row << entry.first << ": " << entry.second << " [" << gradeLabel(entry.second) << "]";
@@ -71,7 +71,7 @@ int main() {
 
     std::ostringstream footer;
     footer << std::fixed << std::setprecision(1)
-           << "Average: " << (acc / static_cast<double>(lines.size()));
+           << "Average: " << (acc / static_cast<double>(students.size()));
     report.write_line(footer.str());
 
     std::cout << "Report written to report.txt" << std::endl;

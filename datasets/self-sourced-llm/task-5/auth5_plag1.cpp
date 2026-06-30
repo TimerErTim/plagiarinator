@@ -7,49 +7,49 @@
 template <typename Key, typename Value>
 class LRUCache {
     std::size_t cap_;
-    std::list<std::pair<Key, Value>> lst_;
-    std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> mp_;
+    std::list<std::pair<Key, Value>> items_;
+    std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> table_;
 
 public:
     explicit LRUCache(std::size_t c) : cap_(c) {}
 
     bool get(const Key& k, Value& o) {
-        auto p = mp_.find(k);
-        if (p == mp_.end()) return false;
+        auto p = table_.find(k);
+        if (p == table_.end()) return false;
         o = p->second->second;
-        lst_.splice(lst_.begin(), lst_, p->second);
+        items_.splice(items_.begin(), items_, p->second);
         return true;
     }
 
     void put(const Key& k, const Value& v) {
-        if (mp_.count(k)) {
-            mp_[k]->second = v;
-            lst_.splice(lst_.begin(), lst_, mp_[k]);
+        if (table_.count(k)) {
+            table_[k]->second = v;
+            items_.splice(items_.begin(), items_, table_[k]);
         } else {
-            if (lst_.size() >= cap_) {
-                mp_.erase(lst_.back().first);
-                lst_.pop_back();
+            if (items_.size() >= cap_) {
+                table_.erase(items_.back().first);
+                items_.pop_back();
             }
-            lst_.emplace_front(k, v);
-            mp_[k] = lst_.begin();
+            items_.emplace_front(k, v);
+            table_[k] = items_.begin();
         }
     }
 };
 
 int main() {
-    std::string s; std::size_t n;
-    std::cin >> s >> n;
-    LRUCache<std::string, int> c(n);
-    std::string cmd, k; int v;
-    while (std::cin >> cmd) {
-        if (cmd == "END") break;
-        if (cmd == "GET") {
+    std::string tag; std::size_t n;
+    std::cin >> tag >> n;
+    LRUCache<std::string, int> store(n);
+    std::string verb, k; int v;
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "GET") {
             std::cin >> k;
-            if (c.get(k, v)) std::cout << "HIT " << v << std::endl;
+            if (store.get(k, v)) std::cout << "HIT " << v << std::endl;
             else std::cout << "MISS\n";
-        } else if (cmd == "PUT") {
+        } else if (verb == "PUT") {
             std::cin >> k >> v;
-            c.put(k, v);
+            store.put(k, v);
         }
     }
     return 0;

@@ -1,8 +1,7 @@
-#include <iomanip>
 #include <iostream>
-#include <unordered_map>
+#include <iomanip>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 template <typename... Args>
 void log_line(std::ostream& out, Args&&... args) {
@@ -20,20 +19,20 @@ void log_line(std::ostream& out, Args&&... args) {
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> data_;
+    std::unordered_map<std::string, std::string> store_;
 
 public:
     Config(std::istream& in) {
         std::string row;
         while (std::getline(in, row) && row.size() > 0) {
             std::size_t eq = row.find('=');
-            data_.insert({row.substr(0, eq), row.substr(eq + 1)});
+            store_.insert({row.substr(0, eq), row.substr(eq + 1)});
         }
     }
 
-    bool has(const std::string& key) const { return data_.count(key) > 0; }
+    bool has(const std::string& key) const { return store_.count(key) > 0; }
 
-    const std::string& get(const std::string& key) const { return data_.at(key); }
+    const std::string& get(const std::string& key) const { return store_.at(key); }
 };
 
 static bool parse_int_token(const std::string& tok) {
@@ -49,20 +48,20 @@ static bool parse_int_token(const std::string& tok) {
 }
 
 int main() {
-    Config ref(std::cin);
-    std::string word;
+    Config settings(std::cin);
+    std::string op;
 
-    while (std::cin >> word) {
-        if (word == "END") break;
+    while (std::cin >> op) {
+        if (op == "END") break;
 
-        if (word == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            std::cout << (ref.has(tag) ? ref.get(tag) : std::string("MISSING")) << '\n';
+        if (op == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (settings.has(k) ? settings.get(k) : std::string("MISSING")) << '\n';
             continue;
         }
 
-        if (word != "LOG") continue;
+        if (op != "LOG") continue;
 
         std::string a, b, c;
         std::cin >> a;

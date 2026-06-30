@@ -1,49 +1,48 @@
-#include <algorithm>
-#include <iostream>
 #include <string>
-#include <type_traits>
+#include <iostream>
 #include <vector>
-// cleaned up version
+#include <type_traits>
+#include <algorithm>
 
 namespace util {
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), std::less<T>{});
+sort_values(std::vector<T>& payload) {
+    std::sort(payload.begin(), payload.end(), std::less<T>{});
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    auto cmp = [](const T& lhs, const T& rhs) {
-        return lhs.size() < rhs.size() || (lhs.size() == rhs.size() && lhs < rhs);
+sort_values(std::vector<T>& payload) {
+    auto byLenThenText = [](const T& left, const T& right) {
+        return left.size() < right.size() || (left.size() == right.size() && left < right);
     };
-    std::sort(data.begin(), data.end(), cmp);
+    std::sort(payload.begin(), payload.end(), byLenThenText);
 }
 
 }  // namespace util
 
 int main() {
-    std::string kind;
-    int n;
-    std::cin >> kind >> n;
+    std::string category;
+    int length;
+    std::cin >> category >> length;
 
-    if (kind == "STR") {
-        std::vector<std::string> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
-        util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
+    if (category == "STR") {
+        std::vector<std::string> payload(static_cast<std::size_t>(length));
+        for (int idx = 0; idx < length; ++idx) std::cin >> payload[static_cast<std::size_t>(idx)];
+        util::sort_values(payload);
+        for (int idx = 0; idx < length; ++idx) {
+            if (idx) std::cout << ' ';
+            std::cout << payload[static_cast<std::size_t>(idx)];
         }
     } else {
-        std::vector<double> items(static_cast<std::size_t>(n));
-        for (int i = 0; i < n; ++i) std::cin >> items[static_cast<std::size_t>(i)];
-        util::sort_values(items);
-        for (int i = 0; i < n; ++i) {
-            if (i) std::cout << ' ';
-            std::cout << items[static_cast<std::size_t>(i)];
+        std::vector<double> payload(static_cast<std::size_t>(length));
+        for (int idx = 0; idx < length; ++idx) std::cin >> payload[static_cast<std::size_t>(idx)];
+        util::sort_values(payload);
+        for (int idx = 0; idx < length; ++idx) {
+            if (idx) std::cout << ' ';
+            std::cout << payload[static_cast<std::size_t>(idx)];
         }
     }
     std::cout << std::endl;

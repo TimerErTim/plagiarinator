@@ -4,9 +4,9 @@ use data_loading::dataset_loader::load_dataset;
 use graph_deeplearning::{loading::parse_cpp_to_tree, model::Graph};
 
 pub fn main() {
-    type Backend = burn::backend::ndarray::NdArray;
+    type Backend = burn::backend::flex::Flex;
     let dataset = load_dataset("datasets/c_cpp_plagiarism").unwrap();
-    let device = burn::backend::ndarray::NdArrayDevice::default();
+    let device = burn::backend::flex::FlexDevice::default();
     let ast = parse_cpp_to_tree(
         File::open(dataset.cpp_dataset.plagiarized_pairs[0].left_path.clone()).unwrap(),
     );

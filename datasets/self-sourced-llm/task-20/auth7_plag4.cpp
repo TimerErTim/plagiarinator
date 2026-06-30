@@ -1,8 +1,7 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -60,13 +59,13 @@ bool is_balanced(const std::string& s) {
             if (!balance::closing_matches(top, c)) return false;
         }
     }
-    return brackets.size() == 0;
+    return !brackets.size();
 }
 
 int main() {
-    for (std::string str; std::getline(std::cin, str);) {
-        if (str == "END") break;
-        std::cout << (is_balanced(str) ? "OK" : "FAIL") << '\n';
+    for (std::string line; std::getline(std::cin, line);) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

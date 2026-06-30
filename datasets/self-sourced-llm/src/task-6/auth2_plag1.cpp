@@ -1,10 +1,9 @@
+#include <vector>
+#include <memory>
+#include <string>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 using std::cin;
 using std::cout;
@@ -62,7 +61,7 @@ void print_shape(const Shape& s)
 {
     cout << fixed << setprecision(4)
          << s.name() << ": area=" << s.area()
-         << ", perimeter=" << s.perimeter() << endl;
+         << ", perimeter=" << s.perimeter() << '\n';
 }
 
 void accumulate(const Shape& s, double& a, double& p)
@@ -74,26 +73,26 @@ void accumulate(const Shape& s, double& a, double& p)
 int main()
 {
     vector<unique_ptr<Shape>> items;
-    string word;
-    while (cin >> word && word != "DONE") {
-        if (word == "CIRCLE") {
+    string tok;
+    while (cin >> tok && tok != "DONE") {
+        if (tok == "CIRCLE") {
             double r; cin >> r;
             items.emplace_back(make_unique<Circle>(r));
-        } else if (word == "RECT") {
+        } else if (tok == "RECT") {
             double w, h; cin >> w >> h;
             items.emplace_back(make_unique<Rectangle>(w, h));
-        } else if (word == "TRI") {
+        } else if (tok == "TRI") {
             double s; cin >> s;
             items.emplace_back(make_unique<Triangle>(s));
         }
     }
-    double areaSum = 0, periSum = 0;
-    for (auto& sh : items) {
-        print_shape(*sh);
-        accumulate(*sh, areaSum, periSum);
+    double ta = 0, tp = 0;
+    for (size_t i = 0; i < items.size(); i++) {
+        print_shape(*items[i]);
+        accumulate(*items[i], ta, tp);
     }
     cout << fixed << setprecision(4)
-         << "TOTAL area=" << areaSum << endl
-         << "TOTAL perimeter=" << periSum << endl;
+         << "TOTAL area=" << ta << endl
+         << "TOTAL perimeter=" << tp << endl;
     return 0;
 }

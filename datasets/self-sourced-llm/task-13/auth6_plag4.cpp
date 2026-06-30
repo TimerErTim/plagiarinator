@@ -1,10 +1,9 @@
-#include <iostream>
 #include <condition_variable>
-#include <queue>
+#include <iostream>
 #include <mutex>
-#include <vector>
+#include <queue>
 #include <thread>
-// quick submit
+#include <vector>
 
 template <typename Item>
 class BlockingQueue {
@@ -41,53 +40,53 @@ private:
 };
 
 struct SimConfig {
-    std::size_t producers, consumers, word_;
+    std::size_t producers, consumers, items;
 };
 
 SimConfig load_config() {
     SimConfig cfg{};
     std::string key;
-    std::cin >> key >> cfg.producers >> key >> cfg.consumers >> key >> cfg.word_;
+    std::cin >> key >> cfg.producers >> key >> cfg.consumers >> key >> cfg.items;
     return cfg;
 }
 
 int main() {
-    SimConfig ref = load_config();
-    BlockingQueue<int> queue(ref.word_);
+    SimConfig cfg = load_config();
+    BlockingQueue<int> fifo(cfg.items);
     std::vector<std::thread> threads;
 
-    std::size_t per = ref.word_ / ref.producers;
-    std::size_t extra = ref.word_ % ref.producers;
+    std::size_t per = cfg.items / cfg.producers;
+    std::size_t extra = cfg.items % cfg.producers;
     int next_id = 0;
 
-    for (std::size_t pi = 0; pi < ref.producers; ++pi) {
+    for (std::size_t pi = 0; pi < cfg.producers; ++pi) {
         std::size_t batch = per + (pi < extra ? 1 : 0);
         int start = next_id;
         next_id += static_cast<int>(batch);
         threads.emplace_back([&, batch, start] {
             for (std::size_t i = 0; i < batch; ++i)
-                queue.push(start + static_cast<int>(i));
+                fifo.push(start + static_cast<int>(i));
         });
     }
 
     std::mutex done_lock;
     std::size_t consumed = 0;
 
-    for (std::size_t ci = 0; ci < ref.consumers; ++ci) {
+    for (std::size_t ci = 0; ci < cfg.consumers; ++ci) {
         threads.emplace_back([&] {
             while (true) {
-                int value = queue.pop();
+                int value = fifo.pop();
                 if (value < 0) break;
                 std::cout << "got " << value << '\n';
                 bool finished = false;
                 {
                     std::lock_guard<std::mutex> guard(done_lock);
                     ++consumed;
-                    finished = (consumed == ref.word_);
+                    finished = (consumed == cfg.items);
                 }
                 if (finished) {
-                    for (std::size_t tag = 0; tag < ref.consumers; ++tag)
-                        queue.push(-1);
+                    for (std::size_t k = 0; k < cfg.consumers; ++k)
+                        fifo.push(-1);
                 }
             }
         });

@@ -1,9 +1,8 @@
+#include <cstring>
 #include <cctype>
 #include <algorithm>
 #include <iostream>
-#include <cstring>
 #include <vector>
-// quick submit
 
 class StringBuffer {
     char* text;
@@ -56,16 +55,16 @@ public:
 };
 
 int main() {
-    std::vector<StringBuffer> arr;
-    for (std::string word; std::getline(std::cin, word);)
-        arr.emplace_back(word.c_str());
+    std::vector<StringBuffer> items;
+    for (std::string line; std::getline(std::cin, line);)
+        items.emplace_back(line.c_str());
 
-    for (auto& n : arr) n.trim();
-    arr.erase(std::remove_if(arr.begin(), arr.end(),
+    for (auto& item : items) item.trim();
+    items.erase(std::remove_if(items.begin(), items.end(),
                                [](const StringBuffer& n) { return n.size() == 0; }),
-                arr.end());
-    std::sort(arr.begin(), arr.end());
-    for (const auto& n : arr)
-        std::cout << n.c_str() << '\n';
+                items.end());
+    std::sort(items.begin(), items.end());
+    for (const auto& item : items)
+        std::cout << item.c_str() << '\n';
     return 0;
 }

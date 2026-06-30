@@ -1,10 +1,9 @@
-#include <iostream>
 #include <condition_variable>
-#include <queue>
+#include <iostream>
 #include <mutex>
-#include <vector>
+#include <queue>
 #include <thread>
-// quick submit
+#include <vector>
 
 namespace sync {
 
@@ -50,26 +49,26 @@ int main() {
     std::string s;
     std::cin >> s >> P >> s >> C >> s >> N;
 
-    BlockingQueue<int> ref(N + 1);
+    BlockingQueue<int> queue(N + 1);
     std::vector<std::thread> threads;
     std::mutex stop_mu;
     std::size_t got = 0;
 
-    int tag = 0;
+    int id = 0;
     for (std::size_t i = 0; i < P; ++i) {
         std::size_t cnt = N / P + (i < N % P ? 1 : 0);
-        int from = tag;
-        tag += static_cast<int>(cnt);
+        int from = id;
+        id += static_cast<int>(cnt);
         threads.emplace_back([&, cnt, from]() {
             for (std::size_t j = 0; j < cnt; ++j)
-                ref.push(from + static_cast<int>(j));
+                queue.push(from + static_cast<int>(j));
         });
     }
 
     for (std::size_t i = 0; i < C; ++i) {
         threads.emplace_back([&]() {
             for (;;) {
-                int v = ref.pop();
+                int v = queue.pop();
                 if (v == -1) return;
                 std::cout << "got " << v << '\n';
                 bool last = false;
@@ -80,7 +79,7 @@ int main() {
                 }
                 if (last) {
                     for (std::size_t t = 0; t < C; ++t)
-                        ref.push(-1);
+                        queue.push(-1);
                 }
             }
         });

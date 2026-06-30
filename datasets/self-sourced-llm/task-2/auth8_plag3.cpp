@@ -1,84 +1,100 @@
-#include <utility>
 #include <iostream>
 #include <sstream>
 #include <string>
-// from lab partner
+#include <utility>
+// borrowed from roommate's homework
 
 template <typename T>
-class LinkedList {
-    struct Node {
-        T val;
-        Node* next;
+class LinkedList
+{
+    struct Node
+    {
+        T payload;
+        Node* link;
     };
 
-    Node* ptr_;
-    std::size_t num_;
+    Node* chainHead;
+    std::size_t tally;
 
-    static void destroyChain(Node* n) {
-        while (n) {
-            Node* save = n->next;
+    static void wipeChain(Node* n)
+    {
+        while (n)
+        {
+            Node* nxt = n->link;
             delete n;
-            n = save;
+            n = nxt;
         }
     }
 
 public:
-    LinkedList() : ptr_(nullptr), num_(0) {}
-    ~LinkedList() { destroyChain(ptr_); }
+    LinkedList() : chainHead(nullptr), tally(0) {}
+    ~LinkedList() { wipeChain(chainHead); }
 
-    void push_back(const T& value) {
+    void push_back(const T& value)
+    {
         Node* node = new Node{value, nullptr};
-        if (!ptr_) {
-            ptr_ = node;
-        } else {
-            Node* tail = ptr_;
-            while (tail->next) tail = tail->next;
-            tail->next = node;
+        if (!chainHead)
+            chainHead = node;
+        else
+        {
+            Node* tail = chainHead;
+            while (tail->link) tail = tail->link;
+            tail->link = node;
         }
-        num_++;
+        tally++;
     }
 
-    std::size_t size() const { return num_; }
+    std::size_t size() const { return tally; }
 
-    class Iterator {
-        Node* current;
+    class Iterator
+    {
+        Node* spot;
     public:
-        Iterator(Node* n) : current(n) {}
-        T& operator*() { return current->val; }
-        const T& operator*() const { return current->val; }
-        Iterator& operator++() { current = current->next; return *this; }
-        bool operator!=(const Iterator& rhs) const { return current != rhs.current; }
+        Iterator(Node* n) : spot(n) {}
+        T& operator*() { return spot->payload; }
+        const T& operator*() const { return spot->payload; }
+        Iterator& operator++() { spot = spot->link; return *this; }
+        bool operator!=(const Iterator& rhs) const { return spot != rhs.spot; }
     };
 
-    Iterator begin() { return Iterator(ptr_); }
+    Iterator begin() { return Iterator(chainHead); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(ptr_); }
+    Iterator begin() const { return Iterator(chainHead); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
+LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs)
+{
     LinkedList<T> output;
     auto leftIt = lhs.begin();
     auto rightIt = rhs.begin();
 
-    while (leftIt != lhs.end() && rightIt != rhs.end()) {
-        if (*leftIt <= *rightIt) {
+    while (leftIt != lhs.end() && rightIt != rhs.end())
+    {
+        if (*leftIt <= *rightIt)
+        {
             output.push_back(*leftIt);
             ++leftIt;
-        } else {
+        }
+        else
+        {
             output.push_back(*rightIt);
             ++rightIt;
         }
     }
-    for (; leftIt != lhs.end(); ++leftIt)
-        output.push_back(*leftIt);
-    for (; rightIt != rhs.end(); ++rightIt)
-        output.push_back(*rightIt);
+    auto drain = [&](auto it, auto end) {
+        std::size_t k = 0;
+        for (auto t = it; t != end; ++t) ++k;
+        for (; k-- > 0; ++it) output.push_back(*it);
+    };
+    drain(leftIt, lhs.end());
+    drain(rightIt, rhs.end());
     return output;
 }
 
-static LinkedList<int> parseLine(std::istream& in) {
+static LinkedList<int> parseLine(std::istream& in)
+{
     LinkedList<int> list;
     std::string text;
     if (!std::getline(in, text))
@@ -90,14 +106,16 @@ static LinkedList<int> parseLine(std::istream& in) {
     return list;
 }
 
-int main() {
-    LinkedList<int> listOne = parseLine(std::cin);
-    LinkedList<int> listTwo = parseLine(std::cin);
-    LinkedList<int> res = merge_sorted(listOne, listTwo);
+int main()
+{
+    LinkedList<int> alpha = parseLine(std::cin);
+    LinkedList<int> beta = parseLine(std::cin);
+    LinkedList<int> combo = merge_sorted(alpha, beta);
 
-    std::size_t idx = 0;
-    for (auto it = res.begin(); it != res.end(); ++it, ++idx) {
-        if (idx > 0) std::cout << ' ';
+    std::size_t pos = 0;
+    for (auto it = combo.begin(); it != combo.end(); ++it, ++pos)
+    {
+        if (pos > 0) std::cout << ' ';
         std::cout << *it;
     }
     std::cout << '\n';

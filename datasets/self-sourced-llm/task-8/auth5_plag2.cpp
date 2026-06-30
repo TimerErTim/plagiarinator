@@ -1,66 +1,76 @@
-#include <vector>
 #include <iostream>
-// adapted from classmate submission
+#include <vector>
 
 template <typename T>
 class Matrix {
-    std::size_t R, C;
-    std::vector<T> d;
+    std::size_t nRow, nCol;
+    std::vector<T> buf;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : R(r), C(c), d(r * c, T()) {}
+    Matrix(std::size_t rows, std::size_t cols)
+        : nRow(rows), nCol(cols), buf(rows * cols, T{}) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return d[r * C + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return d[r * C + c]; }
+    T& operator()(std::size_t row, std::size_t col) { return buf[row * nCol + col]; }
+    const T& operator()(std::size_t row, std::size_t col) const { return buf[row * nCol + col]; }
 
-    Matrix operator+(const Matrix& o) const {
-        Matrix m(R, C);
-        for (std::size_t i = 0; i < d.size(); ++i) m.d[i] = d[i] + o.d[i];
-        return m;
+    std::size_t rows() const { return nRow; }
+    std::size_t cols() const { return nCol; }
+
+    Matrix operator+(const Matrix& other) const {
+        Matrix sum(nRow, nCol);
+        for (std::size_t i = 0; i < buf.size(); ++i)
+            sum.buf[i] = buf[i] + other.buf[i];
+        return sum;
     }
 
-    Matrix operator*(const Matrix& o) const {
-        Matrix m(R, o.C);
-        for (std::size_t i = 0; i < R; ++i)
-            for (std::size_t j = 0; j < o.C; ++j)
-                for (std::size_t k = 0; k < C; ++k)
-                    m(i, j) += (*this)(i, k) * o(k, j);
-        return m;
-    }
-
-    std::size_t rows() const { return R; }
-    std::size_t cols() const { return C; }
-
-    friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-        for (std::size_t i = 0; i < m.R; ++i)
-{
-            for (std::size_t j = 0; j < m.C; ++j)
-{
-                if (j) os << ' ';
-                os << m(i, j);
+    Matrix operator*(const Matrix& other) const {
+        Matrix product(nRow, other.nCol);
+        for (std::size_t i = 0; i < nRow; ++i)
+        {
+            for (std::size_t j = 0; j < other.nCol; ++j)
+            {
+                T total = T{};
+                for (std::size_t k = 0; k < nCol; ++k)
+                    total += (*this)(i, k) * other(k, j);
+                product(i, j) = total;
             }
-            os << '\n';
         }
-        return os;
+        return product;
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const Matrix& matrix) {
+        for (std::size_t i = 0; i < matrix.nRow; ++i)
+        {
+            for (std::size_t j = 0; j < matrix.nCol; ++j)
+            {
+                if (j > 0) stream << ' ';
+                stream << matrix(i, j);
+            }
+            stream << '\n';
+        }
+        return stream;
     }
 };
 
-int main()
-{
-    std::size_t ra, ca;
-    std::cin >> ra >> ca;
-    Matrix<int> A(ra, ca);
-    for (std::size_t i = 0; i < ra; ++i)
-        for (std::size_t j = 0; j < ca; ++j)
-            std::cin >> A(i, j);
-    std::size_t rb, cb;
-    std::cin >> rb >> cb;
-    if (ca != rb)
-{ std::cout << "ERROR\n"; return 0; }
-    Matrix<int> B(rb, cb);
-    for (std::size_t i = 0; i < rb; ++i)
-        for (std::size_t j = 0; j < cb; ++j)
-            std::cin >> B(i, j);
-    std::cout << A * B + A;
+template <typename T>
+Matrix<T> readFromStream(std::istream& in) {
+    std::size_t r, c;
+    in >> r >> c;
+    Matrix<T> m(r, c);
+    for (std::size_t j = 0; j < c; ++j)
+        for (std::size_t i = 0; i < r; ++i)
+            in >> m(i, j);
+    return m;
+}
+
+int main() {
+    Matrix<int> matA = readFromStream<int>(std::cin);
+    Matrix<int> matB = readFromStream<int>(std::cin);
+    if (matA.cols() != matB.rows()) {
+        std::cout << "ERROR\n";
+        return 0;
+    }
+    Matrix<int> result = matA * matB + matA;
+    std::cout << result;
     return 0;
 }

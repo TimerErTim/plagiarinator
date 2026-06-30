@@ -1,11 +1,10 @@
-#include <iomanip>
-#include <functional>
-#include <sstream>
 #include <iostream>
-#include <utility>
+#include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
-// quick submit
+#include <functional>
+#include <iomanip>
 
 class Sensor {
     double celsiusReading;
@@ -34,21 +33,21 @@ public:
 };
 
 int main() {
-    Sensor dev;
+    Sensor sensor;
     std::stringstream input;
     input << std::cin.rdbuf();
 
-    std::string elem;
-    while (input >> elem) {
-        if (elem == "END") break;
-        if (elem == "SUB") {
+    std::string token;
+    while (input >> token) {
+        if (token == "END") break;
+        if (token == "SUB") {
             std::string name;
             input >> name;
-            dev.subscribe(name, [](double) {});
-        } else if (elem == "SET") {
+            sensor.subscribe(name, [](double) {});
+        } else if (token == "SET") {
             double temp;
             input >> temp;
-            dev.set_value(temp);
+            sensor.set_value(temp);
         }
     }
     return 0;

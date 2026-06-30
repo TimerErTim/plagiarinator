@@ -1,63 +1,73 @@
-#include <vector>
-#include <algorithm>
 #include <iostream>
+#include <vector>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+#include <algorithm>
+// found online
 
-namespace util {
+namespace pipeline
+{
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data);
+template <typename Chunk>
+typename std::enable_if<std::is_arithmetic<Chunk>::value, void>::type
+sort_values(std::vector<Chunk>& rack);
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data);
+template <typename Chunk>
+typename std::enable_if<!std::is_arithmetic<Chunk>::value, void>::type
+sort_values(std::vector<Chunk>& rack);
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end());
+template <typename Chunk>
+typename std::enable_if<std::is_arithmetic<Chunk>::value, void>::type
+sort_values(std::vector<Chunk>& rack)
+{
+    std::sort(rack.begin(), rack.end());
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& s1, const T& s2) {
-        if (s1.length() != s2.length()) return s1.length() < s2.length();
-        return s1 < s2;
+template <typename Chunk>
+typename std::enable_if<!std::is_arithmetic<Chunk>::value, void>::type
+sort_values(std::vector<Chunk>& rack)
+{
+    std::sort(rack.begin(), rack.end(), [](const Chunk& alpha, const Chunk& beta)
+    {
+        if (alpha.length() != beta.length()) return alpha.length() < beta.length();
+        return alpha < beta;
     });
 }
 
-}  // namespace util
+}  // namespace pipeline
 
-template <typename Container>
-void dump(const Container& c) {
-    bool first = true;
-    for (const auto& item : c) {
-        if (!first) std::cout << ' ';
-        first = false;
-        std::cout << item;
+template <typename Rack>
+void spill(const Rack& rack)
+{
+    bool gap = true;
+    for (const auto& unit : rack)
+    {
+        if (!gap) std::cout << ' ';
+        gap = false;
+        std::cout << unit;
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
-int main() {
-    std::string typ;
-    std::size_t n;
-    std::cin >> typ >> n;
+int main()
+{
+    std::string channel;
+    std::size_t width;
+    std::cin >> channel >> width;
 
-    if (typ == "STR") {
-        std::vector<std::string> data(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> data[i];
-        util::sort_values(data);
-        dump(data);
-    } else {
-        std::vector<double> data(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> data[i];
-        util::sort_values(data);
-        dump(data);
+    if (channel == "STR")
+    {
+        std::vector<std::string> rack(width);
+        for (std::size_t pin = 0; pin < width; ++pin) std::cin >> rack[pin];
+        pipeline::sort_values(rack);
+        spill(rack);
+    }
+    else
+    {
+        std::vector<double> rack(width);
+        for (std::size_t pin = 0; pin < width; ++pin) std::cin >> rack[pin];
+        pipeline::sort_values(rack);
+        spill(rack);
     }
     return 0;
 }

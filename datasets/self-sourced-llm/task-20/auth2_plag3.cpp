@@ -2,66 +2,67 @@
 #include <array>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// bracket checker v2
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> data;
-    std::size_t count = 0;
+    std::array<T, N> backing;
+    std::size_t nItems = 0;
 
 public:
     bool push(const T& value) {
-        if (count == N) return false;
-        data[count++] = value;
+        if (nItems == N) return false;
+        backing[nItems++] = value;
         return true;
     }
 
     bool push(T&& value) {
-        if (count == N) return false;
-        data[count++] = std::move(value);
+        if (nItems == N) return false;
+        backing[nItems++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
-        if (!count) return false;
-        out = data[--count];
+        if (!nItems) return false;
+        out = backing[--nItems];
         return true;
     }
 
     bool peek(T& out) const {
-        if (!count) return false;
-        out = data[count - 1];
+        if (!nItems) return false;
+        out = backing[nItems - 1];
         return true;
     }
 
-    std::size_t size() const { return count; }
+    std::size_t size() const { return nItems; }
 };
 
-static int pair_score(char a, char b) {
-    if (a == '(' && b == ')') return 1;
-    if (a == '[' && b == ']') return 1;
-    if (a == '{' && b == '}') return 1;
+static int brackets_match(char left, char right) {
+    if (left == '(' && right == ')') return 1;
+    if (left == '[' && right == ']') return 1;
+    if (left == '{' && right == '}') return 1;
     return 0;
 }
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> stk;
-    for (unsigned char c : s) {
+bool is_balanced(const std::string& text) {
+    FixedStack<char, 128> pile;
+    for (unsigned char raw : text) {
+        char c = static_cast<char>(raw);
         if (c == '(' || c == '[' || c == '{') {
-            if (!stk.push(static_cast<char>(c))) return false;
+            if (!pile.push(c)) return false;
         } else if (c == ')' || c == ']' || c == '}') {
             char top;
-            if (!stk.pop(top)) return false;
-            if (!pair_score(top, static_cast<char>(c))) return false;
+            if (!pile.pop(top)) return false;
+            if (!brackets_match(top, c)) return false;
         }
     }
-    return stk.size() == 0;
+    return pile.size() == 0;
 }
 
 int main() {
-    for (std::string buf; std::getline(std::cin, buf);) {
-        if (buf == "END") break;
-        std::cout << (is_balanced(buf) ? "OK" : "FAIL") << '\n';
+    for (std::string line; std::getline(std::cin, line);) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

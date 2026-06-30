@@ -1,10 +1,9 @@
-#include <vector>
-#include <variant>
-#include <string>
-#include <sstream>
 #include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -43,26 +42,29 @@ void print_metric(const Printable<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
-int main()
+using Item = std::variant<Distance, Mass, Temperature>;
 
+static void try_store(const std::string& t, double n, std::vector<Item>& items)
 {
-    using Item = std::variant<Distance, Mass, Temperature>;
+    if (t == "DIST") items.push_back(Distance(n));
+    else if (t == "MASS") items.push_back(Mass(n));
+    else if (t == "TEMP") items.push_back(Temperature(n));
+}
+
+int main()
+{
     std::vector<Item> items;
 
     std::string t;
-    while (std::cin >> t) 
-{
+    while (std::cin >> t)
+    {
         if (t == "END") break;
         double n;
         std::cin >> n;
-        if (t == "DIST") items.push_back(Distance(n));
-        else if (t == "MASS") items.push_back(Mass(n));
-        else if (t == "TEMP") items.push_back(Temperature(n));
+        try_store(t, n, items);
     }
 
-    for (const Item& it : items) 
-{
-        std::visit([](const auto& m) { print_metric(m); }, it);
-    }
+    for (std::size_t i = 0; i < items.size(); ++i)
+        std::visit([](const auto& m) { print_metric(m); }, items[i]);
     return 0;
 }

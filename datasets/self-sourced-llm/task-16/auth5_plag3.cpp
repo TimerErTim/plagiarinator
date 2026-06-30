@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// shared sol from discord
 
 namespace assets {
 
@@ -14,63 +14,63 @@ struct Image {
 class ImageCache {
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        auto iter = pool_.find(key);
-        if (iter != pool_.end()) {
-            if (auto strong = iter->second.lock())
-                return strong;
+        auto spot = cache_.find(key);
+        if (spot != cache_.end()) {
+            if (auto kept = spot->second.lock())
+                return kept;
         }
-        auto image = std::make_shared<Image>(Image{key, pixels});
-        pool_[key] = image;
-        return image;
+        auto fresh_img = std::make_shared<Image>(Image{key, pixels});
+        cache_[key] = fresh_img;
+        return fresh_img;
     }
 
     std::size_t size() const {
-        std::size_t live = 0;
-        for (const auto& item : pool_)
-            if (!item.second.expired()) ++live;
-        return live;
+        std::size_t active = 0;
+        for (const auto& node : cache_)
+            if (!node.second.expired()) ++active;
+        return active;
     }
 
-    void drop_all() { pool_.clear(); }
+    void drop_all() { cache_.clear(); }
 
     bool fetch(const std::string& key, int& pixels) const {
-        auto iter = pool_.find(key);
-        if (iter == pool_.end()) return false;
-        std::shared_ptr<Image> img = iter->second.lock();
-        if (!img) return false;
-        pixels = img->pixel_count;
+        auto spot = cache_.find(key);
+        if (spot == cache_.end()) return false;
+        std::shared_ptr<Image> obj = spot->second.lock();
+        if (!obj) return false;
+        pixels = obj->pixel_count;
         return true;
     }
 
 private:
-    std::unordered_map<std::string, std::weak_ptr<Image>> pool_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> cache_;
 };
 
 }  // namespace assets
 
 int main() {
     using assets::ImageCache;
-    ImageCache box;
-    std::string ln;
+    ImageCache store;
+    std::string action;
 
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "LOAD") {
-            std::string val;
-            int tmp;
-            std::cin >> val >> tmp;
+    while (std::cin >> action) {
+        if (action == "END") break;
+        if (action == "LOAD") {
+            std::string tag;
+            int px_num;
+            std::cin >> tag >> px_num;
             {
-                auto handle = box.load(val, tmp);
-                std::cout << "loaded " << handle->name << " pixels=" << handle->pixel_count << '\n';
+                auto ref = store.load(tag, px_num);
+                std::cout << "loaded " << ref->name << " pixels=" << ref->pixel_count << std::endl;
             }
-        } else if (ln == "QUERY") {
-            std::string val;
-            std::cin >> val;
-            int tmp = 0;
-            if (box.fetch(val, tmp)) std::cout << "pixels=" << tmp << '\n';
+        } else if (action == "QUERY") {
+            std::string tag;
+            std::cin >> tag;
+            int px_num = 0;
+            if (store.fetch(tag, px_num)) std::cout << "pixels=" << px_num << '\n';
             else std::cout << "EXPIRED\n";
-        } else if (ln == "DROP_ALL") {
-            box.drop_all();
+        } else if (action == "DROP_ALL") {
+            store.drop_all();
         }
     }
     return 0;

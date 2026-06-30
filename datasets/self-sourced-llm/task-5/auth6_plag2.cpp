@@ -1,11 +1,12 @@
-#include <unordered_map>
 #include <string>
 #include <list>
 #include <iostream>
+#include <unordered_map>
 // adapted from classmate submission
 
 template <typename Key, typename Value>
-class LRUCache {
+class LRUCache
+{
     using NodeList = std::list<std::pair<Key, Value>>;
     using MapType = std::unordered_map<Key, typename NodeList::iterator>;
 
@@ -13,11 +14,13 @@ class LRUCache {
     NodeList chain_;
     MapType idx_;
 
-    void moveToFront(typename NodeList::iterator where) {
+    void moveToFront(typename NodeList::iterator where)
+    {
         chain_.splice(chain_.begin(), chain_, where);
     }
 
-    void dropOldest() {
+    void dropOldest()
+    {
         idx_.erase(chain_.back().first);
         chain_.pop_back();
     }
@@ -25,7 +28,8 @@ class LRUCache {
 public:
     explicit LRUCache(std::size_t capacity) : limit_(capacity) {}
 
-    bool get(const Key& key, Value& output) {
+    bool get(const Key& key, Value& output)
+    {
         auto iterator = idx_.find(key);
         if (iterator == idx_.end())
             return false;
@@ -34,7 +38,8 @@ public:
         return true;
     }
 
-    void put(const Key& key, const Value& value) {
+    void put(const Key& key, const Value& value)
+    {
         auto iterator = idx_.find(key);
         if (iterator != idx_.end()) {
             iterator->second->second = value;
@@ -55,20 +60,20 @@ int main()
     std::cin >> capacityTag >> capacityValue;
     LRUCache<std::string, int> lru(capacityValue);
 
-    std::string command;
-    while (std::cin >> command)
-{
-        if (command == "END") break;
-        if (command == "GET")
-{
+    std::string verb;
+    while (std::cin >> verb)
+    {
+        if (verb == "END") break;
+        if (verb == "GET")
+        {
             std::string key;
             std::cin >> key;
             int value;
             if (lru.get(key, value))
-                std::cout << "HIT " << value << std::endl;
+                std::cout << "HIT " << value << '\n';
             else
-                std::cout << "MISS" << std::endl;
-        } else if (command == "PUT") {
+                std::cout << "MISS\n";
+        } else if (verb == "PUT") {
             std::string key;
             int value;
             std::cin >> key >> value;

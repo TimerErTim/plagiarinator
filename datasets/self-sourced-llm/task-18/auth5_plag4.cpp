@@ -1,7 +1,6 @@
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
-// quick submit
 
 class Parser;
 
@@ -68,13 +67,13 @@ struct HeaderState : State {
 int main() {
     Parser ctx;
     ctx.state = std::make_unique<HeaderState>();
-    std::string str;
-    while (std::getline(std::cin, str))
-        ctx.state = ctx.state->handle(ctx, str);
+    std::string row;
+    while (std::getline(std::cin, row))
+        ctx.state = ctx.state->handle(ctx, row);
 
-    std::cout << "INFO: " << ctx.info << '\n';
-    std::cout << "WARN: " << ctx.warn << '\n';
-    std::cout << "ERROR: " << ctx.error << '\n';
-    std::cout << "REJECTED: " << ctx.rejected << '\n';
+    std::cout << "INFO: " << ctx.info << std::endl;
+    std::cout << "WARN: " << ctx.warn << std::endl;
+    std::cout << "ERROR: " << ctx.error << std::endl;
+    std::cout << "REJECTED: " << ctx.rejected << std::endl;
     return 0;
 }

@@ -1,44 +1,44 @@
-#include <iomanip>
-#include <fstream>
 #include <sstream>
-#include <iostream>
-#include <utility>
 #include <string>
+#include <utility>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+// quick submit before deadline
 
 class FileWriter {
 private:
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream os_;
+    std::string path_;
 
 public:
-    explicit FileWriter(const std::string& path) : tmp_(path) {
-        word_.open(path);
+    explicit FileWriter(const std::string& path) : path_(path) {
+        os_.open(path);
     }
 
     ~FileWriter() {
-        if (word_.is_open())
-            word_.close();
+        if (os_.is_open())
+            os_.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& other) noexcept
-        : word_(std::move(other.word_)), tmp_(std::move(other.tmp_)) {}
+        : os_(std::move(other.os_)), path_(std::move(other.path_)) {}
 
     FileWriter& operator=(FileWriter&& other) noexcept {
         if (&other != this) {
-            if (word_.is_open()) word_.close();
-            word_ = std::move(other.word_);
-            tmp_ = std::move(other.tmp_);
+            if (os_.is_open()) os_.close();
+            os_ = std::move(other.os_);
+            path_ = std::move(other.path_);
         }
         return *this;
     }
 
     void write_line(const std::string& line) {
-        word_ << line << '\n';
+        os_ << line << std::endl;
     }
 };
 
@@ -66,13 +66,13 @@ void emitReport(FileWriter writer, const std::vector<std::pair<std::string, int>
 }
 
 int main() {
-    std::vector<std::pair<std::string, int>> arr;
+    std::vector<std::pair<std::string, int>> entries;
     std::string buffer;
     while (std::getline(std::cin, buffer)) {
         auto comma = buffer.find(',');
-        arr.push_back({buffer.substr(0, comma), std::stoi(buffer.substr(comma + 1))});
+        entries.push_back({buffer.substr(0, comma), std::stoi(buffer.substr(comma + 1))});
     }
-    emitReport(FileWriter("report.txt"), arr);
+    emitReport(FileWriter("report.txt"), entries);
     std::cout << "Report written to report.txt\n";
     return 0;
 }

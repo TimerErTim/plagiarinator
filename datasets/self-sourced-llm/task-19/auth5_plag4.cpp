@@ -1,7 +1,6 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
     std::string storage;
@@ -37,34 +36,34 @@ public:
 };
 
 int main() {
-    StringBuilder master;
-    std::string tag;
+    StringBuilder doc;
+    std::string word;
 
-    while (std::cin >> tag) {
-        if (tag == "END") break;
-        if (tag != "SECTION") continue;
+    while (std::cin >> word) {
+        if (word == "END") break;
+        if (word != "SECTION") continue;
 
-        std::string hdr;
-        std::getline(std::cin, hdr);
-        if (hdr.size() && hdr[0] == ' ') hdr = hdr.substr(1);
+        std::string title;
+        std::getline(std::cin, title);
+        if (title.size() && title[0] == ' ') title = title.substr(1);
 
         std::string body;
         body.reserve(128);
         body += "# ";
-        body += hdr;
+        body += title;
         body += "\n";
 
-        std::string str;
-        while (std::getline(std::cin, str)) {
-            if (str.empty()) break;
-            body += str;
+        std::string row;
+        while (std::getline(std::cin, row)) {
+            if (row.empty()) break;
+            body += row;
             body += '\n';
         }
         body += '\n';
 
-        master.append(std::move(body));
+        doc.append(std::move(body));
     }
 
-    std::cout << master.str();
+    std::cout << doc.str();
     return 0;
 }

@@ -1,11 +1,10 @@
-#include <condition_variable>
-#include <iostream>
 #include <mutex>
 #include <queue>
 #include <sstream>
 #include <thread>
 #include <vector>
-// cleaned up version
+#include <condition_variable>
+#include <iostream>
 
 template <typename T>
 class BlockingQueue {
@@ -14,27 +13,27 @@ public:
 
     void push(T value) {
         std::unique_lock<std::mutex> lk(mu_);
-        cv_producer_.wait(lk, [this] { return elems_.size() < capacity_; });
-        elems_.push(std::move(value));
+        cv_producer_.wait(lk, [this] { return data_.size() < capacity_; });
+        data_.emplace(std::move(value));
         cv_consumer_.notify_one();
     }
 
     T pop() {
         std::unique_lock<std::mutex> lk(mu_);
-        cv_consumer_.wait(lk, [this] { return !elems_.empty(); });
-        T front = std::move(elems_.front());
-        elems_.pop();
+        cv_consumer_.wait(lk, [this] { return !data_.empty(); });
+        T front = std::move(data_.front());
+        data_.pop();
         cv_producer_.notify_one();
         return front;
     }
 
     std::size_t size() const {
         std::lock_guard<std::mutex> lk(mu_);
-        return elems_.size();
+        return data_.size();
     }
 
 private:
-    std::queue<T> elems_;
+    std::queue<T> data_;
     std::size_t capacity_;
     mutable std::mutex mu_;
     std::condition_variable cv_producer_;
@@ -45,7 +44,7 @@ struct Script {
     std::size_t producers, consumers, items;
 };
 
-Script load_script() {
+Script read_script() {
     Script s{};
     std::string w;
     std::cin >> w >> s.producers >> w >> s.consumers >> w >> s.items;
@@ -53,44 +52,44 @@ Script load_script() {
 }
 
 int main() {
-    Script conf = load_script();
-    BlockingQueue<int> q(conf.items + 2);
+    Script cfg = read_script();
+    BlockingQueue<int> q(cfg.items + 2);
     std::vector<std::thread> workers;
     std::mutex tally_mu;
     std::size_t tally = 0;
 
     int next = 0;
-    for (std::size_t i = 0; i < conf.producers; ++i) {
-        std::size_t share = conf.items / conf.producers + (i < conf.items % conf.producers ? 1 : 0);
+    for (std::size_t i = 0; i < cfg.producers; i++) {
+        std::size_t share = cfg.items / cfg.producers + (i < cfg.items % cfg.producers ? 1 : 0);
         int begin = next;
         next += static_cast<int>(share);
-        workers.emplace_back([&, share, begin]() {
-            for (std::size_t j = 0; j < share; ++j)
+        workers.push_back(std::thread([&, share, begin]() {
+            for (std::size_t j = 0; j < share; j++)
                 q.push(begin + static_cast<int>(j));
-        });
+        }));
     }
 
-    for (std::size_t i = 0; i < conf.consumers; ++i) {
-        workers.emplace_back([&]() {
+    for (std::size_t i = 0; i < cfg.consumers; i++) {
+        workers.push_back(std::thread([&, cfg]() {
             while (true) {
-                int n = q.pop();
-                if (n == -1) return;
-                std::cout << "got " << n << '\n';
+                int val = q.pop();
+                if (val == -1) return;
+                std::cout << "got " << val << std::endl;
                 bool done = false;
                 {
                     std::lock_guard<std::mutex> g(tally_mu);
                     ++tally;
-                    done = (tally == conf.items);
+                    done = (tally == cfg.items);
                 }
                 if (done) {
-                    for (std::size_t id = 0; id < conf.consumers; ++id)
+                    for (std::size_t k = 0; k < cfg.consumers; k++)
                         q.push(-1);
                 }
             }
-        });
+        }));
     }
 
-    for (auto& piece : workers) piece.join();
-    std::cout << "DONE\n";
+    for (auto& t : workers) t.join();
+    std::cout << "DONE" << std::endl;
     return 0;
 }

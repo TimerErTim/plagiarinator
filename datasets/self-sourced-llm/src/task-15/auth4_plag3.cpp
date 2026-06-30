@@ -1,71 +1,72 @@
+#include <sstream>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Concrete>
+class TextBase {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Concrete*>(this)->format();
     }
 };
 
-struct Distance : Printable<Distance> {
+struct LenMeasure : TextBase<LenMeasure> {
     double meters;
-    Distance(double m) : meters(m) {}
+    LenMeasure(double m) : meters(m) {}
     std::string format() const;
 };
 
-struct Mass : Printable<Mass> {
+struct WtMeasure : TextBase<WtMeasure> {
     double kilograms;
-    Mass(double k) : kilograms(k) {}
+    WtMeasure(double k) : kilograms(k) {}
     std::string format() const;
 };
 
-struct Temperature : Printable<Temperature> {
+struct CMeasure : TextBase<CMeasure> {
     double celsius;
-    Temperature(double c) : celsius(c) {}
+    CMeasure(double c) : celsius(c) {}
     std::string format() const;
 };
 
-std::string Distance::format() const {
+std::string LenMeasure::format() const {
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(1) << "Distance: " << meters << " m";
     return ss.str();
 }
 
-std::string Mass::format() const {
+std::string WtMeasure::format() const {
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(1) << "Mass: " << kilograms << " kg";
     return ss.str();
 }
 
-std::string Temperature::format() const {
+std::string CMeasure::format() const {
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(1) << "Temp: " << celsius << " C";
     return ss.str();
 }
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void write_out(const TextBase<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> data;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
+    std::vector<std::variant<LenMeasure, WtMeasure, CMeasure>> data;
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "END") break;
         double x;
         std::cin >> x;
-        if (ln == "DIST") data.emplace_back(Distance{x});
-        else if (ln == "MASS") data.emplace_back(Mass{x});
-        else if (ln == "TEMP") data.emplace_back(Temperature{x});
+        if (cmd == "DIST") data.emplace_back(LenMeasure{x});
+        else if (cmd == "MASS") data.emplace_back(WtMeasure{x});
+        else if (cmd == "TEMP") data.emplace_back(CMeasure{x});
     }
-    for (auto& v : data)
-        std::visit([](auto& m) { print_metric(m); }, v);
+    for (std::size_t step = data.size(); step-- > 0;)
+        std::visit([](const auto& m) { write_out(m); }, data[data.size() - 1 - step]);
     return 0;
 }

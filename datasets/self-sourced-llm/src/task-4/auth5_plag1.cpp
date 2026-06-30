@@ -1,10 +1,10 @@
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 // cleaned up version
 
 class FileWriter {
@@ -27,7 +27,7 @@ public:
         return *this;
     }
 
-    void write_line(const std::string& s) { handle_ << s << '\n'; }
+    void write_line(const std::string& s) { handle_ << s << std::endl; }
 };
 
 static char grade(int x) {
@@ -36,10 +36,10 @@ static char grade(int x) {
 
 int main() {
     std::vector<std::pair<std::string,int>> data;
-    std::string row;
-    while (std::getline(std::cin, row)) {
-        auto c = row.find(',');
-        data.emplace_back(row.substr(0,c), std::stoi(row.substr(c+1)));
+    std::string ln;
+    while (std::getline(std::cin, ln)) {
+        auto c = ln.find(',');
+        data.emplace_back(ln.substr(0,c), std::stoi(ln.substr(c+1)));
     }
     FileWriter w("report.txt");
     w.write_line("Student Report");

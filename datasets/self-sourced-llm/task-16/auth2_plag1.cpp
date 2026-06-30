@@ -2,72 +2,72 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-// cleaned up version
+#include <utility>
 
 class Image {
 public:
-    Image(std::string n, int p) : label_(std::move(n)), count_(p) {}
+    Image(std::string n, int p) : label_(std::move(n)), px_(p) {}
     const std::string& name() const { return label_; }
-    int pixels() const { return count_; }
+    int pixels() const { return px_; }
 
 private:
     std::string label_;
-    int count_;
+    int px_;
 };
 
 class ImageCache {
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        auto it = registry_.find(key);
-        if (it != registry_.end()) {
+        auto it = vault_.find(key);
+        if (it != vault_.end()) {
             if (auto locked = it->second.lock())
                 return locked;
         }
         auto fresh = std::make_shared<Image>(key, pixels);
-        registry_[key] = fresh;
+        vault_[key] = fresh;
         return fresh;
     }
 
     std::size_t size() const {
         std::size_t n = 0;
-        for (auto& p : registry_)
-            if (!p.second.expired()) ++n;
+        for (auto& p : vault_)
+            if (!p.second.expired()) n++;
         return n;
     }
 
-    void clear() { registry_.clear(); }
+    void clear() { vault_.clear(); }
 
     std::shared_ptr<Image> peek(const std::string& key) const {
-        auto it = registry_.find(key);
-        if (it == registry_.end()) return {};
+        auto it = vault_.find(key);
+        if (it == vault_.end()) return {};
         return it->second.lock();
     }
 
 private:
-    std::unordered_map<std::string, std::weak_ptr<Image>> registry_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> vault_;
 };
 
 int main() {
-    ImageCache ic;
-    std::string token;
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token == "LOAD") {
-            std::string id;
+    ImageCache cache;
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
+        if (op == "LOAD") {
+            std::string k;
             int p;
-            std::cin >> id >> p;
-            auto handle = ic.load(id, p);
-            std::cout << "loaded " << handle->name() << " pixels=" << handle->pixels() << std::endl;
-            handle.reset();
-        } else if (token == "QUERY") {
-            std::string id;
-            std::cin >> id;
-            if (auto handle = ic.peek(id))
-                std::cout << "pixels=" << handle->pixels() << std::endl;
+            std::cin >> k >> p;
+            auto img = cache.load(k, p);
+            std::cout << "loaded " << img->name() << " pixels=" << img->pixels() << std::endl;
+            img.reset();
+        } else if (op == "QUERY") {
+            std::string k;
+            std::cin >> k;
+            if (auto img = cache.peek(k))
+                std::cout << "pixels=" << img->pixels() << std::endl;
             else
                 std::cout << "EXPIRED\n";
-        } else if (token == "DROP_ALL") {
-            ic.clear();
+        } else if (op == "DROP_ALL") {
+            cache.clear();
         }
     }
     return 0;

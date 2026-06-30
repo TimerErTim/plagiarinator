@@ -1,10 +1,10 @@
+#include <string>
+#include <utility>
+#include <vector>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
 // cleaned up version
 
 class FileWriter {
@@ -41,7 +41,7 @@ public:
     }
 
     void write_line(const std::string& text) {
-        stream_ << text << '\n';
+        stream_ << text << std::endl;
     }
 };
 
@@ -57,12 +57,12 @@ int main() {
     std::stringstream stdinCopy;
     stdinCopy << std::cin.rdbuf();
 
-    std::vector<std::pair<std::string, int>> lines;
-    std::string buf;
-    while (std::getline(stdinCopy, buf)) {
-        std::size_t commaPos = buf.find(',');
-        lines.emplace_back(buf.substr(0, commaPos),
-                          std::stoi(buf.substr(commaPos + 1)));
+    std::vector<std::pair<std::string, int>> rows;
+    std::string line;
+    while (std::getline(stdinCopy, line)) {
+        std::size_t commaPos = line.find(',');
+        rows.emplace_back(line.substr(0, commaPos),
+                          std::stoi(line.substr(commaPos + 1)));
     }
 
     FileWriter reportWriter("report.txt");
@@ -70,7 +70,7 @@ int main() {
     reportWriter.write_line("--------------");
 
     double scoreSum = 0.0;
-    for (const auto& row : lines) {
+    for (const auto& row : rows) {
         scoreSum += row.second;
         reportWriter.write_line(row.first + ": " + std::to_string(row.second)
                                 + " [" + gradeToken(row.second) + "]");
@@ -78,7 +78,7 @@ int main() {
 
     std::ostringstream avgStream;
     avgStream << std::fixed << std::setprecision(1)
-              << "Average: " << scoreSum / lines.size();
+              << "Average: " << scoreSum / rows.size();
     reportWriter.write_line(avgStream.str());
 
     std::cout << "Report written to report.txt" << std::endl;

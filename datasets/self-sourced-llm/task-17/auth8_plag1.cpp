@@ -1,25 +1,24 @@
-#include <algorithm>
+#include <vector>
+#include <type_traits>
 #include <iostream>
 #include <string>
-#include <type_traits>
-#include <vector>
-// cleaned up version
+#include <algorithm>
 
 namespace util {
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    for (std::size_t i = 0; i < data.size(); ++i)
-        for (std::size_t j = i + 1; j < data.size(); ++j)
-            if (data[j] < data[i]) std::swap(data[i], data[j]);
+sort_values(std::vector<T>& batch) {
+    for (std::size_t outer = 0; outer < batch.size(); ++outer)
+        for (std::size_t inner = outer + 1; inner < batch.size(); ++inner)
+            if (batch[inner] < batch[outer]) std::swap(batch[outer], batch[inner]);
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& p, const T& q) {
-        return (p.size() < q.size()) || (p.size() == q.size() && p < q);
+sort_values(std::vector<T>& batch) {
+    std::sort(batch.begin(), batch.end(), [](const T& head, const T& tail) {
+        return (head.size() < tail.size()) || (head.size() == tail.size() && head < tail);
     });
 }
 
@@ -27,22 +26,22 @@ sort_values(std::vector<T>& data) {
 
 int main() {
     std::string kind;
-    std::size_t n;
-    if (!(std::cin >> kind >> n)) return 0;
+    std::size_t length;
+    if (!(std::cin >> kind >> length)) return 0;
 
     if (kind == "STR") {
-        std::vector<std::string> tokens(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> tokens[i];
-        util::sort_values(tokens);
-        for (std::size_t i = 0; i < n; ++i)
-            std::cout << (i ? " " : "") << tokens[i];
+        std::vector<std::string> batch(length);
+        for (auto& token : batch) std::cin >> token;
+        util::sort_values(batch);
+        for (std::size_t slot = 0; slot < length; ++slot)
+            std::cout << (slot ? " " : "") << batch[slot];
         std::cout << std::endl;
     } else {
-        std::vector<double> nums(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> nums[i];
-        util::sort_values(nums);
-        for (std::size_t i = 0; i < n; ++i)
-            std::cout << (i ? " " : "") << nums[i];
+        std::vector<double> batch(length);
+        for (auto& token : batch) std::cin >> token;
+        util::sort_values(batch);
+        for (std::size_t slot = 0; slot < length; ++slot)
+            std::cout << (slot ? " " : "") << batch[slot];
         std::cout << std::endl;
     }
     return 0;

@@ -1,56 +1,56 @@
+#include <vector>
 #include <iostream>
 #include <string>
 #include <utility>
-#include <vector>
-// cleaned up version
 
 class StringBuilder {
-    std::string content_;
+    std::string buf_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : content_(std::move(o.content_)) {}
+    StringBuilder(StringBuilder&& o) noexcept : buf_(std::move(o.buf_)) {}
     StringBuilder& operator=(StringBuilder&& o) noexcept {
-        content_ = std::move(o.content_);
+        buf_ = std::move(o.buf_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) { content_ += s; return *this; }
-    StringBuilder& append(std::string&& s) { content_ += std::move(s); return *this; }
+    StringBuilder& append(const std::string& s) { buf_ += s; return *this; }
+    StringBuilder& append(std::string&& s) { buf_ += std::move(s); return *this; }
     StringBuilder& append_line(const std::string& s) { return append(s).append("\n"); }
-    const std::string& str() const { return content_; }
-    void clear() { content_.clear(); }
+    const std::string& str() const { return buf_; }
+    void clear() { buf_.clear(); }
 };
 
 int main() {
-    StringBuilder output;
+    StringBuilder doc;
     std::string word;
 
     while (std::cin >> word) {
         if (word == "END") break;
         if (word != "SECTION") continue;
 
-        std::string heading;
-        std::getline(std::cin, heading);
-        heading.erase(0, heading.find_first_not_of(' '));
+        std::string title;
+        std::getline(std::cin, title);
+        title.erase(0, title.find_first_not_of(' '));
 
         std::vector<std::string> lines;
-        std::string ln;
-        while (std::getline(std::cin, ln)) {
-            if (ln.empty()) break;
-            lines.push_back(ln);
+        std::string row;
+        while (std::getline(std::cin, row)) {
+            if (row.empty()) break;
+            lines.emplace_back(row);
         }
 
-        StringBuilder part;
-        part.append("# ").append(heading).append_line("");
-        for (const auto& l : lines) part.append_line(l);
-        part.append_line("");
+        StringBuilder section;
+        section.append("# ").append(title).append_line("");
+        for (std::size_t i = 0; i < lines.size(); ++i)
+            section.append_line(lines[i]);
+        section.append_line("");
 
-        output.append(std::move(part.str()));
+        doc.append(std::move(section.str()));
     }
 
-    std::cout << output.str();
+    std::cout << doc.str();
     return 0;
 }

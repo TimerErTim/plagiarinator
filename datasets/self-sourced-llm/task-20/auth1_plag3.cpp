@@ -1,66 +1,66 @@
-#include <utility>
 #include <array>
+#include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// stack lab from thursday
 
 template <typename T, std::size_t N>
 class FixedStack {
-    std::array<T, N> pool_;
-    std::size_t top_ = 0;
+    std::array<T, N> pile_;
+    std::size_t depth_ = 0;
 
 public:
     bool push(const T& value) {
-        if (top_ >= N) return false;
-        pool_[top_++] = value;
+        if (depth_ >= N) return false;
+        pile_[depth_++] = value;
         return true;
     }
 
     bool push(T&& value) {
-        if (top_ >= N) return false;
-        pool_[top_++] = std::move(value);
+        if (depth_ >= N) return false;
+        pile_[depth_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
-        if (top_ == 0) return false;
-        out = pool_[--top_];
+        if (depth_ == 0) return false;
+        out = pile_[--depth_];
         return true;
     }
 
     bool peek(T& out) const {
-        if (top_ == 0) return false;
-        out = pool_[top_ - 1];
+        if (depth_ == 0) return false;
+        out = pile_[depth_ - 1];
         return true;
     }
 
-    std::size_t size() const { return top_; }
+    std::size_t size() const { return depth_; }
 };
 
-static bool matches(char open, char close) {
-    return (open == '(' && close == ')') || (open == '[' && close == ']') ||
-           (open == '{' && close == '}');
+static bool mates(char lhs, char rhs) {
+    return (lhs == '(' && rhs == ')') || (lhs == '[' && rhs == ']') ||
+           (lhs == '{' && rhs == '}');
 }
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> st;
-    for (char ch : s) {
-        if (ch == '(' || ch == '[' || ch == '{') {
-            if (!st.push(ch)) return false;
-        } else if (ch == ')' || ch == ']' || ch == '}') {
-            char open;
-            if (!st.pop(open)) return false;
-            if (!matches(open, ch)) return false;
+bool is_balanced(const std::string& expr) {
+    FixedStack<char, 128> tower;
+    for (char sym : expr) {
+        if (sym == '(' || sym == '[' || sym == '{') {
+            if (!tower.push(sym)) return false;
+        } else if (sym == ')' || sym == ']' || sym == '}') {
+            char opener;
+            if (!tower.pop(opener)) return false;
+            if (!mates(opener, sym)) return false;
         }
     }
-    return st.size() == 0;
+    return tower.size() == 0;
 }
 
 int main() {
-    std::string buf;
-    while (std::getline(std::cin, buf)) {
-        if (buf == "END") break;
-        std::cout << (is_balanced(buf) ? "OK" : "FAIL") << '\n';
+    std::string chunk;
+    while (std::getline(std::cin, chunk)) {
+        if (chunk == "END") break;
+        std::cout << (is_balanced(chunk) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

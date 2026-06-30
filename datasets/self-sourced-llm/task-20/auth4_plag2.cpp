@@ -1,8 +1,8 @@
-#include <utility>
-#include <string>
 #include <iostream>
 #include <array>
-// adapted from classmate submission
+#include <string>
+#include <utility>
+#include <cstdio>
 
 template <typename Elem, std::size_t Cap>
 class FixedStack {
@@ -37,28 +37,40 @@ public:
     std::size_t size() const { return height; }
 };
 
+static bool close_ok(char open, char close)
+{
+    if (open == '(') return close == ')';
+    if (open == '[') return close == ']';
+    if (open == '{') return close == '}';
+    return false;
+}
+
+static bool handle_switch(FixedStack<char, 128>& st, char c)
+{
+    switch (c)
+    {
+        case '(':
+        case '[':
+        case '{':
+            return st.push(c);
+        case ')':
+        case ']':
+        case '}':
+        {
+            char open;
+            if (!st.pop(open)) return false;
+            return close_ok(open, c);
+        }
+        default:
+            return true;
+    }
+}
+
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> st;
-    for (char c : s) {
-        switch (c) {
-            case '(':
-            case '[':
-            case '{':
-                if (!st.push(c)) return false;
-                break;
-            case ')':
-            case ']':
-            case '}': {
-                char open;
-                if (!st.pop(open)) return false;
-                if ((open == '(' && c != ')') || (open == '[' && c != ']') ||
-                    (open == '{' && c != '}'))
-                    return false;
-                break;
-            }
-            default:
-                break;
-        }
+    for (char c : s)
+    {
+        if (!handle_switch(st, c)) return false;
     }
     return st.size() == 0;
 }
@@ -66,7 +78,8 @@ bool is_balanced(const std::string& s) {
 int main()
 {
     std::string text;
-    while (std::getline(std::cin, text)) {
+    while (std::getline(std::cin, text))
+    {
         if (text == "END") break;
         std::puts(is_balanced(text) ? "OK" : "FAIL");
     }

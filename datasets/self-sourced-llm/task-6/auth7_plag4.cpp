@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <cmath>
 #include <memory>
-#include <iostream>
-#include <vector>
 #include <string>
-// quick submit
+#include <vector>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
 
 const double PI = 3.141592653589793;
 
@@ -61,9 +60,9 @@ int main() {
         else if(k=="RECT"){double w,h;std::cin>>w>>h;data.push_back(std::make_unique<Rectangle>(w,h));}
         else if(k=="TRI"){double s;std::cin>>s;data.push_back(std::make_unique<Triangle>(s));}
     }
-    double numA=0,numP=0;
-    for(auto& e:data){print_shape(*e);accumulate(*e,numA,numP);}
+    double ta=0,tp=0;
+    for(auto& e:data){print_shape(*e);accumulate(*e,ta,tp);}
     std::cout<<std::fixed<<std::setprecision(4)
-             <<"TOTAL area="<<numA<<"\n"<<"TOTAL perimeter="<<numP<<"\n";
+             <<"TOTAL area="<<ta<<"\n"<<"TOTAL perimeter="<<tp<<"\n";
     return 0;
 }

@@ -1,10 +1,9 @@
+#include <vector>
+#include <memory>
+#include <string>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 class Shape {
 public:
@@ -56,7 +55,7 @@ public:
 void print_shape(const Shape& s) {
     std::cout << std::fixed << std::setprecision(4)
               << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << ", perimeter=" << s.perimeter() << std::endl;
 }
 
 void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
@@ -65,29 +64,29 @@ void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> items;
-    std::string label;
-    while (std::cin >> label && label != "DONE") {
-        if (label == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> figures;
+    std::string tag;
+    while (std::cin >> tag && tag != "DONE") {
+        if (tag == "CIRCLE") {
             double r; std::cin >> r;
-            items.emplace_back(std::make_unique<shapes::Circle>(r));
-        } else if (label == "RECT") {
+            figures.emplace_back(std::make_unique<shapes::Circle>(r));
+        } else if (tag == "RECT") {
             double w, h; std::cin >> w >> h;
-            items.emplace_back(std::make_unique<shapes::Rectangle>(w, h));
-        } else if (label == "TRI") {
+            figures.emplace_back(std::make_unique<shapes::Rectangle>(w, h));
+        } else if (tag == "TRI") {
             double s; std::cin >> s;
-            items.emplace_back(std::make_unique<shapes::Triangle>(s));
+            figures.emplace_back(std::make_unique<shapes::Triangle>(s));
         }
     }
 
-    double areaSum = 0.0, periSum = 0.0;
-    for (const auto& ptr : items) {
-        print_shape(*ptr);
-        accumulate(*ptr, areaSum, periSum);
+    double areaTotal = 0.0, periTotal = 0.0;
+    for (std::size_t i = 0; i < figures.size(); i++) {
+        print_shape(*figures[i]);
+        accumulate(*figures[i], areaTotal, periTotal);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << areaSum << std::endl
-              << "TOTAL perimeter=" << periSum << std::endl;
+              << "TOTAL area=" << areaTotal << std::endl
+              << "TOTAL perimeter=" << periTotal << std::endl;
     return 0;
 }

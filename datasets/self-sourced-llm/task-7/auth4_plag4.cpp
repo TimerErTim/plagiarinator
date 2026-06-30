@@ -1,9 +1,8 @@
+#include <memory>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <iomanip>
-#include <string>
-#include <memory>
-#include <vector>
-// quick submit
 
 class Vehicle {
 public:
@@ -49,26 +48,26 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> arr;
+    std::vector<std::unique_ptr<Vehicle>> vehicles;
     std::vector<double> kms;
-    std::string opt;
-    while (std::cin >> opt) {
-        auto v = create_vehicle(opt, std::cin);
+    std::string kind;
+    while (std::cin >> kind) {
+        auto v = create_vehicle(kind, std::cin);
         if (!v) {
             std::string junk; std::getline(std::cin, junk);
             std::cout << "ERROR\n";
             continue;
         }
         double d; std::cin >> d;
-        arr.push_back(std::move(v));
+        vehicles.push_back(std::move(v));
         kms.push_back(d);
     }
 
     double tot = 0;
-    for (size_t i = 0; i < arr.size(); ++i) {
-        double f = arr[i]->fuel_needed(kms[i]);
+    for (size_t i = 0; i < vehicles.size(); ++i) {
+        double f = vehicles[i]->fuel_needed(kms[i]);
         tot += f;
-        std::cout << "Trip " << i + 1 << ": " << arr[i]->type()
+        std::cout << "Trip " << i + 1 << ": " << vehicles[i]->type()
                   << " needs " << std::fixed << std::setprecision(2) << f
                   << " liters\n";
     }

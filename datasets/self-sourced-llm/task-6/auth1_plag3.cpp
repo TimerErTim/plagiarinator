@@ -1,10 +1,10 @@
 #include <vector>
+#include <iostream>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// borrowed from classmate solution
 
 class Shape {
 public:
@@ -15,66 +15,66 @@ public:
 };
 
 class Circle : public Shape {
-    double ref;
+    double radiusVal;
 public:
-    explicit Circle(double r) : ref(r) {}
-    double area() const override { return 3.141592653589793 * ref * ref; }
-    double perimeter() const override { return 2.0 * 3.141592653589793 * ref; }
+    explicit Circle(double r) : radiusVal(r) {}
+    double area() const override { return 3.141592653589793 * radiusVal * radiusVal; }
+    double perimeter() const override { return 2.0 * 3.141592653589793 * radiusVal; }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double argW, argH;
+    double len, wid;
 public:
-    Rectangle(double w, double h) : argW(w), argH(h) {}
-    double area() const override { return argW * argH; }
-    double perimeter() const override { return 2.0 * (argW + argH); }
+    Rectangle(double w, double h) : len(w), wid(h) {}
+    double area() const override { return len * wid; }
+    double perimeter() const override { return 2.0 * (len + wid); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double val;
+    double sideLen;
 public:
-    explicit Triangle(double s) : val(s) {}
-    double area() const override { return std::sqrt(3.0) / 4.0 * val * val; }
-    double perimeter() const override { return 3.0 * val; }
+    explicit Triangle(double s) : sideLen(s) {}
+    double area() const override { return std::sqrt(3.0) / 4.0 * sideLen * sideLen; }
+    double perimeter() const override { return 3.0 * sideLen; }
     std::string name() const override { return "Triangle"; }
 };
 
-void print_shape(const Shape& s) {
+void print_shape(const Shape& fig) {
     std::cout << std::fixed << std::setprecision(4)
-              << s.name() << ": area=" << s.area()
-              << ", perimeter=" << s.perimeter() << '\n';
+              << fig.name() << ": area=" << fig.area()
+              << ", perimeter=" << fig.perimeter() << '\n';
 }
 
-void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
-    area_sum += s.area();
-    peri_sum += s.perimeter();
+void accumulate(const Shape& fig, double& aTot, double& pTot) {
+    aTot += fig.area();
+    pTot += fig.perimeter();
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> shapes;
-    std::string line;
-    while (std::cin >> line && line != "DONE") {
-        if (line == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> allShapes;
+    std::string op;
+    while (std::cin >> op && op != "DONE") {
+        if (op == "CIRCLE") {
             double r; std::cin >> r;
-            shapes.push_back(std::make_unique<Circle>(r));
-        } else if (line == "RECT") {
+            allShapes.push_back(std::make_unique<Circle>(r));
+        } else if (op == "RECT") {
             double w, h; std::cin >> w >> h;
-            shapes.push_back(std::make_unique<Rectangle>(w, h));
-        } else if (line == "TRI") {
+            allShapes.push_back(std::make_unique<Rectangle>(w, h));
+        } else if (op == "TRI") {
             double s; std::cin >> s;
-            shapes.push_back(std::make_unique<Triangle>(s));
+            allShapes.push_back(std::make_unique<Triangle>(s));
         }
     }
 
-    double totalA = 0.0, totalP = 0.0;
-    for (const auto& sp : shapes) {
-        print_shape(*sp);
-        accumulate(*sp, totalA, totalP);
+    double areaAcc = 0.0, periAcc = 0.0;
+    for (std::size_t n = 0; n < allShapes.size(); ++n) {
+        print_shape(*allShapes[n]);
+        accumulate(*allShapes[n], areaAcc, periAcc);
     }
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << totalA << std::endl
-              << "TOTAL perimeter=" << totalP << std::endl;
+              << "TOTAL area=" << areaAcc << '\n'
+              << "TOTAL perimeter=" << periAcc << '\n';
     return 0;
 }

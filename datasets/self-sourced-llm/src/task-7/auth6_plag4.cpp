@@ -1,10 +1,9 @@
+#include <string>
+#include <vector>
+#include <memory>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <memory>
-#include <vector>
-#include <string>
-// quick submit
 
 class Vehicle {
 public:
@@ -16,21 +15,21 @@ public:
 namespace fleet {
 
 class Car : public Vehicle {
-    double rateVal;
+    double litersPer100Km;
 public:
-    explicit Car(double rate) : rateVal(rate) {}
+    explicit Car(double rate) : litersPer100Km(rate) {}
     double fuel_needed(double distance_km) const override {
-        return rateVal * distance_km / 100.0;
+        return litersPer100Km * distance_km / 100.0;
     }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double rateVal;
+    double litersPerKm;
 public:
-    explicit Truck(double rate) : rateVal(rate) {}
+    explicit Truck(double rate) : litersPerKm(rate) {}
     double fuel_needed(double distance_km) const override {
-        return rateVal * distance_km;
+        return litersPerKm * distance_km;
     }
     std::string type() const override { return "TRUCK"; }
 };
@@ -58,7 +57,7 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> arr;
+    std::vector<std::unique_ptr<Vehicle>> vehicles;
     std::vector<double> tripDistances;
     std::string lineBuffer;
 
@@ -73,16 +72,16 @@ int main() {
         }
         double distanceKm;
         lineStream >> distanceKm;
-        arr.emplace_back(std::move(vehicle));
+        vehicles.emplace_back(std::move(vehicle));
         tripDistances.push_back(distanceKm);
     }
 
     double totalLiters = 0.0;
-    for (std::size_t tripIndex = 0; tripIndex < arr.size(); ++tripIndex) {
-        double liters = arr[tripIndex]->fuel_needed(tripDistances[tripIndex]);
+    for (std::size_t tripIndex = 0; tripIndex < vehicles.size(); ++tripIndex) {
+        double liters = vehicles[tripIndex]->fuel_needed(tripDistances[tripIndex]);
         totalLiters += liters;
         std::cout << "Trip " << tripIndex + 1 << ": "
-                  << arr[tripIndex]->type()
+                  << vehicles[tripIndex]->type()
                   << " needs " << std::fixed << std::setprecision(2)
                   << liters << " liters" << std::endl;
     }

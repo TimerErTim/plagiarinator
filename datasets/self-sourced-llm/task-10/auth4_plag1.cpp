@@ -1,11 +1,10 @@
+#include <vector>
 #include <iostream>
 #include <string>
-#include <vector>
-// cleaned up version
 
 class IntBST {
     struct Node { int val; Node* l; Node* r; Node(int v): val(v), l(0), r(0) {} };
-    Node* root;
+    Node* rootk;
 
     void clear(Node* n) {
         if (!n) return;
@@ -27,7 +26,7 @@ class IntBST {
 
     void seq(const Node* n, std::vector<int>& o) const {
         if (!n) return;
-        seq(n->l, o); o.push_back(n->val); seq(n->r, o);
+        seq(n->l, o); o.emplace_back(n->val); seq(n->r, o);
     }
 
     Node* smallest(Node* n) const {
@@ -36,33 +35,33 @@ class IntBST {
     }
 
 public:
-    IntBST() : root(0) {}
-    ~IntBST() { clear(root); }
+    IntBST() : rootk(0) {}
+    ~IntBST() { clear(rootk); }
 
-    void insert(int v) { root = add(root, v); }
-    bool contains(int v) const { return find(root, v); }
-    void inorder(std::vector<int>& o) const { seq(root, o); }
-    int& min() { return smallest(root)->val; }
-    const int& min() const { return smallest(root)->val; }
-    bool empty() const { return !root; }
+    void insert(int v) { rootk = add(rootk, v); }
+    bool contains(int v) const { return find(rootk, v); }
+    void inorder(std::vector<int>& o) const { seq(rootk, o); }
+    int& min() { return smallest(rootk)->val; }
+    const int& min() const { return smallest(rootk)->val; }
+    bool empty() const { return !rootk; }
 };
 
 int main() {
     IntBST t;
-    std::string s;
-    while (std::cin >> s && s != "DONE")
-        t.insert(std::stoi(s));
+    std::string tok;
+    while (std::cin >> tok && tok != "DONE")
+        t.insert(std::stoi(tok));
 
-    while (std::cin >> s) {
-        if (s == "DONE") break;
-        if (s == "CONTAINS") {
+    while (std::cin >> tok) {
+        if (tok == "DONE") break;
+        if (tok == "CONTAINS") {
             int x; std::cin >> x;
             std::cout << (t.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (s == "MIN") {
+        } else if (tok == "MIN") {
             std::cout << (t.empty() ? "EMPTY" : std::to_string(t.min())) << std::endl;
-        } else if (s == "PRINT") {
+        } else if (tok == "PRINT") {
             std::vector<int> v; t.inorder(v);
-            for (size_t i = 0; i < v.size(); ++i) {
+            for (size_t i = 0; i < v.size(); i++) {
                 if (i) std::cout << ' ';
                 std::cout << v[i];
             }

@@ -4,7 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
-// TODO: refactor later
+// adapted from classmate submission
 
 class Vehicle {
 public:
@@ -13,54 +13,55 @@ public:
     virtual std::string type() const = 0;
 };
 
-class Car : public Vehicle {
-    double boxRate;
+class MotorCar : public Vehicle {
+    double burnRate;
 public:
-    explicit Car(double r) : boxRate(r) {}
-    double fuel_needed(double d) const override { return boxRate * d / 100.0; }
+    explicit MotorCar(double r) : burnRate(r) {}
+    double fuel_needed(double d) const override { return burnRate * d / 100.0; }
     std::string type() const override { return "CAR"; }
 };
 
-class Truck : public Vehicle {
-    double boxRate;
+class BigRig : public Vehicle {
+    double burnRate;
 public:
-    explicit Truck(double r) : boxRate(r) {}
-    double fuel_needed(double d) const override { return boxRate * d; }
+    explicit BigRig(double r) : burnRate(r) {}
+    double fuel_needed(double d) const override { return burnRate * d; }
     std::string type() const override { return "TRUCK"; }
 };
 
-class Bike : public Vehicle {
+class TwoWheeler : public Vehicle {
 public:
     double fuel_needed(double) const override { return 0.0; }
     std::string type() const override { return "BIKE"; }
 };
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& cfg) {
-    if (kind == "CAR") { double x; cfg >> x; return std::make_unique<Car>(x); }
-    if (kind == "TRUCK") { double x; cfg >> x; return std::make_unique<Truck>(x); }
-    if (kind == "BIKE") return std::make_unique<Bike>();
+std::unique_ptr<Vehicle> makeRide(const std::string& tag, std::istream& cfg) {
+    if (tag == "CAR") { double x; cfg >> x; return std::make_unique<MotorCar>(x); }
+    if (tag == "TRUCK") { double x; cfg >> x; return std::make_unique<BigRig>(x); }
+    if (tag == "BIKE") return std::make_unique<TwoWheeler>();
     return nullptr;
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> pool;
-    std::vector<double> ds;
-    for (std::string ln; std::getline(std::cin, ln);) {
-        std::istringstream s(ln);
-        std::string k; s >> k;
-        auto v = create_vehicle(k, s);
-        if (!v) { std::cout << "ERROR\n"; continue; }
-        double d; s >> d;
-        pool.push_back(std::move(v));
-        ds.push_back(d);
+    std::vector<std::unique_ptr<Vehicle>> ridePool;
+    std::vector<double> legKm;
+    for (std::string raw; std::getline(std::cin, raw);) {
+        std::istringstream parser(raw);
+        std::string tag;
+        parser >> tag;
+        auto ride = makeRide(tag, parser);
+        if (!ride) { std::cout << "ERROR\n"; continue; }
+        double km; parser >> km;
+        ridePool.push_back(std::move(ride));
+        legKm.push_back(km);
     }
-    double hold = 0;
-    for (std::size_t i = 0; i < pool.size(); ++i) {
-        double f = pool[i]->fuel_needed(ds[i]);
-        hold += f;
-        std::cout << "Trip " << i+1 << ": " << pool[i]->type()
+    double fuelAcc = 0;
+    for (std::size_t n = 0; n < ridePool.size(); ++n) {
+        double f = ridePool[n]->fuel_needed(legKm[n]);
+        fuelAcc += f;
+        std::cout << "Trip " << n+1 << ": " << ridePool[n]->type()
                   << " needs " << std::fixed << std::setprecision(2) << f << " liters\n";
     }
-    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << hold << " liters\n";
+    std::cout << "TOTAL " << std::fixed << std::setprecision(2) << fuelAcc << " liters\n";
     return 0;
 }

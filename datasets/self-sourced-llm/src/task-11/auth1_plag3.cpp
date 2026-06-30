@@ -1,116 +1,115 @@
 #include <vector>
+#include <unordered_map>
+#include <string>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <utility>
-// TODO: refactor later
+// borrowed from roommate's homework
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
-    ((out << std::forward<Args>(args) << " "), ...);
-    out << "\n";
+void log_line(std::ostream& sink, Args&&... args) {
+    ((sink << std::forward<Args>(args) << " "), ...);
+    sink << std::endl;
 }
 
 class Config {
-    std::unordered_map<std::string, std::string> pool_;
+    std::unordered_map<std::string, std::string> props_;
 
 public:
-    void read(std::istream& in) {
-        std::string line;
-        while (std::getline(in, line) && !line.empty()) {
-            auto pos = line.find('=');
-            if (pos != std::string::npos)
-                pool_[line.substr(0, pos)] = line.substr(pos + 1);
+    void read(std::istream& src) {
+        std::string row;
+        while (std::getline(src, row) && !row.empty()) {
+            auto eq = row.find('=');
+            if (eq != std::string::npos)
+                props_[row.substr(0, eq)] = row.substr(eq + 1);
         }
     }
 
-    bool has(const std::string& key) const {
-        return pool_.find(key) != pool_.end();
+    bool has(const std::string& k) const {
+        return props_.find(k) != props_.end();
     }
 
-    const std::string& get(const std::string& key) const {
-        return pool_.at(key);
+    const std::string& get(const std::string& k) const {
+        return props_.at(k);
     }
 };
 
-static bool check_int(const std::string& s) {
+static bool intish(const std::string& s) {
     if (s.empty()) return false;
-    std::size_t i = (s[0] == '-' || s[0] == '+') ? 1 : 0;
-    if (i >= s.size()) return false;
-    for (; i < s.size(); ++i)
-        if (!std::isdigit(static_cast<unsigned char>(s[i]))) return false;
+    std::size_t p = (s[0] == '-' || s[0] == '+') ? 1 : 0;
+    if (p >= s.size()) return false;
+    for (std::size_t k = s.size(); k-- > p;)
+        if (!std::isdigit(static_cast<unsigned char>(s[k]))) return false;
     return true;
 }
 
-struct LogArg {
+struct TokVal {
     bool numeric;
     int ival;
-    std::string sval;
+    std::string str;
 };
 
-static LogArg to_log_arg(const std::string& t) {
-    if (check_int(t)) return LogArg{true, std::stoi(t), {}};
-    return LogArg{false, 0, t};
+static TokVal classify(const std::string& t) {
+    if (intish(t)) return TokVal{true, std::stoi(t), {}};
+    return TokVal{false, 0, t};
 }
 
-static void dump_log(std::ostream& out, const std::vector<LogArg>& args) {
-    if (args.size() == 1) {
-        if (args[0].numeric) log_line(out, args[0].ival);
-        else log_line(out, args[0].sval);
-    } else if (args.size() == 2) {
-        if (args[0].numeric && args[1].numeric) log_line(out, args[0].ival, args[1].ival);
-        else if (args[0].numeric) log_line(out, args[0].ival, args[1].sval);
-        else if (args[1].numeric) log_line(out, args[0].sval, args[1].ival);
-        else log_line(out, args[0].sval, args[1].sval);
-    } else if (args.size() == 3) {
-        const LogArg& a0 = args[0], &a1 = args[1], &a2 = args[2];
-        if (a1.numeric) {
-            if (a0.numeric && a2.numeric) log_line(out, a0.ival, a1.ival, a2.ival);
-            else if (a0.numeric) log_line(out, a0.ival, a1.ival, a2.sval);
-            else if (a2.numeric) log_line(out, a0.sval, a1.ival, a2.ival);
-            else log_line(out, a0.sval, a1.ival, a2.sval);
+static void flush_log(std::ostream& sink, const std::vector<TokVal>& vals) {
+    if (vals.size() == 1) {
+        if (vals[0].numeric) log_line(sink, vals[0].ival);
+        else log_line(sink, vals[0].str);
+    } else if (vals.size() == 2) {
+        if (vals[0].numeric && vals[1].numeric) log_line(sink, vals[0].ival, vals[1].ival);
+        else if (vals[0].numeric) log_line(sink, vals[0].ival, vals[1].str);
+        else if (vals[1].numeric) log_line(sink, vals[0].str, vals[1].ival);
+        else log_line(sink, vals[0].str, vals[1].str);
+    } else if (vals.size() == 3) {
+        const TokVal& x = vals[0], &y = vals[1], &z = vals[2];
+        if (y.numeric) {
+            if (x.numeric && z.numeric) log_line(sink, x.ival, y.ival, z.ival);
+            else if (x.numeric) log_line(sink, x.ival, y.ival, z.str);
+            else if (z.numeric) log_line(sink, x.str, y.ival, z.ival);
+            else log_line(sink, x.str, y.ival, z.str);
         } else {
-            log_line(out, a0.numeric ? std::to_string(a0.ival) : a0.sval, a1.sval,
-                     a2.numeric ? std::to_string(a2.ival) : a2.sval);
+            log_line(sink, x.numeric ? std::to_string(x.ival) : x.str, y.str,
+                     z.numeric ? std::to_string(z.ival) : z.str);
         }
-    } else if (args.empty()) {
-        out << "\n";
+    } else if (vals.empty()) {
+        sink << std::endl;
     } else {
-        for (std::size_t i = 0; i < args.size(); ++i) {
-            if (i) out << ' ';
-            if (args[i].numeric) out << args[i].ival;
-            else out << args[i].sval;
+        for (std::size_t n = vals.size(); n-- > 0;) {
+            if (n + 1 < vals.size()) sink << ' ';
+            if (vals[n].numeric) sink << vals[n].ival;
+            else sink << vals[n].str;
         }
-        out << '\n';
+        sink << std::endl;
     }
 }
 
 int main() {
-    Config box;
-    box.read(std::cin);
+    Config cfg;
+    cfg.read(std::cin);
 
-    std::string ln;
-    while (std::cin >> ln && ln != "END") {
-        if (ln == "GET") {
-            std::string val;
-            std::cin >> val;
-            std::cout << (box.has(val) ? box.get(val) : std::string("MISSING")) << "\n";
-        } else if (ln == "LOG") {
-            std::vector<std::string> tokens;
-            std::string chunk;
-            while (std::cin >> chunk) {
-                if (chunk == "GET" || chunk == "LOG" || chunk == "END") {
-                    for (auto it = chunk.rbegin(); it != chunk.rend(); ++it)
-                        std::cin.putback(*it);
+    std::string verb;
+    while (std::cin >> verb && verb != "END") {
+        if (verb == "GET") {
+            std::string k;
+            std::cin >> k;
+            std::cout << (cfg.has(k) ? cfg.get(k) : std::string("MISSING")) << std::endl;
+        } else if (verb == "LOG") {
+            std::vector<std::string> bits;
+            std::string piece;
+            while (std::cin >> piece) {
+                if (piece == "GET" || piece == "LOG" || piece == "END") {
+                    for (std::size_t k = piece.size(); k-- > 0;)
+                        std::cin.putback(piece[k]);
                     break;
                 }
-                tokens.push_back(chunk);
+                bits.push_back(piece);
             }
-            std::vector<LogArg> parsed;
-            for (const auto& t : tokens) parsed.push_back(to_log_arg(t));
-            dump_log(std::cout, parsed);
+            std::vector<TokVal> decoded;
+            for (const auto& b : bits) decoded.push_back(classify(b));
+            flush_log(std::cout, decoded);
         }
     }
     return 0;

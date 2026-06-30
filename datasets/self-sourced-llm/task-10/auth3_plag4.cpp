@@ -1,7 +1,6 @@
 #include <string>
-#include <iostream>
 #include <vector>
-// quick submit
+#include <iostream>
 
 class IntBST {
     struct Node {
@@ -11,7 +10,7 @@ class IntBST {
         explicit Node(int k) : key(k), left(nullptr), right(nullptr) {}
     };
 
-    Node* elemRoot_;
+    Node* rootv_;
 
     static void deleteTree(Node* node) {
         if (node == nullptr) return;
@@ -48,38 +47,28 @@ class IntBST {
     }
 
 public:
-    IntBST() : elemRoot_(nullptr) {}
-    ~IntBST() { deleteTree(elemRoot_); }
+    IntBST() : rootv_(nullptr) {}
+    ~IntBST() { deleteTree(rootv_); }
 
-    void insert(int value) {
-        elemRoot_ = insertRecursive(elemRoot_, value);
-    }
+    void insert(int value) { rootv_ = insertRecursive(rootv_, value); }
 
-    bool contains(int value) const {
-        return searchRecursive(elemRoot_, value);
-    }
+    bool contains(int value) const { return searchRecursive(rootv_, value); }
 
-    void inorder(std::vector<int>& out) const {
-        collectInorder(elemRoot_, out);
-    }
+    void inorder(std::vector<int>& out) const { collectInorder(rootv_, out); }
 
-    int& min() {
-        return findMinimum(elemRoot_)->key;
-    }
+    int& min() { return findMinimum(rootv_)->key; }
 
-    const int& min() const {
-        return findMinimum(elemRoot_)->key;
-    }
+    const int& min() const { return findMinimum(rootv_)->key; }
 
-    bool empty() const { return elemRoot_ == nullptr; }
+    bool empty() const { return rootv_ == nullptr; }
 };
 
 int main() {
-    IntBST ref;
+    IntBST bst;
     std::string item;
     while (std::cin >> item) {
         if (item == "DONE") break;
-        ref.insert(std::stoi(item));
+        bst.insert(std::stoi(item));
     }
 
     std::string command;
@@ -88,18 +77,18 @@ int main() {
         if (command == "CONTAINS") {
             int query;
             std::cin >> query;
-            std::cout << (ref.contains(query) ? "YES" : "NO") << std::endl;
+            std::cout << (bst.contains(query) ? "YES" : "NO") << std::endl;
         } else if (command == "MIN") {
-            if (ref.empty())
+            if (bst.empty())
                 std::cout << "EMPTY" << std::endl;
             else
-                std::cout << ref.min() << std::endl;
+                std::cout << bst.min() << std::endl;
         } else if (command == "PRINT") {
-            std::vector<int> tmp;
-            ref.inorder(tmp);
-            for (std::size_t i = 0; i < tmp.size(); ++i) {
+            std::vector<int> sorted;
+            bst.inorder(sorted);
+            for (std::size_t i = 0; i < sorted.size(); ++i) {
                 if (i > 0) std::cout << ' ';
-                std::cout << tmp[i];
+                std::cout << sorted[i];
             }
             std::cout << std::endl;
         }

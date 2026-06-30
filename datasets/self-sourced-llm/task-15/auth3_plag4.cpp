@@ -1,10 +1,9 @@
-#include <iomanip>
 #include <iostream>
-#include <string>
+#include <iomanip>
 #include <sstream>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -61,15 +60,15 @@ struct RecordVisitor {
 };
 
 int main() {
-    std::vector<Record> word_;
+    std::vector<Record> list;
     for (std::string type; std::cin >> type && type != "END";) {
         double v;
         std::cin >> v;
-        if (type == "DIST") word_.emplace_back(metrics::Distance(v));
-        else if (type == "MASS") word_.emplace_back(metrics::Mass(v));
-        else if (type == "TEMP") word_.emplace_back(metrics::Temperature(v));
+        if (type == "DIST") list.emplace_back(metrics::Distance(v));
+        else if (type == "MASS") list.emplace_back(metrics::Mass(v));
+        else if (type == "TEMP") list.emplace_back(metrics::Temperature(v));
     }
 
-    for (const auto& r : word_) std::visit(RecordVisitor{}, r);
+    for (const auto& r : list) std::visit(RecordVisitor{}, r);
     return 0;
 }

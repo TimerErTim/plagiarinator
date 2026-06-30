@@ -1,7 +1,6 @@
 #include <string>
-#include <iostream>
 #include <vector>
-// quick submit
+#include <iostream>
 
 class IntBST {
     struct TreeNode {
@@ -11,7 +10,7 @@ class IntBST {
         explicit TreeNode(int v) : value(v), left(nullptr), right(nullptr) {}
     };
 
-    TreeNode* elemRoot_;
+    TreeNode* rootv_;
 
     static void dispose(TreeNode* node) {
         if (node == nullptr) return;
@@ -49,26 +48,25 @@ class IntBST {
     }
 
 public:
-    IntBST() : elemRoot_(nullptr) {}
-    ~IntBST() { dispose(elemRoot_); }
+    IntBST() : rootv_(nullptr) {}
+    ~IntBST() { dispose(rootv_); }
 
-    void insert(int value) { elemRoot_ = doInsert(elemRoot_, value); }
-    bool contains(int value) const { return doContains(elemRoot_, value); }
-    void inorder(std::vector<int>& out) const { doInorder(elemRoot_, out); }
+    void insert(int value) { rootv_ = doInsert(rootv_, value); }
+    bool contains(int value) const { return doContains(rootv_, value); }
+    void inorder(std::vector<int>& out) const { doInorder(rootv_, out); }
 
-    int& min() { return leftmostNode(elemRoot_)->value; }
-    const int& min() const { return leftmostNode(elemRoot_)->value; }
+    int& min() { return leftmostNode(rootv_)->value; }
+    const int& min() const { return leftmostNode(rootv_)->value; }
 
-    bool empty() const { return elemRoot_ == nullptr; }
+    bool empty() const { return rootv_ == nullptr; }
 };
 
 int main() {
-    IntBST ref;
+    IntBST bst;
     std::string word;
-
     while (std::cin >> word) {
         if (word == "DONE") break;
-        ref.insert(std::stoi(word));
+        bst.insert(std::stoi(word));
     }
 
     while (std::cin >> word) {
@@ -76,15 +74,15 @@ int main() {
         if (word == "CONTAINS") {
             int target;
             std::cin >> target;
-            std::cout << (ref.contains(target) ? "YES" : "NO") << '\n';
+            std::cout << (bst.contains(target) ? "YES" : "NO") << '\n';
         } else if (word == "MIN") {
-            if (ref.empty())
+            if (bst.empty())
                 std::cout << "EMPTY\n";
             else
-                std::cout << ref.min() << '\n';
+                std::cout << bst.min() << '\n';
         } else if (word == "PRINT") {
             std::vector<int> sequence;
-            ref.inorder(sequence);
+            bst.inorder(sequence);
             for (std::size_t idx = 0; idx < sequence.size(); ++idx) {
                 if (idx > 0) std::cout << ' ';
                 std::cout << sequence[idx];

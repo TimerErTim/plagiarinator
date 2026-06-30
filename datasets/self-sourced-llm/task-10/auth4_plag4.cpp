@@ -1,11 +1,10 @@
 #include <string>
-#include <iostream>
 #include <vector>
-// quick submit
+#include <iostream>
 
 class IntBST {
     struct Node { int val; Node* l; Node* r; Node(int v): val(v), l(0), r(0) {} };
-    Node* root;
+    Node* rootz;
 
     void clear(Node* n) {
         if (!n) return;
@@ -36,15 +35,15 @@ class IntBST {
     }
 
 public:
-    IntBST() : root(0) {}
-    ~IntBST() { clear(root); }
+    IntBST() : rootz(0) {}
+    ~IntBST() { clear(rootz); }
 
-    void insert(int v) { root = add(root, v); }
-    bool contains(int v) const { return find(root, v); }
-    void inorder(std::vector<int>& o) const { seq(root, o); }
-    int& min() { return smallest(root)->val; }
-    const int& min() const { return smallest(root)->val; }
-    bool empty() const { return !root; }
+    void insert(int v) { rootz = add(rootz, v); }
+    bool contains(int v) const { return find(rootz, v); }
+    void inorder(std::vector<int>& o) const { seq(rootz, o); }
+    int& min() { return smallest(rootz)->val; }
+    const int& min() const { return smallest(rootz)->val; }
+    bool empty() const { return !rootz; }
 };
 
 int main() {

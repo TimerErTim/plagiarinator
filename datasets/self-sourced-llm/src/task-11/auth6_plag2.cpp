@@ -1,27 +1,30 @@
-#include <unordered_map>
-#include <string>
-#include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <iomanip>
+#include <string>
+#include <unordered_map>
 
 struct ConfigStore {
     std::unordered_map<std::string, std::string> values;
 
-    bool has(const std::string& key) const {
+    bool has(const std::string& key) const
+    {
         return values.find(key) != values.end();
     }
 
-    const std::string& get(const std::string& key) const {
+    const std::string& get(const std::string& key) const
+    {
         return values.at(key);
     }
 };
 
-void print_one(std::ostream& out, double v) {
+void print_one(std::ostream& out, double v)
+{
     out << std::fixed << std::setprecision(2) << v;
 }
 
 template <typename T>
-void print_one(std::ostream& out, T&& v) {
+void print_one(std::ostream& out, T&& v)
+{
     out << std::forward<T>(v);
 }
 
@@ -30,7 +33,8 @@ struct LogWriter {
     bool sep = false;
 
     template <typename U>
-    void step(U&& u) {
+    void step(U&& u)
+    {
         if (sep) os << ' ';
         else sep = true;
         print_one(os, std::forward<U>(u));
@@ -38,13 +42,15 @@ struct LogWriter {
 };
 
 template <typename... Args>
-void log_line(std::ostream& out, Args&&... args) {
+void log_line(std::ostream& out, Args&&... args)
+{
     LogWriter w{out};
     (w.step(std::forward<Args>(args)), ...);
     out << '\n';
 }
 
-bool numeric_token(const std::string& s) {
+static bool numeric_token(const std::string& s)
+{
     if (s.empty()) return false;
     std::size_t k = 0;
     if (s[0] == '-' || s[0] == '+') k = 1;
@@ -54,51 +60,63 @@ bool numeric_token(const std::string& s) {
     return true;
 }
 
-int main()
-
+static void load_config(ConfigStore& cfg, std::istream& in)
 {
-    ConfigStore settings;
+    std::string line;
+    while (std::getline(in, line) && !line.empty())
     {
-        std::string input;
-        while (std::getline(std::cin, input) && !input.empty()) 
+        auto p = line.find('=');
+        cfg.values[line.substr(0, p)] = line.substr(p + 1);
+    }
+}
+
+static void handle_log(std::istream& in)
 {
-            auto p = input.find('=');
-            settings.values[input.substr(0, p)] = input.substr(p + 1);
+    std::string t1, t2, t3;
+    if (!(in >> t1)) return;
+    if (in >> t2)
+    {
+        if (in >> t3)
+        {
+            if (numeric_token(t2))
+                log_line(std::cout, t1, std::stoi(t2), t3);
+            else
+                log_line(std::cout, t1, t2, t3);
+        }
+        else
+        {
+            if (numeric_token(t2))
+                log_line(std::cout, t1, std::stoi(t2));
+            else
+                log_line(std::cout, t1, t2);
+            in.clear();
         }
     }
+    else
+    {
+        if (numeric_token(t1)) log_line(std::cout, std::stoi(t1));
+        else log_line(std::cout, t1);
+    }
+}
 
-    std::string op;
-    while (std::cin >> op) 
+int main()
 {
-        if (op == "END") break;
-        if (op == "GET") 
-{
+    ConfigStore cfg;
+    load_config(cfg, std::cin);
+
+    std::string verb;
+    while (std::cin >> verb)
+    {
+        if (verb == "END") break;
+        if (verb == "GET")
+        {
             std::string k;
             std::cin >> k;
-            log_line(std::cout, settings.has(k) ? settings.get(k) : std::string("MISSING"));
-        } else if (op == "LOG") 
-{
-            std::string t1, t2, t3;
-            if (!(std::cin >> t1)) continue;
-            if (std::cin >> t2) 
-{
-                if (std::cin >> t3) 
-{
-                    if (numeric_token(t2))
-                        log_line(std::cout, t1, std::stoi(t2), t3);
-                    else
-                        log_line(std::cout, t1, t2, t3);
-                } else {
-                    if (numeric_token(t2))
-                        log_line(std::cout, t1, std::stoi(t2));
-                    else
-                        log_line(std::cout, t1, t2);
-                    std::cin.clear();
-                }
-            } else {
-                if (numeric_token(t1)) log_line(std::cout, std::stoi(t1));
-                else log_line(std::cout, t1);
-            }
+            log_line(std::cout, cfg.has(k) ? cfg.get(k) : std::string("MISSING"));
+        }
+        else if (verb == "LOG")
+        {
+            handle_log(std::cin);
         }
     }
     return 0;

@@ -1,11 +1,10 @@
-#include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-// cleaned up version
+#include <iostream>
 
 struct GraphNode {
     std::string label;
@@ -28,7 +27,7 @@ public:
     void addNode(const std::string& key) { fetch(key); }
 
     void addEdge(const std::string& x, const std::string& y) {
-        fetch(x)->edges.push_back(fetch(y));
+        fetch(x)->edges.emplace_back(fetch(y));
     }
 
     bool query(const std::string& start, const std::string& end) const {
@@ -41,7 +40,8 @@ public:
             auto now = frontier.front();
             frontier.pop();
             if (now->label == end) return true;
-            for (auto& link : now->edges) {
+            for (std::size_t i = 0; i < now->edges.size(); ++i) {
+                auto& link = now->edges[i];
                 if (!done.count(link->label)) {
                     done.insert(link->label);
                     frontier.push(link);

@@ -1,105 +1,104 @@
 #include <vector>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// kinda copied this from discord
 
 class IntBST {
-    struct Node {
-        int key;
-        Node* left;
-        Node* right;
-        explicit Node(int k) : key(k), left(nullptr), right(nullptr) {}
+    struct Slot {
+        int datum;
+        Slot* prior;
+        Slot* next;
+        explicit Slot(int d) : datum(d), prior(nullptr), next(nullptr) {}
     };
 
-    Node* ptr;
+    Slot* head_;
 
-    static void deleteTree(Node* node) {
-        if (node == nullptr) return;
-        deleteTree(node->left);
-        deleteTree(node->right);
-        delete node;
+    static void release(Slot* slot) {
+        if (!slot) return;
+        std::vector<Slot*> chain;
+        std::vector<Slot*> todo;
+        todo.push_back(slot);
+        while (!todo.empty()) {
+            Slot* cur = todo.back();
+            todo.pop_back();
+            chain.push_back(cur);
+            if (cur->prior) todo.push_back(cur->prior);
+            if (cur->next) todo.push_back(cur->next);
+        }
+        for (std::size_t k = chain.size(); k-- > 0;)
+            delete chain[k];
     }
 
-    Node* insertRecursive(Node* node, int value) {
-        if (node == nullptr) return new Node(value);
-        if (value < node->key) node->left = insertRecursive(node->left, value);
-        else if (value > node->key) node->right = insertRecursive(node->right, value);
-        return node;
+    Slot* place(Slot* slot, int d) {
+        if (!slot) return new Slot(d);
+        if (d < slot->datum) slot->prior = place(slot->prior, d);
+        else if (d > slot->datum) slot->next = place(slot->next, d);
+        return slot;
     }
 
-    bool searchRecursive(const Node* node, int value) const {
-        if (node == nullptr) return false;
-        if (value == node->key) return true;
-        if (value < node->key) return searchRecursive(node->left, value);
-        return searchRecursive(node->right, value);
+    bool hunt(const Slot* slot, int d) const {
+        if (!slot) return false;
+        if (d == slot->datum) return true;
+        if (d < slot->datum) return hunt(slot->prior, d);
+        return hunt(slot->next, d);
     }
 
-    void collectInorder(const Node* node, std::vector<int>& output) const {
-        if (node == nullptr) return;
-        collectInorder(node->left, output);
-        output.push_back(node->key);
-        collectInorder(node->right, output);
+    void drain(const Slot* slot, std::vector<int>& sink) const {
+        if (!slot) return;
+        drain(slot->prior, sink);
+        sink.push_back(slot->datum);
+        drain(slot->next, sink);
     }
 
-    Node* findMinimum(Node* node) const {
-        if (node == nullptr) return nullptr;
-        while (node->left != nullptr) node = node->left;
-        return node;
+    Slot* baseline(Slot* slot) const {
+        if (!slot) return nullptr;
+        while (slot->prior != nullptr) slot = slot->prior;
+        return slot;
     }
 
 public:
-    IntBST() : ptr(nullptr) {}
-    ~IntBST() { deleteTree(ptr); }
+    IntBST() : head_(nullptr) {}
+    ~IntBST() { release(head_); }
 
-    void insert(int value) {
-        ptr = insertRecursive(ptr, value);
-    }
+    void insert(int value) { head_ = place(head_, value); }
 
-    bool contains(int value) const {
-        return searchRecursive(ptr, value);
-    }
+    bool contains(int value) const { return hunt(head_, value); }
 
-    void inorder(std::vector<int>& out) const {
-        collectInorder(ptr, out);
-    }
+    void inorder(std::vector<int>& out) const { drain(head_, out); }
 
-    int& min() {
-        return findMinimum(ptr)->key;
-    }
+    int& min() { return baseline(head_)->datum; }
 
-    const int& min() const {
-        return findMinimum(ptr)->key;
-    }
+    const int& min() const { return baseline(head_)->datum; }
 
-    bool empty() const { return ptr == nullptr; }
+    bool empty() const { return head_ == nullptr; }
 };
 
 int main() {
-    IntBST hold;
-    std::string item;
-    while (std::cin >> item) {
-        if (item == "DONE") break;
-        hold.insert(std::stoi(item));
+    IntBST store;
+    std::string chunk;
+    while (std::cin >> chunk) {
+        if (chunk == "DONE") break;
+        store.insert(std::stoi(chunk));
     }
 
-    std::string command;
-    while (std::cin >> command) {
-        if (command == "DONE") break;
-        if (command == "CONTAINS") {
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "DONE") break;
+        if (verb == "CONTAINS") {
             int query;
             std::cin >> query;
-            std::cout << (hold.contains(query) ? "YES" : "NO") << std::endl;
-        } else if (command == "MIN") {
-            if (hold.empty())
+            std::cout << (store.contains(query) ? "YES" : "NO") << std::endl;
+        } else if (verb == "MIN") {
+            if (store.empty())
                 std::cout << "EMPTY" << std::endl;
             else
-                std::cout << hold.min() << std::endl;
-        } else if (command == "PRINT") {
+                std::cout << store.min() << std::endl;
+        } else if (verb == "PRINT") {
             std::vector<int> sorted;
-            hold.inorder(sorted);
-            for (std::size_t i = 0; i < sorted.size(); ++i) {
-                if (i > 0) std::cout << ' ';
-                std::cout << sorted[i];
+            store.inorder(sorted);
+            for (std::size_t idx = 0; idx < sorted.size(); ++idx) {
+                if (idx > 0) std::cout << ' ';
+                std::cout << sorted[idx];
             }
             std::cout << std::endl;
         }

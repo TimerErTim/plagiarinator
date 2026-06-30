@@ -1,9 +1,9 @@
-#include <vector>
-#include <variant>
-#include <string>
 #include <iomanip>
 #include <iostream>
-// adapted from classmate submission
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
 
 template <typename Derived>
 class Printable {
@@ -54,21 +54,27 @@ void print_metric(const Printable<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
-int main()
+using Entry = std::variant<Distance, Mass, Temperature>;
 
+static void ingest(const std::string& cmd, double x, std::vector<Entry>& data)
 {
-    std::vector<std::variant<Distance, Mass, Temperature>> data;
-    std::string op;
-    while (std::cin >> op) 
+    if (cmd == "DIST") data.emplace_back(Distance{x});
+    else if (cmd == "MASS") data.emplace_back(Mass{x});
+    else if (cmd == "TEMP") data.emplace_back(Temperature{x});
+}
+
+int main()
 {
-        if (op == "END") break;
+    std::vector<Entry> data;
+    std::string cmd;
+    while (std::cin >> cmd)
+    {
+        if (cmd == "END") break;
         double x;
         std::cin >> x;
-        if (op == "DIST") data.push_back(Distance{x});
-        else if (op == "MASS") data.push_back(Mass{x});
-        else if (op == "TEMP") data.push_back(Temperature{x});
+        ingest(cmd, x, data);
     }
-    for (auto& v : data)
-        std::visit([](auto& m) { print_metric(m); }, v);
+    for (std::size_t k = 0; k < data.size(); ++k)
+        std::visit([](const auto& m) { print_metric(m); }, data[k]);
     return 0;
 }

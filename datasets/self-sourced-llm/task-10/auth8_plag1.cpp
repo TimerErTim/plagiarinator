@@ -1,7 +1,6 @@
-#include <iostream>
-#include <string>
 #include <vector>
-// cleaned up version
+#include <string>
+#include <iostream>
 
 class IntBST {
     struct TreeNode {
@@ -11,7 +10,7 @@ class IntBST {
         explicit TreeNode(int v) : value(v), left(nullptr), right(nullptr) {}
     };
 
-    TreeNode* root_;
+    TreeNode* rootk_;
 
     static void dispose(TreeNode* node) {
         if (node == nullptr) return;
@@ -38,7 +37,7 @@ class IntBST {
     void doInorder(const TreeNode* node, std::vector<int>& dest) const {
         if (node == nullptr) return;
         doInorder(node->left, dest);
-        dest.push_back(node->value);
+        dest.emplace_back(node->value);
         doInorder(node->right, dest);
     }
 
@@ -49,45 +48,44 @@ class IntBST {
     }
 
 public:
-    IntBST() : root_(nullptr) {}
-    ~IntBST() { dispose(root_); }
+    IntBST() : rootk_(nullptr) {}
+    ~IntBST() { dispose(rootk_); }
 
-    void insert(int value) { root_ = doInsert(root_, value); }
-    bool contains(int value) const { return doContains(root_, value); }
-    void inorder(std::vector<int>& out) const { doInorder(root_, out); }
+    void insert(int value) { rootk_ = doInsert(rootk_, value); }
+    bool contains(int value) const { return doContains(rootk_, value); }
+    void inorder(std::vector<int>& out) const { doInorder(rootk_, out); }
 
-    int& min() { return leftmostNode(root_)->value; }
-    const int& min() const { return leftmostNode(root_)->value; }
+    int& min() { return leftmostNode(rootk_)->value; }
+    const int& min() const { return leftmostNode(rootk_)->value; }
 
-    bool empty() const { return root_ == nullptr; }
+    bool empty() const { return rootk_ == nullptr; }
 };
 
 int main() {
     IntBST bst;
-    std::string elem;
-
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        bst.insert(std::stoi(elem));
+    std::string word;
+    while (std::cin >> word) {
+        if (word == "DONE") break;
+        bst.insert(std::stoi(word));
     }
 
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        if (elem == "CONTAINS") {
-            int x;
-            std::cin >> x;
-            std::cout << (bst.contains(x) ? "YES" : "NO") << std::endl;
-        } else if (elem == "MIN") {
+    while (std::cin >> word) {
+        if (word == "DONE") break;
+        if (word == "CONTAINS") {
+            int target;
+            std::cin >> target;
+            std::cout << (bst.contains(target) ? "YES" : "NO") << std::endl;
+        } else if (word == "MIN") {
             if (bst.empty())
-                std::cout << "EMPTY\n";
+                std::cout << "EMPTY" << std::endl;
             else
                 std::cout << bst.min() << std::endl;
-        } else if (elem == "PRINT") {
-            std::vector<int> out;
-            bst.inorder(out);
-            for (std::size_t idx = 0; idx < out.size(); ++idx) {
-                if (idx > 0) std::cout << ' ';
-                std::cout << out[idx];
+        } else if (word == "PRINT") {
+            std::vector<int> sequence;
+            bst.inorder(sequence);
+            for (std::size_t i = 0; i < sequence.size(); i++) {
+                if (i > 0) std::cout << ' ';
+                std::cout << sequence[i];
             }
             std::cout << std::endl;
         }

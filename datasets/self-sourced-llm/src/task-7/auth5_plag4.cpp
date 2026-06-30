@@ -1,10 +1,9 @@
-#include <iostream>
-#include <iomanip>
+#include <string>
+#include <vector>
 #include <sstream>
 #include <memory>
-#include <vector>
-#include <string>
-// quick submit
+#include <iostream>
+#include <iomanip>
 
 class Vehicle {
 public:
@@ -14,18 +13,18 @@ public:
 };
 
 class Car : public Vehicle {
-    double elemRate_;
+    double rate_;
 public:
-    explicit Car(double r) : elemRate_(r) {}
-    double fuel_needed(double d) const override { return elemRate_ * d / 100.0; }
+    explicit Car(double r) : rate_(r) {}
+    double fuel_needed(double d) const override { return rate_ * d / 100.0; }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double elemRate_;
+    double rate_;
 public:
-    explicit Truck(double r) : elemRate_(r) {}
-    double fuel_needed(double d) const override { return elemRate_ * d; }
+    explicit Truck(double r) : rate_(r) {}
+    double fuel_needed(double d) const override { return rate_ * d; }
     std::string type() const override { return "TRUCK"; }
 };
 
@@ -43,22 +42,22 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> arr;
+    std::vector<std::unique_ptr<Vehicle>> vs;
     std::vector<double> ds;
-    for (std::string elem; std::getline(std::cin, elem);) {
-        std::istringstream s(elem);
+    for (std::string ln; std::getline(std::cin, ln);) {
+        std::istringstream s(ln);
         std::string k; s >> k;
         auto v = create_vehicle(k, s);
         if (!v) { std::cout << "ERROR\n"; continue; }
         double d; s >> d;
-        arr.push_back(std::move(v));
+        vs.push_back(std::move(v));
         ds.push_back(d);
     }
     double t = 0;
-    for (std::size_t i = 0; i < arr.size(); ++i) {
-        double f = arr[i]->fuel_needed(ds[i]);
+    for (std::size_t i = 0; i < vs.size(); ++i) {
+        double f = vs[i]->fuel_needed(ds[i]);
         t += f;
-        std::cout << "Trip " << i+1 << ": " << arr[i]->type()
+        std::cout << "Trip " << i+1 << ": " << vs[i]->type()
                   << " needs " << std::fixed << std::setprecision(2) << f << " liters\n";
     }
     std::cout << "TOTAL " << std::fixed << std::setprecision(2) << t << " liters\n";

@@ -1,79 +1,93 @@
-#include <string>
 #include <iostream>
 #include <sstream>
-// from lab partner
+#include <string>
+// borrowed from roommate's homework
 
 template <typename T>
-class LinkedList {
-    struct Node { T v; Node* next; };
-    Node* h;
-    std::size_t sz;
+class LinkedList
+{
+    struct Node { T payload; Node* link; };
+    Node* chainHead;
+    std::size_t tally;
 
-    void appendNode(Node* n) {
-        if (!h) { h = n; return; }
-        Node* t = h;
-        while (t->next) t = t->next;
-        t->next = n;
+    void attachTail(Node* fresh)
+    {
+        if (!chainHead) { chainHead = fresh; return; }
+        Node* rover = chainHead;
+        while (rover->link) rover = rover->link;
+        rover->link = fresh;
     }
 
 public:
-    LinkedList() : h(nullptr), sz(0) {}
-    ~LinkedList() {
-        Node* p = h;
-        while (p) { Node* d = p; p = p->next; delete d; }
+    LinkedList() : chainHead(nullptr), tally(0) {}
+    ~LinkedList()
+    {
+        Node* cur = chainHead;
+        while (cur) { Node* gone = cur; cur = cur->link; delete gone; }
     }
 
-    void push_back(const T& val) {
-        appendNode(new Node{val, nullptr});
-        ++sz;
+    void push_back(const T& val)
+    {
+        attachTail(new Node{val, nullptr});
+        ++tally;
     }
 
-    std::size_t size() const { return sz; }
+    std::size_t size() const { return tally; }
 
-    class Iterator {
-        Node* n;
+    class Iterator
+    {
+        Node* spot;
     public:
-        Iterator(Node* node) : n(node) {}
-        T& operator*() { return n->v; }
-        const T& operator*() const { return n->v; }
-        Iterator& operator++() { n = n->next; return *this; }
-        bool operator!=(const Iterator& o) { return n != o.n; }
+        Iterator(Node* node) : spot(node) {}
+        T& operator*() { return spot->payload; }
+        const T& operator*() const { return spot->payload; }
+        Iterator& operator++() { spot = spot->link; return *this; }
+        bool operator!=(const Iterator& o) { return spot != o.spot; }
     };
 
-    Iterator begin() { return Iterator(h); }
+    Iterator begin() { return Iterator(chainHead); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(h); }
+    Iterator begin() const { return Iterator(chainHead); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& A, const LinkedList<T>& B) {
-    LinkedList<T> C;
-    auto a = A.begin(), b = B.begin();
-    while (a != A.end() && b != B.end()) {
-        if (*a <= *b) { C.push_back(*a); ++a; }
-        else { C.push_back(*b); ++b; }
+LinkedList<T> merge_sorted(const LinkedList<T>& leftSide, const LinkedList<T>& rightSide)
+{
+    LinkedList<T> fused;
+    auto leftPtr = leftSide.begin(), rightPtr = rightSide.begin();
+    while (leftPtr != leftSide.end() && rightPtr != rightSide.end())
+    {
+        if (*leftPtr <= *rightPtr) { fused.push_back(*leftPtr); ++leftPtr; }
+        else { fused.push_back(*rightPtr); ++rightPtr; }
     }
-    for (; a != A.end(); ++a) C.push_back(*a);
-    for (; b != B.end(); ++b) C.push_back(*b);
-    return C;
+    auto flushRest = [&](auto it, auto end) {
+        std::size_t n = 0;
+        for (auto t = it; t != end; ++t) ++n;
+        for (; n-- > 0; ++it) fused.push_back(*it);
+    };
+    flushRest(leftPtr, leftSide.end());
+    flushRest(rightPtr, rightSide.end());
+    return fused;
 }
 
-int main() {
-    LinkedList<int> L1, L2;
-    std::string s;
-    std::getline(std::cin, s);
-    { std::istringstream in(s); int x; while (in >> x) L1.push_back(x); }
-    std::getline(std::cin, s);
-    { std::istringstream in(s); int x; while (in >> x) L2.push_back(x); }
+int main()
+{
+    LinkedList<int> firstList, secondList;
+    std::string rawLine;
+    std::getline(std::cin, rawLine);
+    { std::istringstream in(rawLine); int token; while (in >> token) firstList.push_back(token); }
+    std::getline(std::cin, rawLine);
+    { std::istringstream in(rawLine); int token; while (in >> token) secondList.push_back(token); }
 
-    LinkedList<int> M = merge_sorted(L1, L2);
-    bool sep = false;
-    for (auto i = M.begin(); i != M.end(); ++i) {
-        if (sep) std::cout << ' ';
-        std::cout << *i;
-        sep = true;
+    LinkedList<int> mergedOut = merge_sorted(firstList, secondList);
+    bool gap = false;
+    for (auto cursor = mergedOut.begin(); cursor != mergedOut.end(); ++cursor)
+    {
+        if (gap) std::cout << ' ';
+        std::cout << *cursor;
+        gap = true;
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }

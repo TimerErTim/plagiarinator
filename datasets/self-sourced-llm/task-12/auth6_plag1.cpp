@@ -1,16 +1,15 @@
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <variant>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <stdexcept>
 
 struct Number { int value; };
-struct Add { std::size_t lhs, rhs; };
-struct Sub { std::size_t lhs, rhs; };
-struct Mul { std::size_t lhs, rhs; };
-struct Div { std::size_t lhs, rhs; };
+struct Add { std::size_t a, b; };
+struct Sub { std::size_t a, b; };
+struct Mul { std::size_t a, b; };
+struct Div { std::size_t a, b; };
 
 using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
@@ -21,44 +20,44 @@ struct EvalCtx {
         struct V {
             const EvalCtx* ctx;
             int operator()(Number n) const { return n.value; }
-            int operator()(Add lhs) const { return ctx->eval(lhs.lhs) + ctx->eval(lhs.rhs); }
-            int operator()(Sub lhs) const { return ctx->eval(lhs.lhs) - ctx->eval(lhs.rhs); }
-            int operator()(Mul lhs) const { return ctx->eval(lhs.lhs) * ctx->eval(lhs.rhs); }
-            int operator()(Div lhs) const {
-                int rhs = ctx->eval(lhs.rhs);
-                if (rhs == 0) throw std::runtime_error("div0");
-                return ctx->eval(lhs.lhs) / rhs;
+            int operator()(Add x) const { return ctx->eval(x.a) + ctx->eval(x.b); }
+            int operator()(Sub x) const { return ctx->eval(x.a) - ctx->eval(x.b); }
+            int operator()(Mul x) const { return ctx->eval(x.a) * ctx->eval(x.b); }
+            int operator()(Div x) const {
+                int y = ctx->eval(x.b);
+                if (y == 0) throw std::runtime_error("div0");
+                return ctx->eval(x.a) / y;
             }
         };
         return std::visit(V{this}, (*exprs)[i]);
     }
 };
 
-void parse_eval(const std::string& s) {
+void eval_line(const std::string& s) {
     std::vector<Expr> bag;
     std::vector<std::size_t> stack;
     std::istringstream in(s);
     std::string t;
     while (in >> t) {
         if (t.size() == 1 && std::string("+-*/").find(t[0]) != std::string::npos) {
-            std::size_t rhs = stack.back(); stack.pop_back();
-            std::size_t lhs = stack.back(); stack.pop_back();
+            std::size_t y = stack.back(); stack.pop_back();
+            std::size_t x = stack.back(); stack.pop_back();
             char c = t[0];
-            if (c == '+') bag.push_back(Add{lhs, rhs});
-            else if (c == '-') bag.push_back(Sub{lhs, rhs});
-            else if (c == '*') bag.push_back(Mul{lhs, rhs});
-            else bag.push_back(Div{lhs, rhs});
-            stack.push_back(bag.size() - 1);
+            if (c == '+') bag.emplace_back(Add{x, y});
+            else if (c == '-') bag.emplace_back(Sub{x, y});
+            else if (c == '*') bag.emplace_back(Mul{x, y});
+            else bag.emplace_back(Div{x, y});
+            stack.emplace_back(bag.size() - 1);
         } else {
-            bag.push_back(Number{std::stoi(t)});
-            stack.push_back(bag.size() - 1);
+            bag.emplace_back(Number{std::stoi(t)});
+            stack.emplace_back(bag.size() - 1);
         }
     }
     EvalCtx ctx{&bag};
     try {
-        std::cout << ctx.eval(stack.back()) << '\n';
+        std::cout << ctx.eval(stack.back()) << std::endl;
     } catch (...) {
-        std::cout << "ERROR\n";
+        std::cout << "ERROR" << std::endl;
     }
 }
 
@@ -66,7 +65,7 @@ int main() {
     std::string ln;
     while (std::getline(std::cin, ln)) {
         if (ln.empty()) break;
-        parse_eval(ln);
+        eval_line(ln);
     }
     return 0;
 }

@@ -1,37 +1,71 @@
-#include <vector>
 #include <iostream>
-// quick submit
+#include <vector>
+#include <sstream>
 
-template<typename T>
+template <typename T>
 class Matrix {
-    std::size_t r,c;
-    std::vector<T> v;
+    std::size_t rows_;
+    std::size_t cols_;
+    std::vector<T> data_;
+
 public:
-    Matrix(std::size_t x,std::size_t y):r(x),c(y),v(x*y){}
-    T& operator()(std::size_t i,std::size_t j){return v[i*c+j];}
-    const T& operator()(std::size_t i,std::size_t j)const{return v[i*c+j];}
-    std::size_t rows()const{return r;} std::size_t cols()const{return c;}
-    Matrix operator+(const Matrix& o)const{
-        Matrix m(r,c);for(std::size_t i=0;i<v.size();++i)m.v[i]=v[i]+o.v[i];return m;}
-    Matrix operator*(const Matrix& o)const{
-        Matrix m(r,o.c);
-        for(std::size_t i=0;i<r;++i)for(std::size_t j=0;j<o.c;++j)
-            for(std::size_t k=0;k<c;++k)m(i,j)+=(*this)(i,k)*o(k,j);
-        return m;}
-    friend std::ostream& operator<<(std::ostream& os,const Matrix& m){
-        for(std::size_t i=0;i<m.r;++i){
-            for(std::size_t j=0;j<m.c;++j){if(j)os<<' ';os<<m(i,j);}
-            os<<'\n';}return os;}
+    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), data_(r * c) {}
+
+    T& operator()(std::size_t r, std::size_t c) { return data_[r * cols_ + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return data_[r * cols_ + c]; }
+
+    std::size_t rows() const { return rows_; }
+    std::size_t cols() const { return cols_; }
+
+    Matrix operator+(const Matrix& rhs) const {
+        Matrix out(rows_, cols_);
+        for (std::size_t i = 0; i < data_.size(); ++i)
+            out.data_[i] = data_[i] + rhs.data_[i];
+        return out;
+    }
+
+    Matrix operator*(const Matrix& rhs) const {
+        Matrix out(rows_, rhs.cols_);
+        for (std::size_t i = 0; i < rows_; ++i)
+            for (std::size_t j = 0; j < rhs.cols_; ++j)
+                for (std::size_t k = 0; k < cols_; ++k)
+                    out(i, j) += (*this)(i, k) * rhs(k, j);
+        return out;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+        for (std::size_t i = 0; i < m.rows_; ++i) {
+            for (std::size_t j = 0; j < m.cols_; ++j) {
+                if (j) os << ' ';
+                os << m(i, j);
+            }
+            os << '\n';
+        }
+        return os;
+    }
 };
 
-int main(){
-    std::size_t ra,ca,rb,cb;
-    std::cin>>ra>>ca; Matrix<int> A(ra,ca);
-    for(std::size_t i=0;i<ra;++i)for(std::size_t j=0;j<ca;++j)std::cin>>A(i,j);
-    std::cin>>rb>>cb;
-    if(ca!=rb){std::cout<<"ERROR\n";return 0;}
-    Matrix<int> B(rb,cb);
-    for(std::size_t i=0;i<rb;++i)for(std::size_t j=0;j<cb;++j)std::cin>>B(i,j);
-    std::cout<<A*B+A;
+int main() {
+    std::stringstream in;
+    in << std::cin.rdbuf();
+
+    std::size_t rA, cA, rB, cB;
+    in >> rA >> cA;
+    Matrix<int> matA(rA, cA);
+    for (std::size_t i = 0; i < rA; ++i)
+        for (std::size_t j = 0; j < cA; ++j)
+            in >> matA(i, j);
+
+    in >> rB >> cB;
+    if (cA != rB) {
+        std::cout << "ERROR\n";
+        return 0;
+    }
+    Matrix<int> matB(rB, cB);
+    for (std::size_t i = 0; i < rB; ++i)
+        for (std::size_t j = 0; j < cB; ++j)
+            in >> matB(i, j);
+
+    std::cout << matA * matB + matA;
     return 0;
 }

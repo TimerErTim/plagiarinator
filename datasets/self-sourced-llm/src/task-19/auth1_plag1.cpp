@@ -1,18 +1,17 @@
-#include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <iostream>
 
 class StringBuilder {
-    std::string data;
+    std::string buf;
 
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : data(std::move(other.data)) {}
+    StringBuilder(StringBuilder&& other) noexcept : buf(std::move(other.buf)) {}
 
     StringBuilder& operator=(StringBuilder&& other) noexcept {
-        if (this != &other) data = std::move(other.data);
+        if (this != &other) buf = std::move(other.buf);
         return *this;
     }
 
@@ -20,48 +19,48 @@ public:
     StringBuilder& operator=(const StringBuilder&) = delete;
 
     StringBuilder& append(const std::string& s) {
-        data += s;
+        buf += s;
         return *this;
     }
 
     StringBuilder& append(std::string&& s) {
-        data += std::move(s);
+        buf += std::move(s);
         return *this;
     }
 
     StringBuilder& append_line(const std::string& s) {
-        data += s;
-        data += '\n';
+        buf += s;
+        buf.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return data; }
+    const std::string& str() const { return buf; }
 
-    void clear() { data.clear(); }
+    void clear() { buf.clear(); }
 };
 
 int main() {
     StringBuilder output;
-    std::string token;
+    std::string word;
 
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token != "SECTION") continue;
+    for (; std::cin >> word;) {
+        if (word == "END") break;
+        if (word != "SECTION") continue;
 
-        std::string heading;
-        std::getline(std::cin, heading);
-        heading.erase(0, heading.find_first_not_of(' '));
+        std::string title;
+        std::getline(std::cin, title);
+        title.erase(0, title.find_first_not_of(' '));
 
-        StringBuilder part;
-        part.append("# ").append(heading).append_line("");
+        StringBuilder block;
+        block.append("# ").append(title).append_line("");
 
-        std::string s;
-        while (std::getline(std::cin, s)) {
-            if (s.empty()) break;
-            part.append_line(s);
+        std::string input;
+        while (std::getline(std::cin, input)) {
+            if (input.empty()) break;
+            block.append_line(input);
         }
-        part.append_line("");
-        output.append(std::move(part.str()));
+        block.append_line("");
+        output.append(std::move(block.str()));
     }
 
     std::cout << output.str();

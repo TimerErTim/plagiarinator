@@ -1,9 +1,9 @@
-#include <sstream>
 #include <iostream>
-#include <variant>
+#include <sstream>
 #include <string>
+#include <variant>
 #include <vector>
-// quick submit
+#include <stdexcept>
 
 struct Number { int value; };
 struct Add {};
@@ -41,28 +41,28 @@ int compute(const std::vector<NodeRef>& g, int id) {
 }
 
 int main() {
-    std::string str;
-    while (std::getline(std::cin, str)) {
-        if (str.empty()) break;
+    std::string row;
+    while (std::getline(std::cin, row)) {
+        if (row.empty()) break;
         std::vector<NodeRef> graph;
         std::vector<int> sp;
-        std::istringstream iss(str);
-        std::string w;
-        while (iss >> w) {
-            if (w == "+" || w == "-" || w == "*" || w == "/") {
+        std::istringstream iss(row);
+        std::string tok;
+        while (iss >> tok) {
+            if (tok == "+" || tok == "-" || tok == "*" || tok == "/") {
                 int r = sp.back(); sp.pop_back();
                 int l = sp.back(); sp.pop_back();
                 NodeRef node;
                 node.left = l;
                 node.right = r;
-                if (w == "+") node.kind = Add{};
-                else if (w == "-") node.kind = Sub{};
-                else if (w == "*") node.kind = Mul{};
+                if (tok == "+") node.kind = Add{};
+                else if (tok == "-") node.kind = Sub{};
+                else if (tok == "*") node.kind = Mul{};
                 else node.kind = Div{};
                 sp.push_back(static_cast<int>(graph.size()));
                 graph.push_back(node);
             } else {
-                NodeRef leaf{Number{std::stoi(w)}, -1, -1};
+                NodeRef leaf{Number{std::stoi(tok)}, -1, -1};
                 sp.push_back(static_cast<int>(graph.size()));
                 graph.push_back(leaf);
             }

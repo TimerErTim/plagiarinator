@@ -1,10 +1,9 @@
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <memory>
-#include <vector>
 #include <string>
-// quick submit
+#include <vector>
+#include <memory>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 
 using std::cin;
 using std::cout;
@@ -73,23 +72,23 @@ int main()
 {
     vector<unique_ptr<Vehicle>> trips;
     vector<double> dists;
-    string str;
-    while (getline(cin, str)) {
-        istringstream in(str);
-        string opt; in >> opt;
-        auto v = create_vehicle(opt, in);
+    string row;
+    while (getline(cin, row)) {
+        istringstream in(row);
+        string kind; in >> kind;
+        auto v = create_vehicle(kind, in);
         if (!v) { cout << "ERROR" << endl; continue; }
         double d; in >> d;
         trips.push_back(move(v));
         dists.push_back(d);
     }
-    double numTotal = 0;
+    double sum = 0;
     for (size_t i = 0; i < trips.size(); ++i) {
         double f = trips[i]->fuel_needed(dists[i]);
-        numTotal += f;
+        sum += f;
         cout << "Trip " << i + 1 << ": " << trips[i]->type()
              << " needs " << fixed << setprecision(2) << f << " liters" << endl;
     }
-    cout << "TOTAL " << fixed << setprecision(2) << numTotal << " liters" << endl;
+    cout << "TOTAL " << fixed << setprecision(2) << sum << " liters" << endl;
     return 0;
 }

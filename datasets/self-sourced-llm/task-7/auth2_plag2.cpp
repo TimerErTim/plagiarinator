@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <sstream>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using std::cin;
 using std::cout;
@@ -57,12 +56,12 @@ public:
 unique_ptr<Vehicle> create_vehicle(const string& kind, istream& cfg)
 {
     if (kind == "CAR")
-{
+    {
         double x; cfg >> x;
         return make_unique<Car>(x);
     }
     if (kind == "TRUCK")
-{
+    {
         double x; cfg >> x;
         return make_unique<Truck>(x);
     }
@@ -71,26 +70,41 @@ unique_ptr<Vehicle> create_vehicle(const string& kind, istream& cfg)
     return nullptr;
 }
 
+bool extract(const string& line, unique_ptr<Vehicle>& veh, double& dist)
+{
+    istringstream in(line);
+    string kind;
+    in >> kind;
+    veh = create_vehicle(kind, in);
+    if (!veh)
+        return false;
+    in >> dist;
+    return true;
+}
+
 int main()
 {
-    vector<unique_ptr<Vehicle>> vs;
-    vector<double> ds;
+    vector<unique_ptr<Vehicle>> trips;
+    vector<double> dists;
     string row;
-    while (getline(cin, row)) {
-        istringstream in(row);
-        string kind; in >> kind;
-        auto v = create_vehicle(kind, in);
-        if (!v)
-{ cout << "ERROR" << endl; continue; }
-        double d; in >> d;
-        vs.push_back(move(v));
-        ds.push_back(d);
+    while (getline(cin, row))
+    {
+        unique_ptr<Vehicle> v;
+        double d;
+        if (!extract(row, v, d))
+        {
+            cout << "ERROR" << endl;
+            continue;
+        }
+        trips.push_back(move(v));
+        dists.push_back(d);
     }
     double sum = 0;
-    for (size_t i = 0; i < vs.size(); ++i) {
-        double f = vs[i]->fuel_needed(ds[i]);
+    for (size_t i = 0; i < trips.size(); ++i)
+    {
+        double f = trips[i]->fuel_needed(dists[i]);
         sum += f;
-        cout << "Trip " << i + 1 << ": " << vs[i]->type()
+        cout << "Trip " << i + 1 << ": " << trips[i]->type()
              << " needs " << fixed << setprecision(2) << f << " liters" << endl;
     }
     cout << "TOTAL " << fixed << setprecision(2) << sum << " liters" << endl;

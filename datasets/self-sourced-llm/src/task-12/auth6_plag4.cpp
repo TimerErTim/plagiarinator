@@ -1,10 +1,9 @@
-#include <sstream>
 #include <iostream>
-#include <string>
+#include <sstream>
 #include <stdexcept>
-#include <vector>
+#include <string>
 #include <variant>
-// quick submit
+#include <vector>
 
 struct Number { int value; };
 struct Add { std::size_t a, b; };
@@ -34,10 +33,10 @@ struct EvalCtx {
     }
 };
 
-void eval_line(const std::string& s) {
+void eval_line(const std::string& text) {
     std::vector<Expr> bag;
     std::vector<std::size_t> stack;
-    std::istringstream in(s);
+    std::istringstream in(text);
     std::string t;
     while (in >> t) {
         if (t.size() == 1 && std::string("+-*/").find(t[0]) != std::string::npos) {
@@ -63,10 +62,10 @@ void eval_line(const std::string& s) {
 }
 
 int main() {
-    std::string ln;
-    while (std::getline(std::cin, ln)) {
-        if (ln.empty()) break;
-        eval_line(ln);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) break;
+        eval_line(line);
     }
     return 0;
 }

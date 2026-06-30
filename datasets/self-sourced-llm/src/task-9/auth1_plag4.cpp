@@ -1,45 +1,44 @@
 #include <iomanip>
+#include <iostream>
 #include <functional>
 #include <string>
-#include <iostream>
-#include <vector>
 #include <utility>
-// quick submit
+#include <vector>
 
 class Sensor {
-    double word_;
-    std::vector<std::pair<std::string, std::function<void(double)>>> ref_;
+    double reading_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> observers_;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        ref_.emplace_back(name, std::move(callback));
+        observers_.emplace_back(name, std::move(callback));
     }
 
     void set_value(double celsius) {
-        word_ = celsius;
-        for (const auto& sub : ref_) {
+        reading_ = celsius;
+        for (const auto& sub : observers_) {
             std::cout << std::fixed << std::setprecision(1)
-                      << "[" << sub.first << "] temp=" << word_ << '\n';
-            if (sub.second) sub.second(word_);
+                      << "[" << sub.first << "] temp=" << reading_ << '\n';
+            if (sub.second) sub.second(reading_);
         }
     }
 
-    double value() const { return word_; }
+    double value() const { return reading_; }
 };
 
 int main() {
-    Sensor dev;
-    std::string word;
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word == "SUB") {
+    Sensor sen;
+    std::string line;
+    while (std::cin >> line) {
+        if (line == "END") break;
+        if (line == "SUB") {
             std::string name;
             std::cin >> name;
-            dev.subscribe(name, [](double) {});
-        } else if (word == "SET") {
+            sen.subscribe(name, [](double) {});
+        } else if (line == "SET") {
             double v;
             std::cin >> v;
-            dev.set_value(v);
+            sen.set_value(v);
         }
     }
     return 0;

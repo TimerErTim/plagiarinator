@@ -1,43 +1,43 @@
-#include <iomanip>
-#include <fstream>
 #include <sstream>
-#include <iostream>
-#include <utility>
 #include <string>
+#include <utility>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+// quick submit before deadline
 
 class FileWriter {
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream outStream;
+    std::string filePath;
 
 public:
     explicit FileWriter(const std::string& path)
-        : tmp_(path), word_(path) {}
+        : filePath(path), outStream(path) {}
 
     ~FileWriter() {
-        if (word_.is_open())
-            word_.close();
+        if (outStream.is_open())
+            outStream.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& moved) noexcept
-        : word_(std::move(moved.word_)),
-          tmp_(std::move(moved.tmp_)) {}
+        : outStream(std::move(moved.outStream)),
+          filePath(std::move(moved.filePath)) {}
 
     FileWriter& operator=(FileWriter&& moved) noexcept {
         if (this != &moved) {
-            if (word_.is_open()) word_.close();
-            word_ = std::move(moved.word_);
-            tmp_ = std::move(moved.tmp_);
+            if (outStream.is_open()) outStream.close();
+            outStream = std::move(moved.outStream);
+            filePath = std::move(moved.filePath);
         }
         return *this;
     }
 
     void write_line(const std::string& content) {
-        word_ << content << std::endl;
+        outStream << content << std::endl;
     }
 };
 
@@ -61,9 +61,9 @@ int main() {
                           std::stoi(inputLine.substr(delim + 1))});
     }
 
-    FileWriter w("report.txt");
-    w.write_line("Student Report");
-    w.write_line("--------------");
+    FileWriter writer("report.txt");
+    writer.write_line("Student Report");
+    writer.write_line("--------------");
 
     double runningTotal = 0.0;
     for (const Student& s : roster) {
@@ -71,14 +71,14 @@ int main() {
         std::ostringstream lineBuilder;
         lineBuilder << s.name << ": " << s.score
                     << " [" << grading::forScore(s.score) << "]";
-        w.write_line(lineBuilder.str());
+        writer.write_line(lineBuilder.str());
     }
 
     std::ostringstream averageLine;
     averageLine << std::fixed << std::setprecision(1)
                 << "Average: " << runningTotal / roster.size();
-    w.write_line(averageLine.str());
+    writer.write_line(averageLine.str());
 
-    std::cout << "Report written to report.txt" << '\n';
+    std::cout << "Report written to report.txt" << std::endl;
     return 0;
 }

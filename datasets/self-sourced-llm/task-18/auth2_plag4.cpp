@@ -1,7 +1,6 @@
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
-// quick submit
 
 class Parser;
 
@@ -72,13 +71,13 @@ std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
 int main() {
     Parser p;
     p.state = std::make_unique<HeaderState>();
-    std::string str;
-    while (std::getline(std::cin, str))
-        p.state = p.state->handle(p, str);
+    std::string line;
+    while (std::getline(std::cin, line))
+        p.state = p.state->handle(p, line);
 
-    std::cout << "INFO: " << p.info_count << '\n';
-    std::cout << "WARN: " << p.warn_count << '\n';
-    std::cout << "ERROR: " << p.error_count << '\n';
-    std::cout << "REJECTED: " << p.rejected << '\n';
+    std::cout << "INFO: " << p.info_count << std::endl;
+    std::cout << "WARN: " << p.warn_count << std::endl;
+    std::cout << "ERROR: " << p.error_count << std::endl;
+    std::cout << "REJECTED: " << p.rejected << std::endl;
     return 0;
 }

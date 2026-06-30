@@ -1,60 +1,59 @@
-#include <algorithm>
-#include <iostream>
-#include <string>
-#include <type_traits>
 #include <vector>
-// cleaned up version
+#include <string>
+#include <iostream>
+#include <type_traits>
+#include <algorithm>
 
 namespace util {
 
 template <typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end());
+sort_values(std::vector<T>& bucket) {
+    std::sort(bucket.begin(), bucket.end());
 }
 
 template <typename T>
 typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& a, const T& b) {
-        if (a.size() < b.size()) return true;
-        if (b.size() < a.size()) return false;
-        return a < b;
+sort_values(std::vector<T>& bucket) {
+    std::sort(bucket.begin(), bucket.end(), [](const T& left, const T& right) {
+        if (left.size() < right.size()) return true;
+        if (right.size() < left.size()) return false;
+        return left < right;
     });
 }
 
 }  // namespace util
 
-void emit_doubles(std::vector<double>& v) {
-    util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+void emit_doubles(std::vector<double>& seq) {
+    util::sort_values(seq);
+    for (std::size_t pos = 0; pos < seq.size(); ++pos) {
+        if (pos) std::cout << ' ';
+        std::cout << seq[pos];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
-void emit_strings(std::vector<std::string>& v) {
-    util::sort_values(v);
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        if (i) std::cout << ' ';
-        std::cout << v[i];
+void emit_strings(std::vector<std::string>& seq) {
+    util::sort_values(seq);
+    for (std::size_t pos = 0; pos < seq.size(); ++pos) {
+        if (pos) std::cout << ' ';
+        std::cout << seq[pos];
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 }
 
 int main() {
-    std::string kind;
-    std::size_t n;
-    std::cin >> kind >> n;
-    if (kind == "NUM") {
-        std::vector<double> buf(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_doubles(buf);
+    std::string selector;
+    std::size_t qty;
+    std::cin >> selector >> qty;
+    if (selector == "NUM") {
+        std::vector<double> seq(qty);
+        for (auto& entry : seq) std::cin >> entry;
+        emit_doubles(seq);
     } else {
-        std::vector<std::string> buf(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> buf[i];
-        emit_strings(buf);
+        std::vector<std::string> seq(qty);
+        for (auto& entry : seq) std::cin >> entry;
+        emit_strings(seq);
     }
     return 0;
 }

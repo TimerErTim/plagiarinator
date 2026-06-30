@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <cstring>
+#include <cctype>
+#include <algorithm>
+#include <iostream>
 
 using std::cin;
 using std::cout;
@@ -16,74 +15,74 @@ using std::vector;
 
 class StringBuffer
 {
-    char* buf;
-    size_t length;
+    char* storage;
+    size_t byteCount;
 
-    void release() { delete[] buf; buf = nullptr; length = 0; }
+    void release() { delete[] storage; storage = nullptr; byteCount = 0; }
 
     void copyFrom(const char* src, size_t n)
     {
-        buf = new char[n + 1];
-        memcpy(buf, src, n);
-        buf[n] = '\0';
-        length = n;
+        storage = new char[n + 1];
+        memcpy(storage, src, n);
+        storage[n] = '\0';
+        byteCount = n;
     }
 
 public:
     explicit StringBuffer(const char* text)
     {
-        length = strlen(text);
-        copyFrom(text, length);
+        byteCount = strlen(text);
+        copyFrom(text, byteCount);
     }
 
     ~StringBuffer() { release(); }
 
     StringBuffer(const StringBuffer& other)
     {
-        copyFrom(other.buf, other.length);
+        copyFrom(other.storage, other.byteCount);
     }
 
     StringBuffer& operator=(const StringBuffer& rhs)
     {
         if (this == &rhs) return *this;
         release();
-        copyFrom(rhs.buf, rhs.length);
+        copyFrom(rhs.storage, rhs.byteCount);
         return *this;
     }
 
     void trim()
     {
-        size_t lo = 0, hi = length;
-        while (lo < hi && isspace(static_cast<unsigned char>(buf[lo]))) lo++;
-        while (hi > lo && isspace(static_cast<unsigned char>(buf[hi - 1]))) hi--;
-        memmove(buf, buf + lo, hi - lo);
-        length = hi - lo;
-        buf[length] = '\0';
+        size_t lo = 0, hi = byteCount;
+        while (lo < hi && isspace(static_cast<unsigned char>(storage[lo]))) lo++;
+        while (hi > lo && isspace(static_cast<unsigned char>(storage[hi - 1]))) hi--;
+        memmove(storage, storage + lo, hi - lo);
+        byteCount = hi - lo;
+        storage[byteCount] = '\0';
     }
 
-    const char* c_str() const { return buf; }
-    size_t size() const { return length; }
-    bool empty() const { return length == 0; }
+    const char* c_str() const { return storage; }
+    size_t size() const { return byteCount; }
+    bool empty() const { return byteCount == 0; }
 
     bool operator<(const StringBuffer& rhs) const
     {
-        return strcmp(buf, rhs.buf) < 0;
+        return strcmp(storage, rhs.storage) < 0;
     }
 };
 
 int main()
 {
-    vector<StringBuffer> lines;
-    string buf;
-    while (getline(cin, buf))
-        lines.emplace_back(buf.c_str());
+    vector<StringBuffer> entries;
+    string raw;
+    while (getline(cin, raw))
+        entries.push_back(raw.c_str());
 
-    for (auto& e : lines) e.trim();
-    lines.erase(remove_if(lines.begin(), lines.end(),
-        [](const StringBuffer& s){ return s.empty(); }), lines.end());
-    sort(lines.begin(), lines.end());
+    for (auto& e : entries) e.trim();
+    entries.erase(remove_if(entries.begin(), entries.end(),
+        [](const StringBuffer& s){ return s.empty(); }), entries.end());
+    sort(entries.begin(), entries.end());
 
-    for (const auto& e : lines)
+    for (const auto& e : entries)
         cout << e.c_str() << endl;
     return 0;
 }

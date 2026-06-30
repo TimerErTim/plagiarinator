@@ -1,40 +1,39 @@
-#include <iostream>
 #include <array>
-#include <utility>
+#include <iostream>
 #include <string>
-// quick submit
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
 public:
     bool push(const T& value) {
         if (top_index_ >= N) return false;
-        word_[top_index_++] = value;
+        storage_[top_index_++] = value;
         return true;
     }
 
     bool push(T&& value) {
         if (top_index_ >= N) return false;
-        word_[top_index_++] = std::move(value);
+        storage_[top_index_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
         if (top_index_ == 0) return false;
-        out = word_[--top_index_];
+        out = storage_[--top_index_];
         return true;
     }
 
     bool peek(T& out) const {
         if (top_index_ == 0) return false;
-        out = word_[top_index_ - 1];
+        out = storage_[top_index_ - 1];
         return true;
     }
 
     std::size_t size() const { return top_index_; }
 
 private:
-    std::array<T, N> word_{};
+    std::array<T, N> storage_{};
     std::size_t top_index_ = 0;
 };
 
@@ -52,7 +51,7 @@ bool is_balanced(const std::string& s) {
             if (!ok) return false;
         }
     }
-    return pile.size() == 0;
+    return !pile.size();
 }
 
 int main() {

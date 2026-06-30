@@ -1,89 +1,104 @@
-#include <string>
 #include <iostream>
 #include <memory>
-// TODO: refactor later
+#include <string>
+// copied from stackoverflow-ish snippet
 
 class Parser;
 
-class State {
+class State
+{
 public:
     virtual ~State() = default;
-    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
+    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& row) = 0;
 };
 
-class Parser {
+class Parser
+{
 public:
     std::unique_ptr<State> state;
-    int info = 0, warn = 0, err = 0, rejected = 0;
+    int n_info = 0, n_warn = 0, n_err = 0, n_skip = 0;
 
-    void accept(const std::string& level) {
-        if (level == "INFO") ++info;
-        else if (level == "WARN") ++warn;
-        else if (level == "ERROR") ++err;
+    void note(const std::string& tag)
+    {
+        if (tag == "INFO") ++n_info;
+        else if (tag == "WARN") ++n_warn;
+        else if (tag == "ERROR") ++n_err;
     }
 };
 
-class HeaderState : public State {
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+class HeaderState : public State
+{
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& row) override;
 };
 
-class BodyState : public State {
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+class BodyState : public State
+{
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& row) override;
 };
 
-class DoneState : public State {
-    std::unique_ptr<State> handle(Parser&, const std::string&) override {
+class DoneState : public State
+{
+    std::unique_ptr<State> handle(Parser&, const std::string&) override
+    {
         return std::unique_ptr<State>(new DoneState());
     }
 };
 
-namespace {
+namespace
+{
 
-bool valid_log(const std::string& line, std::string& level) {
-    std::size_t rb = line.find(']');
-    if (line.size() < 4 || line[0] != '[' || rb == std::string::npos) return false;
-    level = line.substr(1, rb - 1);
-    return level == "INFO" || level == "WARN" || level == "ERROR";
+bool scan_row(const std::string& row, std::string& tag)
+{
+    std::size_t rb = row.find(']');
+    if (row.size() < 4 || row[0] != '[' || rb == std::string::npos) return false;
+    tag = row.substr(1, rb - 1);
+    return tag == "INFO" || tag == "WARN" || tag == "ERROR";
 }
 
-std::unique_ptr<State> process_body(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (valid_log(line, lvl)) {
-        ctx.accept(lvl);
+std::unique_ptr<State> body_step(Parser& ctx, const std::string& row)
+{
+    if (row == "END") return std::make_unique<DoneState>();
+    std::string tag;
+    if (scan_row(row, tag))
+    {
+        ctx.note(tag);
         return std::make_unique<BodyState>();
     }
-    ++ctx.rejected;
+    ++ctx.n_skip;
     return std::make_unique<BodyState>();
 }
 
 }  // namespace
 
-std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (valid_log(line, lvl)) {
-        ctx.accept(lvl);
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& row)
+{
+    if (row == "END") return std::make_unique<DoneState>();
+    std::string tag;
+    if (scan_row(row, tag))
+    {
+        ctx.note(tag);
         return std::make_unique<BodyState>();
     }
-    ++ctx.rejected;
+    ++ctx.n_skip;
     return std::make_unique<HeaderState>();
 }
 
-std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
-    return process_body(ctx, line);
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& row)
+{
+    return body_step(ctx, row);
 }
 
-int main() {
-    Parser machine;
-    machine.state.reset(new HeaderState());
-    std::string buf;
-    while (std::getline(std::cin, buf))
-        machine.state = machine.state->handle(machine, buf);
+int main()
+{
+    Parser engine;
+    engine.state.reset(new HeaderState());
+    std::string row;
+    while (std::getline(std::cin, row))
+        engine.state = engine.state->handle(engine, row);
 
-    std::cout << "INFO: " << machine.info << '\n';
-    std::cout << "WARN: " << machine.warn << '\n';
-    std::cout << "ERROR: " << machine.err << '\n';
-    std::cout << "REJECTED: " << machine.rejected << '\n';
+    std::cout << "INFO: " << engine.n_info << std::endl;
+    std::cout << "WARN: " << engine.n_warn << std::endl;
+    std::cout << "ERROR: " << engine.n_err << std::endl;
+    std::cout << "REJECTED: " << engine.n_skip << std::endl;
     return 0;
 }

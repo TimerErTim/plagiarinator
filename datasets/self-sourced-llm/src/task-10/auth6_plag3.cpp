@@ -1,96 +1,103 @@
 #include <vector>
-#include <iostream>
 #include <sstream>
+#include <iostream>
 #include <string>
-// TODO: refactor later
+// basically the same as lecture slides lol
 
 class IntBST {
-    struct Node {
-        int data;
-        Node* leftChild;
-        Node* rightChild;
-        explicit Node(int d) : data(d), leftChild(nullptr), rightChild(nullptr) {}
+    struct Block {
+        int payload;
+        Block* west;
+        Block* east;
+        explicit Block(int p) : payload(p), west(nullptr), east(nullptr) {}
     };
 
-    Node* ptr;
+    Block* apex_;
 
-    void freeNodes(Node* node) {
-        if (!node) return;
-        freeNodes(node->leftChild);
-        freeNodes(node->rightChild);
-        delete node;
+    void drop(Block* blk) {
+        if (!blk) return;
+        std::vector<Block*> order;
+        std::vector<Block*> pending;
+        pending.push_back(blk);
+        while (!pending.empty()) {
+            Block* cur = pending.back();
+            pending.pop_back();
+            order.push_back(cur);
+            if (cur->west) pending.push_back(cur->west);
+            if (cur->east) pending.push_back(cur->east);
+        }
+        for (std::size_t k = order.size(); k-- > 0;)
+            delete order[k];
     }
 
-    Node* insertHelper(Node* node, int value) {
-        if (!node) return new Node(value);
-        if (value < node->data)
-            node->leftChild = insertHelper(node->leftChild, value);
-        else if (value > node->data)
-            node->rightChild = insertHelper(node->rightChild, value);
-        return node;
+    Block* graft(Block* blk, int p) {
+        if (!blk) return new Block(p);
+        if (p < blk->payload) blk->west = graft(blk->west, p);
+        else if (p > blk->payload) blk->east = graft(blk->east, p);
+        return blk;
     }
 
-    bool containsHelper(const Node* node, int value) const {
-        if (!node) return false;
-        if (value == node->data) return true;
-        if (value < node->data) return containsHelper(node->leftChild, value);
-        return containsHelper(node->rightChild, value);
+    bool scan(const Block* blk, int p) const {
+        if (!blk) return false;
+        if (p == blk->payload) return true;
+        if (p < blk->payload) return scan(blk->west, p);
+        return scan(blk->east, p);
     }
 
-    void inorderHelper(const Node* node, std::vector<int>& result) const {
-        if (!node) return;
-        inorderHelper(node->leftChild, result);
-        result.push_back(node->data);
-        inorderHelper(node->rightChild, result);
+    void emit(const Block* blk, std::vector<int>& buf) const {
+        if (!blk) return;
+        emit(blk->west, buf);
+        buf.push_back(blk->payload);
+        emit(blk->east, buf);
     }
 
-    Node* minNodeHelper(Node* node) const {
-        while (node && node->leftChild) node = node->leftChild;
-        return node;
+    Block* floor(Block* blk) const {
+        while (blk && blk->west) blk = blk->west;
+        return blk;
     }
 
 public:
-    IntBST() : ptr(nullptr) {}
-    ~IntBST() { freeNodes(ptr); }
+    IntBST() : apex_(nullptr) {}
+    ~IntBST() { drop(apex_); }
 
-    void insert(int value) { ptr = insertHelper(ptr, value); }
-    bool contains(int value) const { return containsHelper(ptr, value); }
-    void inorder(std::vector<int>& out) const { inorderHelper(ptr, out); }
+    void insert(int value) { apex_ = graft(apex_, value); }
+    bool contains(int value) const { return scan(apex_, value); }
+    void inorder(std::vector<int>& out) const { emit(apex_, out); }
 
-    int& min() { return minNodeHelper(ptr)->data; }
-    const int& min() const { return minNodeHelper(ptr)->data; }
+    int& min() { return floor(apex_)->payload; }
+    const int& min() const { return floor(apex_)->payload; }
 
-    bool empty() const { return ptr == nullptr; }
+    bool empty() const { return apex_ == nullptr; }
 };
 
 int main() {
-    std::stringstream input;
-    input << std::cin.rdbuf();
+    std::stringstream pipe;
+    pipe << std::cin.rdbuf();
 
-    IntBST hold;
-    std::string ln;
-    while (input >> ln) {
-        if (ln == "DONE") break;
-        hold.insert(std::stoi(ln));
+    IntBST grove;
+    std::string chunk;
+    while (pipe >> chunk) {
+        if (chunk == "DONE") break;
+        grove.insert(std::stoi(chunk));
     }
 
-    while (input >> ln) {
-        if (ln == "DONE") break;
-        if (ln == "CONTAINS") {
+    while (pipe >> chunk) {
+        if (chunk == "DONE") break;
+        if (chunk == "CONTAINS") {
             int value;
-            input >> value;
-            std::cout << (hold.contains(value) ? "YES" : "NO") << std::endl;
-        } else if (ln == "MIN") {
-            if (hold.empty())
+            pipe >> value;
+            std::cout << (grove.contains(value) ? "YES" : "NO") << std::endl;
+        } else if (chunk == "MIN") {
+            if (grove.empty())
                 std::cout << "EMPTY" << std::endl;
             else
-                std::cout << hold.min() << std::endl;
-        } else if (ln == "PRINT") {
+                std::cout << grove.min() << std::endl;
+        } else if (chunk == "PRINT") {
             std::vector<int> ordered;
-            hold.inorder(ordered);
-            for (std::size_t i = 0; i < ordered.size(); ++i) {
-                if (i > 0) std::cout << ' ';
-                std::cout << ordered[i];
+            grove.inorder(ordered);
+            for (std::size_t idx = 0; idx < ordered.size(); ++idx) {
+                if (idx > 0) std::cout << ' ';
+                std::cout << ordered[idx];
             }
             std::cout << std::endl;
         }

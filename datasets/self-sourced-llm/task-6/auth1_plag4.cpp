@@ -1,10 +1,9 @@
-#include <iomanip>
-#include <cmath>
-#include <memory>
-#include <iostream>
-#include <vector>
 #include <string>
-// quick submit
+#include <vector>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <memory>
 
 class Shape {
 public:
@@ -15,29 +14,29 @@ public:
 };
 
 class Circle : public Shape {
-    double word_;
+    double r_;
 public:
-    explicit Circle(double r) : word_(r) {}
-    double area() const override { return 3.141592653589793 * word_ * word_; }
-    double perimeter() const override { return 2.0 * 3.141592653589793 * word_; }
+    explicit Circle(double r) : r_(r) {}
+    double area() const override { return 3.141592653589793 * r_ * r_; }
+    double perimeter() const override { return 2.0 * 3.141592653589793 * r_; }
     std::string name() const override { return "Circle"; }
 };
 
 class Rectangle : public Shape {
-    double elemW_, elemH_;
+    double w_, h_;
 public:
-    Rectangle(double w, double h) : elemW_(w), elemH_(h) {}
-    double area() const override { return elemW_ * elemH_; }
-    double perimeter() const override { return 2.0 * (elemW_ + elemH_); }
+    Rectangle(double w, double h) : w_(w), h_(h) {}
+    double area() const override { return w_ * h_; }
+    double perimeter() const override { return 2.0 * (w_ + h_); }
     std::string name() const override { return "Rectangle"; }
 };
 
 class Triangle : public Shape {
-    double tmp_;
+    double s_;
 public:
-    explicit Triangle(double s) : tmp_(s) {}
-    double area() const override { return std::sqrt(3.0) / 4.0 * tmp_ * tmp_; }
-    double perimeter() const override { return 3.0 * tmp_; }
+    explicit Triangle(double s) : s_(s) {}
+    double area() const override { return std::sqrt(3.0) / 4.0 * s_ * s_; }
+    double perimeter() const override { return 3.0 * s_; }
     std::string name() const override { return "Triangle"; }
 };
 
@@ -54,15 +53,15 @@ void accumulate(const Shape& s, double& area_sum, double& peri_sum) {
 
 int main() {
     std::vector<std::unique_ptr<Shape>> shapes;
-    std::string word;
-    while (std::cin >> word && word != "DONE") {
-        if (word == "CIRCLE") {
+    std::string cmd;
+    while (std::cin >> cmd && cmd != "DONE") {
+        if (cmd == "CIRCLE") {
             double r; std::cin >> r;
             shapes.push_back(std::make_unique<Circle>(r));
-        } else if (word == "RECT") {
+        } else if (cmd == "RECT") {
             double w, h; std::cin >> w >> h;
             shapes.push_back(std::make_unique<Rectangle>(w, h));
-        } else if (word == "TRI") {
+        } else if (cmd == "TRI") {
             double s; std::cin >> s;
             shapes.push_back(std::make_unique<Triangle>(s));
         }

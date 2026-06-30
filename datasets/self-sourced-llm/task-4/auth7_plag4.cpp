@@ -1,31 +1,31 @@
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <utility>
-#include <string>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+// quick submit before deadline
 
 class FileWriter {
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream f_;
+    std::string p_;
 
 public:
-    explicit FileWriter(const std::string& p) : tmp_(p) { word_.open(p); }
-    ~FileWriter() { if (word_) word_.close(); }
+    explicit FileWriter(const std::string& p) : p_(p) { f_.open(p); }
+    ~FileWriter() { if (f_) f_.close(); }
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
-    FileWriter(FileWriter&& x) noexcept : word_(std::move(x.word_)), tmp_(std::move(x.tmp_)) {}
+    FileWriter(FileWriter&& x) noexcept : f_(std::move(x.f_)), p_(std::move(x.p_)) {}
     FileWriter& operator=(FileWriter&& x) noexcept {
         if (this != &x) {
-            if (word_) word_.close();
-            word_ = std::move(x.word_);
-            tmp_ = std::move(x.tmp_);
+            if (f_) f_.close();
+            f_ = std::move(x.f_);
+            p_ = std::move(x.p_);
         }
         return *this;
     }
-    void write_line(const std::string& l) { word_ << l << '\n'; }
+    void write_line(const std::string& l) { f_ << l << std::endl; }
 };
 
 int main() {
@@ -34,7 +34,7 @@ int main() {
         auto k = s.find(',');
         recs.emplace_back(s.substr(0,k), std::stoi(s.substr(k+1)));
     }
-    FileWriter fw = FileWriter("report.txt");
+    FileWriter fw("report.txt");
     fw.write_line("Student Report");
     fw.write_line("--------------");
     double tot = 0;

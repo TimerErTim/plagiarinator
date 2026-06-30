@@ -1,10 +1,9 @@
-#include <vector>
-#include <string>
-#include <sstream>
-#include <memory>
-#include <iostream>
 #include <iomanip>
-// adapted from classmate submission
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 class Vehicle {
 public:
@@ -16,21 +15,21 @@ public:
 namespace fleet {
 
 class Car : public Vehicle {
-    double lp100;
+    double litersPer100Km;
 public:
-    explicit Car(double rate) : lp100(rate) {}
+    explicit Car(double rate) : litersPer100Km(rate) {}
     double fuel_needed(double distance_km) const override {
-        return lp100 * distance_km / 100.0;
+        return litersPer100Km * distance_km / 100.0;
     }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double lpkm;
+    double litersPerKm;
 public:
-    explicit Truck(double rate) : lpkm(rate) {}
+    explicit Truck(double rate) : litersPerKm(rate) {}
     double fuel_needed(double distance_km) const override {
-        return lpkm * distance_km;
+        return litersPerKm * distance_km;
     }
     std::string type() const override { return "TRUCK"; }
 };
@@ -43,14 +42,15 @@ public:
 
 } // namespace fleet
 
-std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config) {
-    if (kind == "CAR")
+std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& config)
 {
+    if (kind == "CAR")
+    {
         double rate; config >> rate;
         return std::make_unique<fleet::Car>(rate);
     }
     if (kind == "TRUCK")
-{
+    {
         double rate; config >> rate;
         return std::make_unique<fleet::Truck>(rate);
     }
@@ -59,34 +59,44 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& c
     return nullptr;
 }
 
+bool extract(const std::string& line, std::unique_ptr<Vehicle>& veh, double& dist)
+{
+    std::istringstream lineStream(line);
+    std::string kindToken;
+    lineStream >> kindToken;
+    veh = create_vehicle(kindToken, lineStream);
+    if (!veh)
+        return false;
+    lineStream >> dist;
+    return true;
+}
+
 int main()
 {
-    std::vector<std::unique_ptr<Vehicle>> vs;
+    std::vector<std::unique_ptr<Vehicle>> vehicles;
     std::vector<double> tripDistances;
     std::string lineBuffer;
 
-    while (std::getline(std::cin, lineBuffer)) {
-        std::istringstream lineStream(lineBuffer);
-        std::string kindToken;
-        lineStream >> kindToken;
-        std::unique_ptr<Vehicle> vehicle = create_vehicle(kindToken, lineStream);
-        if (!vehicle)
-{
+    while (std::getline(std::cin, lineBuffer))
+    {
+        std::unique_ptr<Vehicle> vehicle;
+        double distanceKm;
+        if (!extract(lineBuffer, vehicle, distanceKm))
+        {
             std::cout << "ERROR" << std::endl;
             continue;
         }
-        double distanceKm;
-        lineStream >> distanceKm;
-        vs.emplace_back(std::move(vehicle));
+        vehicles.emplace_back(std::move(vehicle));
         tripDistances.push_back(distanceKm);
     }
 
     double totalLiters = 0.0;
-    for (std::size_t tripIndex = 0; tripIndex < vs.size(); ++tripIndex) {
-        double liters = vs[tripIndex]->fuel_needed(tripDistances[tripIndex]);
+    for (std::size_t tripIndex = 0; tripIndex < vehicles.size(); ++tripIndex)
+    {
+        double liters = vehicles[tripIndex]->fuel_needed(tripDistances[tripIndex]);
         totalLiters += liters;
         std::cout << "Trip " << tripIndex + 1 << ": "
-                  << vs[tripIndex]->type()
+                  << vehicles[tripIndex]->type()
                   << " needs " << std::fixed << std::setprecision(2)
                   << liters << " liters" << std::endl;
     }

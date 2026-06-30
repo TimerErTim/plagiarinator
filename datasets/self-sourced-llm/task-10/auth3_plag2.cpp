@@ -1,111 +1,111 @@
-#include <vector>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <vector>
 
-class IntBST {
-    struct Node {
+class IntBST
+{
+    struct Node
+    {
         int key;
         Node* left;
         Node* right;
         explicit Node(int k) : key(k), left(nullptr), right(nullptr) {}
     };
 
-    Node* rootNode_;
+    Node* rootx_;
 
-    static void deleteTree(Node* node) {
+    static void deleteTree(Node* node)
+    {
         if (node == nullptr) return;
         deleteTree(node->left);
         deleteTree(node->right);
         delete node;
     }
 
-    Node* insertRecursive(Node* node, int value) {
+    Node* insertRecursive(Node* node, int value)
+    {
         if (node == nullptr) return new Node(value);
         if (value < node->key) node->left = insertRecursive(node->left, value);
         else if (value > node->key) node->right = insertRecursive(node->right, value);
         return node;
     }
 
-    bool searchRecursive(const Node* node, int value) const {
+    bool matchKey(const Node* node, int value) const
+    {
         if (node == nullptr) return false;
         if (value == node->key) return true;
-        if (value < node->key) return searchRecursive(node->left, value);
-        return searchRecursive(node->right, value);
+        if (value < node->key) return matchKey(node->left, value);
+        return matchKey(node->right, value);
     }
 
-    void collectInorder(const Node* node, std::vector<int>& output) const {
+    void collectInorder(const Node* node, std::vector<int>& output) const
+    {
         if (node == nullptr) return;
         collectInorder(node->left, output);
         output.push_back(node->key);
         collectInorder(node->right, output);
     }
 
-    Node* findMinimum(Node* node) const {
+    Node* findMinimum(Node* node) const
+    {
         if (node == nullptr) return nullptr;
         while (node->left != nullptr) node = node->left;
         return node;
     }
 
 public:
-    IntBST() : rootNode_(nullptr) {}
-    ~IntBST() { deleteTree(rootNode_); }
+    IntBST() : rootx_(nullptr) {}
+    ~IntBST() { deleteTree(rootx_); }
 
-    void insert(int value) {
-        rootNode_ = insertRecursive(rootNode_, value);
-    }
+    void insert(int value) { rootx_ = insertRecursive(rootx_, value); }
 
-    bool contains(int value) const {
-        return searchRecursive(rootNode_, value);
-    }
+    bool contains(int value) const { return matchKey(rootx_, value); }
 
-    void inorder(std::vector<int>& out) const {
-        collectInorder(rootNode_, out);
-    }
+    void inorder(std::vector<int>& out) const { collectInorder(rootx_, out); }
 
-    int& min() {
-        return findMinimum(rootNode_)->key;
-    }
+    int& min() { return findMinimum(rootx_)->key; }
 
-    const int& min() const {
-        return findMinimum(rootNode_)->key;
-    }
+    const int& min() const { return findMinimum(rootx_)->key; }
 
-    bool empty() const { return rootNode_ == nullptr; }
+    bool empty() const { return rootx_ == nullptr; }
 };
 
 int main()
 {
-    IntBST t;
+    IntBST bst;
     std::string item;
     while (std::cin >> item)
-{
+    {
         if (item == "DONE") break;
-        t.insert(std::stoi(item));
+        bst.insert(std::stoi(item));
     }
 
     std::string command;
     while (std::cin >> command)
-{
+    {
         if (command == "DONE") break;
         if (command == "CONTAINS")
-{
+        {
             int query;
             std::cin >> query;
-            std::cout << (t.contains(query) ? "YES" : "NO") << std::endl;
-        } else if (command == "MIN") {
-            if (t.empty())
-                std::cout << "EMPTY" << std::endl;
-            else
-                std::cout << t.min() << std::endl;
-        } else if (command == "PRINT") {
+            if (bst.contains(query)) std::cout << "YES\n";
+            else std::cout << "NO\n";
+        }
+        else if (command == "MIN")
+        {
+            if (bst.empty()) std::cout << "EMPTY\n";
+            else std::cout << bst.min() << '\n';
+        }
+        else if (command == "PRINT")
+        {
             std::vector<int> sorted;
-            t.inorder(sorted);
-            for (std::size_t i = 0; i < sorted.size(); ++i) {
-                if (i > 0) std::cout << ' ';
-                std::cout << sorted[i];
+            bst.inorder(sorted);
+            for (std::size_t j = 0; j < sorted.size(); ++j)
+            {
+                if (j > 0) std::cout << ' ';
+                std::cout << sorted[j];
             }
-            std::cout << std::endl;
+            std::cout << '\n';
         }
     }
     return 0;

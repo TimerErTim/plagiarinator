@@ -1,15 +1,15 @@
-#include <vector>
-#include <iostream>
-#include <cstring>
-#include <cctype>
 #include <algorithm>
-// adapted from classmate submission
+#include <cctype>
+#include <cstring>
+#include <iostream>
+#include <vector>
 
 class StringBuffer {
     char* text;
     std::size_t len;
 
-    void swapContents(StringBuffer& other) {
+    void swapContents(StringBuffer& other)
+    {
         std::swap(text, other.text);
         std::swap(len, other.len);
     }
@@ -18,7 +18,7 @@ public:
     StringBuffer(const char* s) : text(nullptr), len(0) {
         len = std::strlen(s);
         text = new char[len + 1];
-        std::strcpy(text, s);
+        std::memcpy(text, s, len + 1);
     }
 
     ~StringBuffer() { delete[] text; }
@@ -26,7 +26,7 @@ public:
     StringBuffer(const StringBuffer& o) : text(nullptr), len(0) {
         len = o.len;
         text = new char[len + 1];
-        std::strcpy(text, o.text);
+        std::memcpy(text, o.text, len + 1);
     }
 
     StringBuffer& operator=(StringBuffer tmp) {
@@ -34,7 +34,8 @@ public:
         return *this;
     }
 
-    void trim() {
+    void trim()
+    {
         std::size_t start = 0;
         while (start < len && std::isspace(static_cast<unsigned char>(text[start])))
             start++;
@@ -42,8 +43,7 @@ public:
         while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])))
             end--;
         len = end - start;
-        for (std::size_t i = 0; i < len; ++i)
-            text[i] = text[start + i];
+        std::memmove(text, text + start, len);
         text[len] = '\0';
     }
 
@@ -58,10 +58,12 @@ public:
 int main()
 {
     std::vector<StringBuffer> names;
-    for (std::string ln; std::getline(std::cin, ln);)
-        names.push_back(ln.c_str());
+    for (std::string line; std::getline(std::cin, line);)
+        names.push_back(StringBuffer(line.c_str()));
 
-    for (auto& n : names) n.trim();
+    for (std::size_t idx = 0; idx < names.size(); ++idx)
+        names[idx].trim();
+
     names.erase(std::remove_if(names.begin(), names.end(),
                                [](const StringBuffer& n) { return n.size() == 0; }),
                 names.end());

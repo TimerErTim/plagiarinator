@@ -1,12 +1,11 @@
-#include <iostream>
 #include <iomanip>
-#include <string>
+#include <iostream>
 #include <sstream>
-#include <utility>
+#include <string>
 #include <unordered_map>
-#include <vector>
+#include <utility>
 #include <variant>
-// quick submit
+#include <vector>
 
 namespace detail {
 
@@ -36,18 +35,18 @@ void log_line(std::ostream& out, Args&&... args) {
 using detail::log_line;
 
 class Config {
-    std::unordered_map<std::string, std::string> data_;
+    std::unordered_map<std::string, std::string> map_;
 
 public:
-    bool has(const std::string& key) const { return data_.count(key) > 0; }
+    bool has(const std::string& key) const { return map_.count(key) > 0; }
 
-    const std::string& get(const std::string& key) const { return data_.at(key); }
+    const std::string& get(const std::string& key) const { return map_.at(key); }
 
     void loadFromStream(std::istream& is) {
         std::string row;
         while (std::getline(is, row) && !row.empty()) {
             std::size_t eq = row.find('=');
-            data_.emplace(row.substr(0, eq), row.substr(eq + 1));
+            map_.emplace(row.substr(0, eq), row.substr(eq + 1));
         }
     }
 };
@@ -94,16 +93,16 @@ void emitLogLine(std::ostream& out, const std::vector<std::string>& parts) {
 }
 
 int main() {
-    Config ref;
-    ref.loadFromStream(std::cin);
+    Config settings;
+    settings.loadFromStream(std::cin);
 
     std::string word;
     while (std::cin >> word) {
         if (word == "END") break;
         if (word == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            std::cout << (ref.has(tag) ? ref.get(tag) : std::string("MISSING")) << '\n';
+            std::string k;
+            std::cin >> k;
+            std::cout << (settings.has(k) ? settings.get(k) : std::string("MISSING")) << '\n';
         } else if (word == "LOG") {
             std::string rest;
             std::getline(std::cin, rest);

@@ -1,46 +1,45 @@
+#include <utility>
 #include <iostream>
 #include <string>
-#include <utility>
-// cleaned up version
 
 class StringBuilder {
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : content_(std::move(other.content_)) {
-        other.content_.clear();
+    StringBuilder(StringBuilder&& other) noexcept : buf_(std::move(other.buf_)) {
+        other.buf_.clear();
     }
 
     StringBuilder& operator=(StringBuilder&& other) noexcept {
-        content_ = std::move(other.content_);
-        other.content_.clear();
+        buf_ = std::move(other.buf_);
+        other.buf_.clear();
         return *this;
     }
 
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& piece) {
-        content_.append(piece);
+    StringBuilder& append(const std::string& frag) {
+        buf_.append(frag);
         return *this;
     }
 
-    StringBuilder& append(std::string&& piece) {
-        content_.append(std::move(piece));
+    StringBuilder& append(std::string&& frag) {
+        buf_.append(std::move(frag));
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& piece) {
-        content_.append(piece);
-        content_.push_back('\n');
+    StringBuilder& append_line(const std::string& frag) {
+        buf_.append(frag);
+        buf_.append(1, '\n');
         return *this;
     }
 
-    const std::string& str() const { return content_; }
-    void clear() { content_.clear(); }
+    const std::string& str() const { return buf_; }
+    void clear() { buf_.clear(); }
 
 private:
-    std::string content_;
+    std::string buf_;
 };
 
 void consume_section(StringBuilder& doc, std::istream& in) {
@@ -61,14 +60,14 @@ void consume_section(StringBuilder& doc, std::istream& in) {
 }
 
 int main() {
-    StringBuilder output;
-    std::string token;
+    StringBuilder document;
+    std::string verb;
 
-    while (std::cin >> token) {
-        if (token == "END") break;
-        if (token == "SECTION") consume_section(output, std::cin);
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "SECTION") consume_section(document, std::cin);
     }
 
-    std::cout << output.str();
+    std::cout << document.str();
     return 0;
 }

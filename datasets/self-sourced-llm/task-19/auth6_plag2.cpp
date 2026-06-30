@@ -1,57 +1,66 @@
-#include <vector>
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
+#include <vector>
 
-class StringBuilder {
-    std::string buf_;
+class StringBuilder
+{
+    std::string text_;
 
 public:
     StringBuilder() = default;
-    StringBuilder(StringBuilder&& o) noexcept : buf_(std::move(o.buf_)) {}
-    StringBuilder& operator=(StringBuilder&& o) noexcept {
-        buf_ = std::move(o.buf_);
+    StringBuilder(StringBuilder&& o) noexcept : text_(std::move(o.text_)) {}
+    StringBuilder& operator=(StringBuilder&& o) noexcept
+    {
+        text_ = std::move(o.text_);
         return *this;
     }
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) { buf_ += s; return *this; }
-    StringBuilder& append(std::string&& s) { buf_ += std::move(s); return *this; }
+    StringBuilder& append(const std::string& s) { text_ += s; return *this; }
+    StringBuilder& append(std::string&& s) { text_ += std::move(s); return *this; }
     StringBuilder& append_line(const std::string& s) { return append(s).append("\n"); }
-    const std::string& str() const { return buf_; }
-    void clear() { buf_.clear(); }
+    const std::string& str() const { return text_; }
+    void clear() { text_.clear(); }
 };
+
+static std::vector<std::string> gather_lines(std::istream& in)
+{
+    std::vector<std::string> lines;
+    std::string ln;
+    while (std::getline(in, ln))
+    {
+        if (ln.empty()) break;
+        lines.push_back(ln);
+    }
+    return lines;
+}
 
 int main()
 {
-    StringBuilder document;
+    StringBuilder doc;
     std::string word;
 
-    while (std::cin >> word) {
+    while (std::cin >> word)
+    {
         if (word == "END") break;
         if (word != "SECTION") continue;
 
-        std::string name;
-        std::getline(std::cin, name);
-        name.erase(0, name.find_first_not_of(' '));
+        std::string title;
+        std::getline(std::cin, title);
+        title.erase(0, title.find_first_not_of(' '));
 
-        std::vector<std::string> lines;
-        std::string ln;
-        while (std::getline(std::cin, ln)) {
-            if (ln.empty()) break;
-            lines.push_back(ln);
-        }
+        std::vector<std::string> lines = gather_lines(std::cin);
 
-        StringBuilder block;
-        block.append("# ").append(name).append_line("");
-        for (const auto& l : lines) block.append_line(l);
-        block.append_line("");
+        StringBuilder section;
+        section.append("# ").append(title).append_line("");
+        for (const auto& l : lines) section.append_line(l);
+        section.append_line("");
 
-        document.append(std::move(block.str()));
+        doc.append(std::move(section.str()));
     }
 
-    std::cout << document.str();
+    std::cout << doc.str();
     return 0;
 }

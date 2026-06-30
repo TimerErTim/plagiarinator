@@ -1,37 +1,71 @@
+#include <sstream>
 #include <vector>
 #include <iostream>
-// TODO: refactor later
+// saw similar code online, rewrote variable names
 
-template<typename T>
+template <typename T>
 class Matrix {
-    std::size_t r,c;
-    std::vector<T> v;
+    std::size_t height, width;
+    std::vector<T> cells;
+
 public:
-    Matrix(std::size_t x,std::size_t y):r(x),c(y),v(x*y){}
-    T& operator()(std::size_t i,std::size_t j){return v[i*c+j];}
-    const T& operator()(std::size_t i,std::size_t j)const{return v[i*c+j];}
-    std::size_t rows()const{return r;} std::size_t cols()const{return c;}
-    Matrix operator+(const Matrix& o)const{
-        Matrix m(r,c);for(std::size_t i=0;i<v.size();++i)m.v[i]=v[i]+o.v[i];return m;}
-    Matrix operator*(const Matrix& o)const{
-        Matrix m(r,o.c);
-        for(std::size_t i=0;i<r;++i)for(std::size_t j=0;j<o.c;++j)
-            for(std::size_t k=0;k<c;++k)m(i,j)+=(*this)(i,k)*o(k,j);
-        return m;}
-    friend std::ostream& operator<<(std::ostream& os,const Matrix& m){
-        for(std::size_t i=0;i<m.r;++i){
-            for(std::size_t j=0;j<m.c;++j){if(j)os<<' ';os<<m(i,j);}
-            os<<'\n';}return os;}
+    Matrix(std::size_t r, std::size_t c) : height(r), width(c), cells(r * c) {}
+
+    T& operator()(std::size_t r, std::size_t c) { return cells[r * width + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return cells[r * width + c]; }
+
+    std::size_t rows() const { return height; }
+    std::size_t cols() const { return width; }
+
+    Matrix operator+(const Matrix& peer) const {
+        Matrix tmp(height, width);
+        for (std::size_t i = cells.size(); i-- > 0;)
+            tmp.cells[i] = cells[i] + peer.cells[i];
+        return tmp;
+    }
+
+    Matrix operator*(const Matrix& peer) const {
+        Matrix tmp(height, peer.width);
+        for (std::size_t i = 0; i < height; ++i)
+            for (std::size_t j = 0; j < peer.width; ++j)
+                for (std::size_t k = width; k-- > 0;)
+                    tmp(i, j) += (*this)(i, k) * peer(k, j);
+        return tmp;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+        for (std::size_t i = 0; i < m.height; ++i) {
+            for (std::size_t j = 0; j < m.width; ++j) {
+                if (j > 0) os << ' ';
+                os << m(i, j);
+            }
+            os << std::endl;
+        }
+        return os;
+    }
 };
 
-int main(){
-    std::size_t ra,ca,rb,cb;
-    std::cin>>ra>>ca; Matrix<int> A(ra,ca);
-    for(std::size_t i=0;i<ra;++i)for(std::size_t j=0;j<ca;++j)std::cin>>A(i,j);
-    std::cin>>rb>>cb;
-    if(ca!=rb){std::cout<<"ERROR\n";return 0;}
-    Matrix<int> B(rb,cb);
-    for(std::size_t i=0;i<rb;++i)for(std::size_t j=0;j<cb;++j)std::cin>>B(i,j);
-    std::cout<<A*B+A;
+int main() {
+    std::stringstream buf;
+    buf << std::cin.rdbuf();
+
+    std::size_t rA, cA, rB, cB;
+    buf >> rA >> cA;
+    Matrix<int> lhs(rA, cA);
+    for (std::size_t i = 0; i < rA; ++i)
+        for (std::size_t j = 0; j < cA; ++j)
+            buf >> lhs(i, j);
+
+    buf >> rB >> cB;
+    if (cA != rB) {
+        std::cout << "ERROR\n";
+        return 0;
+    }
+    Matrix<int> rhs(rB, cB);
+    for (std::size_t i = 0; i < rB; ++i)
+        for (std::size_t j = 0; j < cB; ++j)
+            buf >> rhs(i, j);
+
+    std::cout << lhs * rhs + lhs;
     return 0;
 }

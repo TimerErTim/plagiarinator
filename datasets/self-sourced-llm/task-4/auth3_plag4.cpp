@@ -1,23 +1,23 @@
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <utility>
-#include <string>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+// quick submit before deadline
 
 class FileWriter {
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream file_;
+    std::string fname_;
 
     void closeIfOpen() {
-        if (word_.is_open()) word_.close();
+        if (file_.is_open()) file_.close();
     }
 
 public:
-    explicit FileWriter(const std::string& fname) : tmp_(fname) {
-        word_.open(tmp_);
+    explicit FileWriter(const std::string& fname) : fname_(fname) {
+        file_.open(fname_);
     }
 
     ~FileWriter() { closeIfOpen(); }
@@ -26,19 +26,19 @@ public:
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& mv) noexcept
-        : word_(std::move(mv.word_)), tmp_(std::move(mv.tmp_)) {}
+        : file_(std::move(mv.file_)), fname_(std::move(mv.fname_)) {}
 
     FileWriter& operator=(FileWriter&& mv) noexcept {
         if (this != &mv) {
             closeIfOpen();
-            word_ = std::move(mv.word_);
-            tmp_ = std::move(mv.tmp_);
+            file_ = std::move(mv.file_);
+            fname_ = std::move(mv.fname_);
         }
         return *this;
     }
 
     void write_line(const std::string& text) {
-        word_ << text << std::endl;
+        file_ << text << std::endl;
     }
 };
 
@@ -52,9 +52,9 @@ static std::string gradeLabel(int pts) {
 
 int main() {
     std::vector<std::pair<std::string, int>> students;
-    for (std::string word; std::getline(std::cin, word);) {
-        std::size_t sep = word.find(',');
-        students.emplace_back(word.substr(0, sep), std::stoi(word.substr(sep + 1)));
+    for (std::string raw; std::getline(std::cin, raw);) {
+        std::size_t sep = raw.find(',');
+        students.emplace_back(raw.substr(0, sep), std::stoi(raw.substr(sep + 1)));
     }
 
     FileWriter report("report.txt");
@@ -74,6 +74,6 @@ int main() {
            << "Average: " << (acc / static_cast<double>(students.size()));
     report.write_line(footer.str());
 
-    std::cout << "Report written to report.txt" << '\n';
+    std::cout << "Report written to report.txt" << std::endl;
     return 0;
 }

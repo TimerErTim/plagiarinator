@@ -1,8 +1,7 @@
-#include <utility>
-#include <string>
 #include <iostream>
 #include <array>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -44,15 +43,24 @@ static int pair_score(char a, char b) {
     return 0;
 }
 
+static bool handle_closer(FixedStack<char, 128>& stk, char c)
+{
+    char top;
+    if (!stk.pop(top)) return false;
+    return pair_score(top, c) != 0;
+}
+
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> stk;
-    for (unsigned char c : s) {
-        if (c == '(' || c == '[' || c == '{') {
+    for (unsigned char c : s)
+    {
+        if (c == '(' || c == '[' || c == '{')
+        {
             if (!stk.push(static_cast<char>(c))) return false;
-        } else if (c == ')' || c == ']' || c == '}') {
-            char top;
-            if (!stk.pop(top)) return false;
-            if (!pair_score(top, static_cast<char>(c))) return false;
+        }
+        else if (c == ')' || c == ']' || c == '}')
+        {
+            if (!handle_closer(stk, static_cast<char>(c))) return false;
         }
     }
     return stk.size() == 0;
@@ -60,7 +68,8 @@ bool is_balanced(const std::string& s) {
 
 int main()
 {
-    for (std::string input; std::getline(std::cin, input);) {
+    for (std::string input; std::getline(std::cin, input);)
+    {
         if (input == "END") break;
         std::cout << (is_balanced(input) ? "OK" : "FAIL") << '\n';
     }

@@ -1,6 +1,5 @@
-#include <utility>
 #include <iostream>
-// quick submit
+#include <utility>
 
 template <typename T>
 class Vector {
@@ -56,11 +55,11 @@ private:
 };
 
 int main() {
-    std::size_t n;
-    if (!(std::cin >> n)) return 0;
+    std::size_t item_count;
+    if (!(std::cin >> item_count)) return 0;
 
     Vector<int> src;
-    for (std::size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < item_count; ++i) {
         int v;
         std::cin >> v;
         src.push_back(v);

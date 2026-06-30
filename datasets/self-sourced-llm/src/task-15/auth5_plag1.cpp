@@ -1,10 +1,9 @@
+#include <vector>
+#include <variant>
+#include <string>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
-#include <vector>
-// cleaned up version
 
 template <typename Derived>
 class Printable {
@@ -14,7 +13,7 @@ public:
     }
 };
 
-static std::string format_metric(double v, const char* prefix, const char* suffix) {
+static std::string fmt1(double v, const char* prefix, const char* suffix) {
     std::ostringstream o;
     o << std::fixed << std::setprecision(1) << prefix << v << suffix;
     return o.str();
@@ -22,42 +21,42 @@ static std::string format_metric(double v, const char* prefix, const char* suffi
 
 struct Distance : Printable<Distance> {
     double v{};
-    explicit Distance(double lhs) : v(lhs) {}
-    std::string format() const { return format_metric(v, "Distance: ", " m"); }
+    explicit Distance(double x) : v(x) {}
+    std::string format() const { return fmt1(v, "Distance: ", " m"); }
 };
 
 struct Mass : Printable<Mass> {
     double v{};
-    explicit Mass(double lhs) : v(lhs) {}
-    std::string format() const { return format_metric(v, "Mass: ", " kg"); }
+    explicit Mass(double x) : v(x) {}
+    std::string format() const { return fmt1(v, "Mass: ", " kg"); }
 };
 
 struct Temperature : Printable<Temperature> {
     double v{};
-    explicit Temperature(double lhs) : v(lhs) {}
-    std::string format() const { return format_metric(v, "Temp: ", " C"); }
+    explicit Temperature(double x) : v(x) {}
+    std::string format() const { return fmt1(v, "Temp: ", " C"); }
 };
 
 template <typename T>
 void print_metric(const Printable<T>& metric) {
-    std::cout << metric.to_string() << '\n';
+    std::cout << metric.to_string() << std::endl;
 }
 
 int main() {
     using Item = std::variant<Distance, Mass, Temperature>;
-    std::vector<Item> items;
+    std::vector<Item> rows;
 
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") break;
-        double cnt;
-        std::cin >> cnt;
-        if (piece == "DIST") items.push_back(Distance(cnt));
-        else if (piece == "MASS") items.push_back(Mass(cnt));
-        else if (piece == "TEMP") items.push_back(Temperature(cnt));
+    std::string t;
+    while (std::cin >> t) {
+        if (t == "END") break;
+        double n;
+        std::cin >> n;
+        if (t == "DIST") rows.emplace_back(Distance(n));
+        else if (t == "MASS") rows.emplace_back(Mass(n));
+        else if (t == "TEMP") rows.emplace_back(Temperature(n));
     }
 
-    for (const Item& it : items) {
+    for (const Item& it : rows) {
         std::visit([](const auto& m) { print_metric(m); }, it);
     }
     return 0;

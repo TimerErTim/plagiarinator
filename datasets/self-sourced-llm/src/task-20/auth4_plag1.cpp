@@ -1,8 +1,7 @@
-#include <array>
-#include <iostream>
 #include <string>
 #include <utility>
-// cleaned up version
+#include <iostream>
+#include <array>
 
 template <typename Elem, std::size_t Cap>
 class FixedStack {
@@ -39,7 +38,8 @@ public:
 
 bool is_balanced(const std::string& s) {
     FixedStack<char, 128> st;
-    for (char c : s) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        char c = s[i];
         switch (c) {
             case '(':
             case '[':
@@ -71,3 +71,5 @@ int main() {
     }
     return 0;
 }
+
+#include <cstdio>

@@ -1,59 +1,60 @@
+#include <cstdio>
 #include <vector>
 #include <iostream>
 #include <string>
 #include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename D>
+class HasFormat {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const D*>(this)->format();
     }
 };
 
-static std::string one_decimal(double x) {
+static std::string fmtNum(double x) {
     char b[32];
     std::snprintf(b, sizeof(b), "%.1f", x);
     return b;
 }
 
-struct Distance : Printable<Distance> {
+struct DistAmt : HasFormat<DistAmt> {
     double amount{};
-    explicit Distance(double v) : amount(v) {}
-    std::string format() const { return "Distance: " + one_decimal(amount) + " m"; }
+    explicit DistAmt(double v) : amount(v) {}
+    std::string format() const { return "Distance: " + fmtNum(amount) + " m"; }
 };
 
-struct Mass : Printable<Mass> {
+struct MassAmt : HasFormat<MassAmt> {
     double amount{};
-    explicit Mass(double v) : amount(v) {}
-    std::string format() const { return "Mass: " + one_decimal(amount) + " kg"; }
+    explicit MassAmt(double v) : amount(v) {}
+    std::string format() const { return "Mass: " + fmtNum(amount) + " kg"; }
 };
 
-struct Temperature : Printable<Temperature> {
+struct TempAmt : HasFormat<TempAmt> {
     double amount{};
-    explicit Temperature(double v) : amount(v) {}
-    std::string format() const { return "Temp: " + one_decimal(amount) + " C"; }
+    explicit TempAmt(double v) : amount(v) {}
+    std::string format() const { return "Temp: " + fmtNum(amount) + " C"; }
 };
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void put_line(const HasFormat<T>& metric) {
     std::cout << metric.to_string() << '\n';
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> metrics;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
+    std::vector<std::variant<DistAmt, MassAmt, TempAmt>> metrics;
+    std::string op;
+    while (std::cin >> op) {
+        if (op == "END") break;
         double d;
         std::cin >> d;
-        if (ln == "DIST") metrics.emplace_back(Distance(d));
-        else if (ln == "MASS") metrics.emplace_back(Mass(d));
-        else if (ln == "TEMP") metrics.emplace_back(Temperature(d));
+        if (op == "DIST") metrics.emplace_back(DistAmt(d));
+        else if (op == "MASS") metrics.emplace_back(MassAmt(d));
+        else if (op == "TEMP") metrics.emplace_back(TempAmt(d));
     }
 
-    auto emit = [](const auto& m) { print_metric(m); };
-    for (const auto& m : metrics) std::visit(emit, m);
+    for (std::size_t tail = metrics.size(); tail-- > 0;)
+        std::visit([](const auto& m) { put_line(m); }, metrics[metrics.size() - 1 - tail]);
     return 0;
 }

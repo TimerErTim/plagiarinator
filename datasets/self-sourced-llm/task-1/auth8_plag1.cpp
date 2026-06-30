@@ -1,10 +1,9 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
-#include <sstream>
 #include <vector>
-// cleaned up version
+#include <sstream>
+#include <iostream>
+#include <cstring>
+#include <cctype>
+#include <algorithm>
 
 class StringBuffer {
     char* storage;
@@ -41,7 +40,7 @@ public:
         std::size_t l = 0, r = length;
         while (l < r && std::isspace(static_cast<unsigned char>(storage[l]))) l++;
         while (r > l && std::isspace(static_cast<unsigned char>(storage[r - 1]))) r--;
-        for (std::size_t i = 0; l < r; ++l, ++i)
+        for (std::size_t i = 0; l < r; l++, i++)
             storage[i] = storage[l];
         length = r - l;
         storage[length] = '\0';
@@ -56,23 +55,23 @@ public:
 };
 
 int main() {
-    std::vector<StringBuffer> items;
-    std::stringstream stream;
-    stream << std::cin.rdbuf();
+    std::vector<StringBuffer> collection;
+    std::stringstream input;
+    input << std::cin.rdbuf();
     std::string row;
-    while (std::getline(stream, row))
-        items.emplace_back(row.c_str());
+    while (std::getline(input, row))
+        collection.emplace_back(row.c_str());
 
-    for (StringBuffer& elem : items)
-        elem.trim();
+    for (StringBuffer& sb : collection)
+        sb.trim();
 
-    items.erase(
-        std::remove_if(items.begin(), items.end(),
-                       [](const StringBuffer& elem) { return elem.size() == 0; }),
-        items.end());
+    collection.erase(
+        std::remove_if(collection.begin(), collection.end(),
+                       [](const StringBuffer& sb) { return sb.size() == 0; }),
+        collection.end());
 
-    std::sort(items.begin(), items.end());
-    for (const StringBuffer& elem : items)
-        std::cout << elem.c_str() << std::endl;
+    std::sort(collection.begin(), collection.end());
+    for (const StringBuffer& sb : collection)
+        std::cout << sb.c_str() << std::endl;
     return 0;
 }

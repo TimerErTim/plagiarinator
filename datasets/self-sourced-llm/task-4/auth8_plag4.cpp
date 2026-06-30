@@ -1,25 +1,25 @@
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <utility>
-#include <string>
 #include <vector>
-// quick submit
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+// quick submit before deadline
 
 class FileWriter {
-    std::ofstream word_;
-    std::string tmp_;
+    std::ofstream stream_;
+    std::string location_;
 
     void shutdown() {
-        if (word_.is_open())
-            word_.close();
+        if (stream_.is_open())
+            stream_.close();
     }
 
 public:
     explicit FileWriter(const std::string& location)
-        : tmp_(location) {
-        word_.open(tmp_);
+        : location_(location) {
+        stream_.open(location_);
     }
 
     ~FileWriter() { shutdown(); }
@@ -28,20 +28,20 @@ public:
     FileWriter& operator=(const FileWriter&) = delete;
 
     FileWriter(FileWriter&& donor) noexcept
-        : word_(std::move(donor.word_)),
-          tmp_(std::move(donor.tmp_)) {}
+        : stream_(std::move(donor.stream_)),
+          location_(std::move(donor.location_)) {}
 
     FileWriter& operator=(FileWriter&& donor) noexcept {
         if (this != &donor) {
             shutdown();
-            word_ = std::move(donor.word_);
-            tmp_ = std::move(donor.tmp_);
+            stream_ = std::move(donor.stream_);
+            location_ = std::move(donor.location_);
         }
         return *this;
     }
 
     void write_line(const std::string& text) {
-        word_ << text << '\n';
+        stream_ << text << std::endl;
     }
 };
 
@@ -58,11 +58,11 @@ int main() {
     stdinCopy << std::cin.rdbuf();
 
     std::vector<std::pair<std::string, int>> rows;
-    std::string word;
-    while (std::getline(stdinCopy, word)) {
-        std::size_t commaPos = word.find(',');
-        rows.emplace_back(word.substr(0, commaPos),
-                          std::stoi(word.substr(commaPos + 1)));
+    std::string line;
+    while (std::getline(stdinCopy, line)) {
+        std::size_t commaPos = line.find(',');
+        rows.emplace_back(line.substr(0, commaPos),
+                          std::stoi(line.substr(commaPos + 1)));
     }
 
     FileWriter reportWriter("report.txt");
@@ -81,6 +81,6 @@ int main() {
               << "Average: " << scoreSum / rows.size();
     reportWriter.write_line(avgStream.str());
 
-    std::cout << "Report written to report.txt" << '\n';
+    std::cout << "Report written to report.txt" << std::endl;
     return 0;
 }

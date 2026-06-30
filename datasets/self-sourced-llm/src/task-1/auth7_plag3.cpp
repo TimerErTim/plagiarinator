@@ -1,71 +1,72 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <iostream>
-// from lab partner
+#include <cctype>
+// borrowed from roommate's homework
 
 class StringBuffer {
-    char* text;
-    std::size_t len;
+    char* bytes;
+    std::size_t byteCount;
 
-    void swapContents(StringBuffer& other) {
-        std::swap(text, other.text);
-        std::swap(len, other.len);
+    void swapWith(StringBuffer& other) {
+        std::swap(bytes, other.bytes);
+        std::swap(byteCount, other.byteCount);
     }
 
 public:
-    StringBuffer(const char* s) : text(nullptr), len(0) {
-        len = std::strlen(s);
-        text = new char[len + 1];
-        std::strcpy(text, s);
+    StringBuffer(const char* s) : bytes(nullptr), byteCount(0) {
+        byteCount = std::strlen(s);
+        bytes = new char[byteCount + 1];
+        std::strcpy(bytes, s);
     }
 
-    ~StringBuffer() { delete[] text; }
+    ~StringBuffer() { delete[] bytes; }
 
-    StringBuffer(const StringBuffer& o) : text(nullptr), len(0) {
-        len = o.len;
-        text = new char[len + 1];
-        std::strcpy(text, o.text);
+    StringBuffer(const StringBuffer& o) : bytes(nullptr), byteCount(0) {
+        byteCount = o.byteCount;
+        bytes = new char[byteCount + 1];
+        std::strcpy(bytes, o.bytes);
     }
 
     StringBuffer& operator=(StringBuffer tmp) {
-        swapContents(tmp);
+        swapWith(tmp);
         return *this;
     }
 
     void trim() {
-        std::size_t start = 0;
-        while (start < len && std::isspace(static_cast<unsigned char>(text[start])))
-            start++;
-        std::size_t end = len;
-        while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])))
-            end--;
-        len = end - start;
-        for (std::size_t i = 0; i < len; ++i)
-            text[i] = text[start + i];
-        text[len] = '\0';
+        std::size_t lo = 0;
+        while (lo < byteCount && std::isspace(static_cast<unsigned char>(bytes[lo])))
+            lo++;
+        std::size_t hi = byteCount;
+        while (hi > lo && std::isspace(static_cast<unsigned char>(bytes[hi - 1])))
+            hi--;
+        std::size_t n = hi - lo;
+        for (std::size_t k = n; k-- > 0;)
+            bytes[k] = bytes[lo + k];
+        bytes[n] = '\0';
+        byteCount = n;
     }
 
-    const char* c_str() const { return text; }
-    std::size_t size() const { return len; }
+    const char* c_str() const { return bytes; }
+    std::size_t size() const { return byteCount; }
 
     bool operator<(const StringBuffer& o) const {
-        return std::strcmp(text, o.text) < 0;
+        return std::strcmp(bytes, o.bytes) < 0;
     }
 };
 
 int main() {
-    std::vector<StringBuffer> buf;
-    for (std::string str; std::getline(std::cin, str);)
-        buf.emplace_back(str.c_str());
+    std::vector<StringBuffer> roster;
+    for (std::string line; std::getline(std::cin, line);)
+        roster.emplace_back(line.c_str());
 
-    for (auto& n : buf) n.trim();
-    buf.erase(std::remove_if(buf.begin(), buf.end(),
+    for (auto& row : roster) row.trim();
+    roster.erase(std::remove_if(roster.begin(), roster.end(),
                                [](const StringBuffer& n) { return n.size() == 0; }),
-                buf.end());
-    std::sort(buf.begin(), buf.end());
-    for (const auto& n : buf)
-        std::cout << n.c_str() << '\n';
+                roster.end());
+    std::sort(roster.begin(), roster.end());
+    for (const auto& row : roster)
+        std::cout << row.c_str() << std::endl;
     return 0;
 }

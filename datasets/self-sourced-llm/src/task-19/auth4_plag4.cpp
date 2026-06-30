@@ -1,7 +1,6 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
-// quick submit
 
 class StringBuilder {
 public:
@@ -49,11 +48,11 @@ StringBuilder& StringBuilder::append_line(const std::string& s) {
 
 int main() {
     StringBuilder output;
-    std::string word;
+    std::string token;
 
-    while (std::cin >> word) {
-        if (word == "END") break;
-        if (word != "SECTION") continue;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token != "SECTION") continue;
 
         std::string name;
         std::getline(std::cin, name);
@@ -62,9 +61,9 @@ int main() {
         StringBuilder chunk;
         chunk.append("# ").append(name).append("\n");
 
-        std::string str;
-        while (std::getline(std::cin, str) && !str.empty())
-            chunk.append_line(str);
+        std::string line;
+        while (std::getline(std::cin, line) && !line.empty())
+            chunk.append_line(line);
         chunk.append("\n");
 
         output.append(std::move(chunk.str()));

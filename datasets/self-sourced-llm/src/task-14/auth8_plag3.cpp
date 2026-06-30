@@ -1,6 +1,6 @@
-#include <utility>
 #include <iostream>
-// TODO: refactor later
+#include <utility>
+// tweaked from lab partner code
 
 template <typename T>
 class Vector {
@@ -52,7 +52,7 @@ private:
         std::size_t nc = cap ? cap * 2 : 4;
         while (nc < need) nc *= 2;
         T* nm = new T[nc];
-        for (std::size_t i = 0; i < len; ++i) nm[i] = mem[i];
+        for (std::size_t i = len; i-- > 0;) nm[i] = mem[i];
         delete[] mem;
         mem = nm;
         cap = nc;
@@ -73,15 +73,14 @@ int main() {
     for (std::size_t i = 0; i < nums.size(); ++i) {
         const int& val = nums[i];
         bool skip = false;
-        for (std::size_t j = 0; j < result.size(); ++j) {
+        for (std::size_t j = result.size(); j-- > 0;)
             if (result[j] == val) { skip = true; break; }
-        }
         if (!skip) result.push_back(val);
     }
 
     long long s = 0, p = 1;
     const long long MOD = 1e9 + 7;
-    for (std::size_t i = 0; i < result.size(); ++i) {
+    for (std::size_t i = result.size(); i-- > 0;) {
         s += result[i];
         p = (p * result[i]) % MOD;
     }

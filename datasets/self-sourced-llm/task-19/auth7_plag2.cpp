@@ -1,58 +1,70 @@
-#include <utility>
-#include <string>
 #include <iostream>
-// adapted from classmate submission
+#include <string>
+#include <utility>
 
-class StringBuilder {
+class StringBuilder
+{
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : text_(std::move(other.text_)) {
-        other.text_.clear();
+    StringBuilder(StringBuilder&& other) noexcept : payload_(std::move(other.payload_))
+    {
+        other.payload_.clear();
     }
 
-    StringBuilder& operator=(StringBuilder&& other) noexcept {
-        text_ = std::move(other.text_);
-        other.text_.clear();
+    StringBuilder& operator=(StringBuilder&& other) noexcept
+    {
+        payload_ = std::move(other.payload_);
+        other.payload_.clear();
         return *this;
     }
 
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& piece) {
-        text_.append(piece);
+    StringBuilder& append(const std::string& piece)
+    {
+        payload_.append(piece);
         return *this;
     }
 
-    StringBuilder& append(std::string&& piece) {
-        text_.append(std::move(piece));
+    StringBuilder& append(std::string&& piece)
+    {
+        payload_.append(std::move(piece));
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& piece) {
-        text_.append(piece);
-        text_.push_back('\n');
+    StringBuilder& append_line(const std::string& piece)
+    {
+        payload_.append(piece);
+        payload_.push_back('\n');
         return *this;
     }
 
-    const std::string& str() const { return text_; }
-    void clear() { text_.clear(); }
+    const std::string& str() const { return payload_; }
+    void clear() { payload_.clear(); }
 
 private:
-    std::string text_;
+    std::string payload_;
 };
 
-void consume_section(StringBuilder& doc, std::istream& in) {
+static void trim_title(std::string& title)
+{
+    if (!title.empty() && title[0] == ' ') title.erase(0, 1);
+}
+
+static void consume_section(StringBuilder& doc, std::istream& in)
+{
     std::string title;
     std::getline(in, title);
-    if (!title.empty() && title[0] == ' ') title.erase(0, 1);
+    trim_title(title);
 
     StringBuilder local;
     local.append("# ").append(title).append("\n");
 
     std::string line;
-    while (std::getline(in, line)) {
+    while (std::getline(in, line))
+    {
         if (line.empty()) break;
         local.append_line(line);
     }
@@ -63,11 +75,12 @@ void consume_section(StringBuilder& doc, std::istream& in) {
 int main()
 {
     StringBuilder document;
-    std::string op;
+    std::string cmd;
 
-    while (std::cin >> op) {
-        if (op == "END") break;
-        if (op == "SECTION") consume_section(document, std::cin);
+    while (std::cin >> cmd)
+    {
+        if (cmd == "END") break;
+        if (cmd == "SECTION") consume_section(document, std::cin);
     }
 
     std::cout << document.str();

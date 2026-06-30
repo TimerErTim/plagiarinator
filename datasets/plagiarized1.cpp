@@ -1,29 +1,35 @@
-#include <iostream>
-#include <vector>
-using namespace std;
+#include <cstdio>
+#include <cmath>
 
-// Checks if 'x' is a prime number
-bool is_prime(int x) {
-    if (x < 2) return false;
-    if (x == 2) return true;
-    if (x % 2 == 0) return false;
-    for (int j = 3; 1LL * j * j <= x; j += 2)
-        if (x % j == 0) return false;
+// Simple function to check for primality of a number
+bool check_prime(unsigned int n) {
+    if (n < 2) return false;
+    if (n == 2 || n == 3) return true;
+    if (n % 2 == 0 || n % 3 == 0) return false;
+
+    unsigned int limit = (unsigned int)std::sqrt(n);
+    for (unsigned int i = 5; i <= limit; i += 6) {
+        if (n % i == 0 || n % (i + 2) == 0)
+            return false;
+    }
     return true;
 }
 
 int main() {
-    vector<int> prime_numbers;
-    int cnt = 2;
-    while (prime_numbers.size() < 1000) {
-        if (is_prime(cnt)) {
-            prime_numbers.push_back(cnt);
+    const int desired_primes = 1000;
+    int count = 0;
+    unsigned int num = 2;
+    bool printed_first = false;
+
+    while (count < desired_primes) {
+        if (check_prime(num)) {
+            if (printed_first) std::printf(" ");
+            std::printf("%u", num);
+            ++count;
+            printed_first = true;
         }
-        cnt++;
+        ++num;
     }
-    for (int k = 0; k < prime_numbers.size(); ++k) {
-        cout << prime_numbers[k];
-        if (k != (int)prime_numbers.size() - 1) cout << " ";
-    }
-    cout << "\n";
+    std::printf("\n");
+    return 0;
 }

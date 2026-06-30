@@ -1,50 +1,51 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-// TODO: refactor later
+// tweaked from lab partner code
 
 template <typename T>
 class Matrix {
-    std::size_t rows_, cols_;
-    std::vector<T> ref;
+    std::size_t nRows, nCols;
+    std::vector<T> flat;
 
 public:
-    Matrix(std::size_t r, std::size_t c) : rows_(r), cols_(c), ref(r * c, T{}) {}
+    Matrix(std::size_t r, std::size_t c) : nRows(r), nCols(c), flat(r * c, T()) {}
 
-    T& operator()(std::size_t r, std::size_t c) { return ref[r * cols_ + c]; }
-    const T& operator()(std::size_t r, std::size_t c) const { return ref[r * cols_ + c]; }
+    T& operator()(std::size_t r, std::size_t c) { return flat[r * nCols + c]; }
+    const T& operator()(std::size_t r, std::size_t c) const { return flat[r * nCols + c]; }
 
-    std::size_t rows() const { return rows_; }
-    std::size_t cols() const { return cols_; }
+    std::size_t rows() const { return nRows; }
+    std::size_t cols() const { return nCols; }
 
-    Matrix operator+(const Matrix& other) const {
-        Matrix out(rows_, cols_);
-        for (std::size_t i = 0; i < ref.size(); ++i)
-            out.ref[i] = ref[i] + other.ref[i];
-        return out;
+    Matrix operator+(const Matrix& peer) const {
+        Matrix tmp(nRows, nCols);
+        for (std::size_t idx = 0; idx < flat.size(); ++idx)
+            tmp.flat[idx] = flat[idx] + peer.flat[idx];
+        return tmp;
     }
 
-    Matrix operator*(const Matrix& other) const {
-        if (cols_ != other.rows_)
+    Matrix operator*(const Matrix& peer) const {
+        if (nCols != peer.nRows)
             throw std::runtime_error("dim");
-        Matrix out(rows_, other.cols_);
-        for (std::size_t i = 0; i < rows_; ++i)
-            for (std::size_t j = 0; j < other.cols_; ++j) {
-                T sum = T{};
-                for (std::size_t k = 0; k < cols_; ++k)
-                    sum += (*this)(i, k) * other(k, j);
-                out(i, j) = sum;
+        Matrix tmp(nRows, peer.nCols);
+        for (std::size_t i = 0; i < nRows; ++i) {
+            for (std::size_t j = 0; j < peer.nCols; ++j) {
+                T partial = T{};
+                for (std::size_t k = nCols; k-- > 0;)
+                    partial += (*this)(i, k) * peer(k, j);
+                tmp(i, j) = partial;
             }
-        return out;
+        }
+        return tmp;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-        for (std::size_t i = 0; i < m.rows_; ++i) {
-            for (std::size_t j = 0; j < m.cols_; ++j) {
-                if (j) os << ' ';
+        for (std::size_t i = 0; i < m.nRows; ++i) {
+            for (std::size_t j = 0; j < m.nCols; ++j) {
+                if (j > 0) os << ' ';
                 os << m(i, j);
             }
-            os << '\n';
+            os << std::endl;
         }
         return os;
     }
@@ -63,10 +64,10 @@ Matrix<T> readMatrix(std::istream& in) {
 
 int main() {
     try {
-        Matrix<int> A = readMatrix<int>(std::cin);
-        Matrix<int> B = readMatrix<int>(std::cin);
-        Matrix<int> C = A * B + A;
-        std::cout << C;
+        Matrix<int> left = readMatrix<int>(std::cin);
+        Matrix<int> right = readMatrix<int>(std::cin);
+        Matrix<int> ans = left * right + left;
+        std::cout << ans;
     } catch (...) {
         std::cout << "ERROR\n";
     }

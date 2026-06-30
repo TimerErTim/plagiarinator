@@ -1,10 +1,9 @@
+#include <vector>
+#include <string>
+#include <memory>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-// cleaned up version
 
 namespace {
 constexpr double kPi = 3.141592653589793;
@@ -59,30 +58,30 @@ static void accumulate(const Shape& figure, double& area_sum, double& peri_sum) 
 }
 
 int main() {
-    std::vector<std::unique_ptr<Shape>> items;
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "DONE") break;
-        if (elem == "CIRCLE") {
+    std::vector<std::unique_ptr<Shape>> gallery;
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "DONE") break;
+        if (token == "CIRCLE") {
             double r; std::cin >> r;
-            items.emplace_back(std::make_unique<Circle>(r));
-        } else if (elem == "RECT") {
+            gallery.push_back(std::make_unique<Circle>(r));
+        } else if (token == "RECT") {
             double w, h; std::cin >> w >> h;
-            items.emplace_back(std::make_unique<Rectangle>(w, h));
-        } else if (elem == "TRI") {
+            gallery.push_back(std::make_unique<Rectangle>(w, h));
+        } else if (token == "TRI") {
             double s; std::cin >> s;
-            items.emplace_back(std::make_unique<Triangle>(s));
+            gallery.push_back(std::make_unique<Triangle>(s));
         }
     }
 
-    double areaSum = 0.0, periSum = 0.0;
-    for (const std::unique_ptr<Shape>& ptr : items) {
-        print_shape(*ptr);
-        accumulate(*ptr, areaSum, periSum);
+    double areaTotal = 0.0, periTotal = 0.0;
+    for (std::size_t i = 0; i < gallery.size(); i++) {
+        print_shape(*gallery[i]);
+        accumulate(*gallery[i], areaTotal, periTotal);
     }
 
     std::cout << std::fixed << std::setprecision(4)
-              << "TOTAL area=" << areaSum << std::endl
-              << "TOTAL perimeter=" << periSum << std::endl;
+              << "TOTAL area=" << areaTotal << std::endl
+              << "TOTAL perimeter=" << periTotal << std::endl;
     return 0;
 }

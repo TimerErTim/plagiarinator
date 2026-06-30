@@ -1,44 +1,44 @@
-#include <utility>
 #include <array>
 #include <iostream>
+#include <utility>
 #include <string>
-// TODO: refactor later
+// private members at bottom like slides
 
 template <typename T, std::size_t N>
 class FixedStack {
 public:
     bool push(const T& value) {
-        if (size_ >= N) return false;
-        pool_[size_++] = value;
+        if (depth_ >= N) return false;
+        bucket_[depth_++] = value;
         return true;
     }
 
     bool push(T&& value) {
-        if (size_ >= N) return false;
-        pool_[size_++] = std::move(value);
+        if (depth_ >= N) return false;
+        bucket_[depth_++] = std::move(value);
         return true;
     }
 
     bool pop(T& out) {
-        if (size_ == 0) return false;
-        out = pool_[--size_];
+        if (depth_ == 0) return false;
+        out = bucket_[--depth_];
         return true;
     }
 
     bool peek(T& out) const {
-        if (size_ == 0) return false;
-        out = pool_[size_ - 1];
+        if (depth_ == 0) return false;
+        out = bucket_[depth_ - 1];
         return true;
     }
 
-    std::size_t size() const { return size_; }
+    std::size_t size() const { return depth_; }
 
 private:
-    std::array<T, N> pool_{};
-    std::size_t size_ = 0;
+    std::array<T, N> bucket_{};
+    std::size_t depth_ = 0;
 };
 
-static char counterpart(char c) {
+static char mirror(char c) {
     switch (c) {
         case ')': return '(';
         case ']': return '[';
@@ -47,25 +47,25 @@ static char counterpart(char c) {
     }
 }
 
-bool is_balanced(const std::string& s) {
-    FixedStack<char, 128> stack;
-    for (char ch : s) {
-        if (ch == '(' || ch == '[' || ch == '{') {
-            if (!stack.push(ch)) return false;
-        } else if (ch == ')' || ch == ']' || ch == '}') {
-            char need = counterpart(ch);
-            char have;
-            if (!stack.pop(have) || have != need) return false;
+bool is_balanced(const std::string& line) {
+    FixedStack<char, 128> tower;
+    for (char sym : line) {
+        if (sym == '(' || sym == '[' || sym == '{') {
+            if (!tower.push(sym)) return false;
+        } else if (sym == ')' || sym == ']' || sym == '}') {
+            char need = mirror(sym);
+            char got;
+            if (!tower.pop(got) || got != need) return false;
         }
     }
-    return stack.size() == 0;
+    return tower.size() == 0;
 }
 
 int main() {
-    std::string buf;
-    while (std::getline(std::cin, buf)) {
-        if (buf == "END") break;
-        std::cout << (is_balanced(buf) ? "OK" : "FAIL") << '\n';
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line == "END") break;
+        std::cout << (is_balanced(line) ? "OK" : "FAIL") << '\n';
     }
     return 0;
 }

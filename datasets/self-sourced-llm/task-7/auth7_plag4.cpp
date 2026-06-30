@@ -1,9 +1,8 @@
+#include <memory>
+#include <string>
+#include <vector>
 #include <iostream>
 #include <iomanip>
-#include <string>
-#include <memory>
-#include <vector>
-// quick submit
 
 class Vehicle {
 public:
@@ -46,10 +45,10 @@ int main() {
     std::vector<double> D;
     std::string k;
     while(std::cin>>k) {
-        auto numP=create_vehicle(k,std::cin);
-        if(!numP){std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR\n";continue;}
+        auto p=create_vehicle(k,std::cin);
+        if(!p){std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR\n";continue;}
         double d;std::cin>>d;
-        V.push_back(std::move(numP)); D.push_back(d);
+        V.push_back(std::move(p)); D.push_back(d);
     }
     double s=0;
     for(size_t i=0;i<V.size();++i){

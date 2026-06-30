@@ -1,29 +1,32 @@
-#include <string>
-#include <memory>
 #include <iostream>
-// adapted from classmate submission
+#include <memory>
+#include <string>
 
 class Parser;
 
-class State {
+class State
+{
 public:
     virtual ~State() = default;
     virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
 };
 
-class Parser {
+class Parser
+{
 public:
     int info = 0, warn = 0, error = 0, rejected = 0;
     std::unique_ptr<State> state;
 
-    void bump(const std::string& level) {
+    void bump(const std::string& level)
+    {
         if (level == "INFO") ++info;
         else if (level == "WARN") ++warn;
         else ++error;
     }
 };
 
-static bool parse_level(const std::string& line, std::string& level) {
+static bool parse_level(const std::string& line, std::string& level)
+{
     if (line.size() < 3 || line[0] != '[') return false;
     auto end = line.find(']');
     if (end == std::string::npos) return false;
@@ -31,59 +34,73 @@ static bool parse_level(const std::string& line, std::string& level) {
     return level == "INFO" || level == "WARN" || level == "ERROR";
 }
 
-class HeaderState : public State {
+class HeaderState : public State
+{
 public:
     std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-class BodyState : public State {
+class BodyState : public State
+{
 public:
     std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-class DoneState : public State {
+class DoneState : public State
+{
 public:
     std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
 };
 
-std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (parse_level(line, lvl)) {
-        ctx.bump(lvl);
-        return std::make_unique<BodyState>();
-    }
+static std::unique_ptr<State> reject_line(Parser& ctx, bool in_body)
+{
     ++ctx.rejected;
+    if (in_body) return std::make_unique<BodyState>();
     return std::make_unique<HeaderState>();
 }
 
-std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line)
+{
     if (line == "END") return std::make_unique<DoneState>();
     std::string lvl;
-    if (parse_level(line, lvl)) {
+    if (parse_level(line, lvl))
+    {
         ctx.bump(lvl);
         return std::make_unique<BodyState>();
     }
-    ++ctx.rejected;
-    return std::make_unique<BodyState>();
+    return reject_line(ctx, false);
 }
 
-std::unique_ptr<State> DoneState::handle(Parser&, const std::string&) {
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line)
+{
+    if (line == "END") return std::make_unique<DoneState>();
+    std::string lvl;
+    if (parse_level(line, lvl))
+    {
+        ctx.bump(lvl);
+        return std::make_unique<BodyState>();
+    }
+    return reject_line(ctx, true);
+}
+
+std::unique_ptr<State> DoneState::handle(Parser&, const std::string&)
+{
     return std::make_unique<DoneState>();
 }
 
 int main()
 {
-    Parser machine;
-    machine.state = std::make_unique<HeaderState>();
-    std::string input;
-    while (std::getline(std::cin, input)) {
-        machine.state = machine.state->handle(machine, input);
+    Parser parser;
+    parser.state = std::make_unique<HeaderState>();
+    std::string row;
+    while (std::getline(std::cin, row))
+    {
+        parser.state = parser.state->handle(parser, row);
     }
 
-    std::cout << "INFO: " << machine.info << '\n';
-    std::cout << "WARN: " << machine.warn << '\n';
-    std::cout << "ERROR: " << machine.error << '\n';
-    std::cout << "REJECTED: " << machine.rejected << '\n';
+    std::cout << "INFO: " << parser.info << '\n';
+    std::cout << "WARN: " << parser.warn << '\n';
+    std::cout << "ERROR: " << parser.error << '\n';
+    std::cout << "REJECTED: " << parser.rejected << '\n';
     return 0;
 }

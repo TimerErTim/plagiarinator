@@ -1,21 +1,22 @@
+#include <cstdio>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Child>
+class Stringify {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Child*>(this)->format();
     }
 };
 
-struct Distance : Printable<Distance> {
+struct DistUnit : Stringify<DistUnit> {
     double value{};
-    explicit Distance(double v) : value(v) {}
+    explicit DistUnit(double v) : value(v) {}
     std::string format() const {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "Distance: %.1f m", value);
@@ -23,9 +24,9 @@ struct Distance : Printable<Distance> {
     }
 };
 
-struct Mass : Printable<Mass> {
+struct MassUnit : Stringify<MassUnit> {
     double value{};
-    explicit Mass(double v) : value(v) {}
+    explicit MassUnit(double v) : value(v) {}
     std::string format() const {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "Mass: %.1f kg", value);
@@ -33,9 +34,9 @@ struct Mass : Printable<Mass> {
     }
 };
 
-struct Temperature : Printable<Temperature> {
+struct TempUnit : Stringify<TempUnit> {
     double value{};
-    explicit Temperature(double v) : value(v) {}
+    explicit TempUnit(double v) : value(v) {}
     std::string format() const {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "Temp: %.1f C", value);
@@ -44,27 +45,27 @@ struct Temperature : Printable<Temperature> {
 };
 
 template <typename T>
-void print_metric(const Printable<T>& m) {
+void show_reading(const Stringify<T>& m) {
     std::cout << m.to_string() << std::endl;
 }
 
-using Metric = std::variant<Distance, Mass, Temperature>;
+using Reading = std::variant<DistUnit, MassUnit, TempUnit>;
 
 int main() {
-    std::vector<Metric> list;
+    std::vector<Reading> list;
     std::string tag;
     double num;
 
     while (std::cin >> tag) {
         if (tag == "END") break;
         if (!(std::cin >> num)) break;
-        if (tag == "DIST") list.push_back(Distance(num));
-        else if (tag == "MASS") list.push_back(Mass(num));
-        else if (tag == "TEMP") list.push_back(Temperature(num));
+        if (tag == "DIST") list.push_back(DistUnit(num));
+        else if (tag == "MASS") list.push_back(MassUnit(num));
+        else if (tag == "TEMP") list.push_back(TempUnit(num));
     }
 
-    for (const Metric& obj : list) {
-        std::visit([](const auto& typed) { print_metric(typed); }, obj);
+    for (std::size_t tail = list.size(); tail-- > 0;) {
+        std::visit([](const auto& typed) { show_reading(typed); }, list[list.size() - 1 - tail]);
     }
     return 0;
 }

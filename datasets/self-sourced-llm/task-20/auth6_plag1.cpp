@@ -1,8 +1,7 @@
-#include <array>
-#include <iostream>
 #include <string>
+#include <iostream>
 #include <utility>
-// cleaned up version
+#include <array>
 
 template <typename T, std::size_t N>
 class FixedStack {
@@ -43,7 +42,8 @@ bool is_balanced(const std::string& s) {
         return (a == '(' && b == ')') || (a == '[' && b == ']') || (a == '{' && b == '}');
     };
 
-    for (char c : s) {
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        char c = s[i];
         if (c == '(' || c == '[' || c == '{') {
             if (!st.push(c)) return false;
         } else if (c == ')' || c == ']' || c == '}') {

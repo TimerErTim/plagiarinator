@@ -1,8 +1,8 @@
-#include <iostream>
-#include <string>
-#include <variant>
+#include <cstdio>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <iostream>
 
 template <typename Derived>
 class Printable {
@@ -12,48 +12,48 @@ public:
     }
 };
 
-static std::string fmt_decimal(double lhs) {
-    char rhs[32];
-    std::snprintf(rhs, sizeof(rhs), "%.1f", lhs);
-    return rhs;
+static std::string one_decimal(double x) {
+    char b[32];
+    std::snprintf(b, sizeof(b), "%.1f", x);
+    return b;
 }
 
 struct Distance : Printable<Distance> {
     double amount{};
     explicit Distance(double v) : amount(v) {}
-    std::string format() const { return "Distance: " + fmt_decimal(amount) + " m"; }
+    std::string format() const { return "Distance: " + one_decimal(amount) + " m"; }
 };
 
 struct Mass : Printable<Mass> {
     double amount{};
     explicit Mass(double v) : amount(v) {}
-    std::string format() const { return "Mass: " + fmt_decimal(amount) + " kg"; }
+    std::string format() const { return "Mass: " + one_decimal(amount) + " kg"; }
 };
 
 struct Temperature : Printable<Temperature> {
     double amount{};
     explicit Temperature(double v) : amount(v) {}
-    std::string format() const { return "Temp: " + fmt_decimal(amount) + " C"; }
+    std::string format() const { return "Temp: " + one_decimal(amount) + " C"; }
 };
 
 template <typename T>
 void print_metric(const Printable<T>& metric) {
-    std::cout << metric.to_string() << '\n';
+    std::cout << metric.to_string() << std::endl;
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> metrics;
-    std::string piece;
-    while (std::cin >> piece) {
-        if (piece == "END") break;
+    std::vector<std::variant<Distance, Mass, Temperature>> rows;
+    std::string tag;
+    while (std::cin >> tag) {
+        if (tag == "END") break;
         double d;
         std::cin >> d;
-        if (piece == "DIST") metrics.emplace_back(Distance(d));
-        else if (piece == "MASS") metrics.emplace_back(Mass(d));
-        else if (piece == "TEMP") metrics.emplace_back(Temperature(d));
+        if (tag == "DIST") rows.push_back(Distance(d));
+        else if (tag == "MASS") rows.push_back(Mass(d));
+        else if (tag == "TEMP") rows.push_back(Temperature(d));
     }
 
     auto emit = [](const auto& m) { print_metric(m); };
-    for (const auto& m : metrics) std::visit(emit, m);
+    for (const auto& m : rows) std::visit(emit, m);
     return 0;
 }

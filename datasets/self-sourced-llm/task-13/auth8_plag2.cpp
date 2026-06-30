@@ -1,31 +1,32 @@
-#include <vector>
-#include <thread>
-#include <sstream>
-#include <queue>
-#include <mutex>
-#include <iostream>
 #include <condition_variable>
-// adapted from classmate submission
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <sstream>
+#include <thread>
+#include <vector>
 
 template <typename T>
 class BlockingQueue {
-    const std::size_t max_;
+    const std::size_t cap_;
     std::queue<T> fifo_;
     mutable std::mutex sync_;
     std::condition_variable prod_wait_;
     std::condition_variable cons_wait_;
 
 public:
-    explicit BlockingQueue(std::size_t capacity) : max_(capacity) {}
+    explicit BlockingQueue(std::size_t capacity) : cap_(capacity) {}
 
-    void push(T value) {
+    void push(T value)
+    {
         std::unique_lock<std::mutex> hold(sync_);
-        prod_wait_.wait(hold, [this] { return fifo_.size() < max_; });
+        prod_wait_.wait(hold, [this] { return fifo_.size() < cap_; });
         fifo_.emplace(std::move(value));
         cons_wait_.notify_one();
     }
 
-    T pop() {
+    T pop()
+    {
         std::unique_lock<std::mutex> hold(sync_);
         cons_wait_.wait(hold, [this] { return !fifo_.empty(); });
         T picked = std::move(fifo_.front());
@@ -34,58 +35,79 @@ public:
         return picked;
     }
 
-    std::size_t size() const {
+    std::size_t size() const
+    {
         std::lock_guard<std::mutex> hold(sync_);
         return fifo_.size();
     }
 };
 
-int main()
+struct ScriptValues {
+    std::size_t items;
+    std::size_t consumers;
+    std::size_t producers;
+};
 
+ScriptValues read_script_lines()
 {
-    std::size_t producers = 0, consumers = 0, items = 0;
-    std::string input;
-    std::getline(std::cin, input);
+    ScriptValues sv{};
+    std::string line;
+    std::getline(std::cin >> std::ws, line);
     {
-        std::istringstream a(input);
+        std::istringstream ss(line);
         std::string t;
-        a >> t >> producers;
+        ss >> t >> sv.producers;
     }
-    std::getline(std::cin, input);
+    std::getline(std::cin, line);
     {
-        std::istringstream b(input);
+        std::istringstream ss(line);
         std::string t;
-        b >> t >> consumers;
+        ss >> t >> sv.consumers;
     }
-    std::getline(std::cin, input);
+    std::getline(std::cin, line);
     {
-        std::istringstream c(input);
+        std::istringstream ss(line);
         std::string t;
-        c >> t >> items;
+        ss >> t >> sv.items;
     }
+    return sv;
+}
 
-    BlockingQueue<int> q(items);
-    std::vector<std::thread> pool;
-    std::size_t served = 0;
-    std::mutex served_mu;
-
+void launch_producers(BlockingQueue<int>& q, std::size_t producers, std::size_t items,
+                      std::vector<std::thread>& pool)
+{
     int id_base = 0;
-    for (std::size_t p = 0; p < producers; ++p) 
-{
+    for (std::size_t p = 0; p < producers; ++p)
+    {
         std::size_t share = items / producers + (p < items % producers ? 1 : 0);
         int base = id_base;
         id_base += static_cast<int>(share);
         pool.emplace_back([&, share, base] {
-            for (std::size_t i = 0; i < share; ++i)
+            std::size_t i = 0;
+            while (i < share)
+            {
                 q.push(base + static_cast<int>(i));
+                ++i;
+            }
         });
     }
+}
 
-    for (std::size_t c = 0; c < consumers; ++c) 
+int main()
 {
+    ScriptValues cfg = read_script_lines();
+    BlockingQueue<int> q(cfg.items);
+    std::vector<std::thread> pool;
+    std::size_t served = 0;
+    std::mutex served_mu;
+
+    launch_producers(q, cfg.producers, cfg.items, pool);
+
+    for (std::size_t c = 0; c < cfg.consumers; ++c)
+    {
         pool.emplace_back([&] {
-            while (true) 
-{
+            while (true)
+            {
                 int v = q.pop();
                 if (v < 0) break;
                 std::cout << "got " << v << '\n';
@@ -93,11 +115,11 @@ int main()
                 {
                     std::lock_guard<std::mutex> g(served_mu);
                     ++served;
-                    all = (served == items);
+                    all = (served == cfg.items);
                 }
-                if (all) 
-{
-                    for (std::size_t k = 0; k < consumers; ++k)
+                if (all)
+                {
+                    for (std::size_t k = 0; k < cfg.consumers; ++k)
                         q.push(-1);
                 }
             }

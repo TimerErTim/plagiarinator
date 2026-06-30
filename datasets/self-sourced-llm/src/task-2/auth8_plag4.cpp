@@ -1,8 +1,7 @@
 #include <sstream>
+#include <string>
 #include <iostream>
 #include <utility>
-#include <string>
-// quick submit
 
 template <typename T>
 class LinkedList {
@@ -11,8 +10,8 @@ class LinkedList {
         Node* next;
     };
 
-    Node* word_;
-    std::size_t tmp_;
+    Node* headPtr;
+    std::size_t itemCount;
 
     static void destroyChain(Node* n) {
         while (n) {
@@ -23,22 +22,22 @@ class LinkedList {
     }
 
 public:
-    LinkedList() : word_(nullptr), tmp_(0) {}
-    ~LinkedList() { destroyChain(word_); }
+    LinkedList() : headPtr(nullptr), itemCount(0) {}
+    ~LinkedList() { destroyChain(headPtr); }
 
     void push_back(const T& value) {
         Node* node = new Node{value, nullptr};
-        if (!word_) {
-            word_ = node;
+        if (!headPtr) {
+            headPtr = node;
         } else {
-            Node* tail = word_;
+            Node* tail = headPtr;
             while (tail->next) tail = tail->next;
             tail->next = node;
         }
-        tmp_++;
+        itemCount++;
     }
 
-    std::size_t size() const { return tmp_; }
+    std::size_t size() const { return itemCount; }
 
     class Iterator {
         Node* current;
@@ -50,9 +49,9 @@ public:
         bool operator!=(const Iterator& rhs) const { return current != rhs.current; }
     };
 
-    Iterator begin() { return Iterator(word_); }
+    Iterator begin() { return Iterator(headPtr); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(word_); }
+    Iterator begin() const { return Iterator(headPtr); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
@@ -91,12 +90,12 @@ static LinkedList<int> parseLine(std::istream& in) {
 }
 
 int main() {
-    LinkedList<int> listOne = parseLine(std::cin);
-    LinkedList<int> listTwo = parseLine(std::cin);
-    LinkedList<int> tmp = merge_sorted(listOne, listTwo);
+    LinkedList<int> first = parseLine(std::cin);
+    LinkedList<int> second = parseLine(std::cin);
+    LinkedList<int> answer = merge_sorted(first, second);
 
     std::size_t idx = 0;
-    for (auto it = tmp.begin(); it != tmp.end(); ++it, ++idx) {
+    for (auto it = answer.begin(); it != answer.end(); ++it, ++idx) {
         if (idx > 0) std::cout << ' ';
         std::cout << *it;
     }

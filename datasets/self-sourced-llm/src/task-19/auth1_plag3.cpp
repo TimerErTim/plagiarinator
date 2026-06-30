@@ -1,69 +1,77 @@
 #include <utility>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// tweaked from lab partner code
 
-class StringBuilder {
-    std::string data;
+class StringBuilder
+{
+    std::string payload;
 
 public:
     StringBuilder() = default;
 
-    StringBuilder(StringBuilder&& other) noexcept : data(std::move(other.data)) {}
+    StringBuilder(StringBuilder&& rhs) noexcept : payload(std::move(rhs.payload)) {}
 
-    StringBuilder& operator=(StringBuilder&& other) noexcept {
-        if (this != &other) data = std::move(other.data);
+    StringBuilder& operator=(StringBuilder&& rhs) noexcept
+    {
+        if (this != &rhs) payload = std::move(rhs.payload);
         return *this;
     }
 
     StringBuilder(const StringBuilder&) = delete;
     StringBuilder& operator=(const StringBuilder&) = delete;
 
-    StringBuilder& append(const std::string& s) {
-        data += s;
+    StringBuilder& append(const std::string& s)
+    {
+        payload += s;
         return *this;
     }
 
-    StringBuilder& append(std::string&& s) {
-        data += std::move(s);
+    StringBuilder& append(std::string&& s)
+    {
+        payload += std::move(s);
         return *this;
     }
 
-    StringBuilder& append_line(const std::string& s) {
-        data += s;
-        data += '\n';
+    StringBuilder& append_line(const std::string& s)
+    {
+        payload += s;
+        payload += '\n';
         return *this;
     }
 
-    const std::string& str() const { return data; }
+    const std::string& str() const { return payload; }
 
-    void clear() { data.clear(); }
+    void clear() { payload.clear(); }
 };
 
-int main() {
-    StringBuilder text;
-    std::string ln;
+int main()
+{
+    StringBuilder manuscript;
+    std::string cmd_token;
 
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln != "SECTION") continue;
+    while (std::cin >> cmd_token)
+    {
+        if (cmd_token == "END") break;
+        if (cmd_token != "SECTION") continue;
 
-        std::string hdr;
-        std::getline(std::cin, hdr);
-        hdr.erase(0, hdr.find_first_not_of(' '));
+        std::string heading;
+        std::getline(std::cin, heading);
+        heading.erase(0, heading.find_first_not_of(' '));
 
-        StringBuilder seg;
-        seg.append("# ").append(hdr).append_line("");
+        StringBuilder segment;
+        segment.append("# ").append(heading).append_line("");
 
-        std::string buf;
-        while (std::getline(std::cin, buf)) {
-            if (buf.empty()) break;
-            seg.append_line(buf);
+        std::string row;
+        while (std::getline(std::cin, row))
+        {
+            if (row.empty()) break;
+            segment.append_line(row);
         }
-        seg.append_line("");
-        text.append(std::move(seg.str()));
+        segment.append_line("");
+        manuscript.append(std::move(segment.str()));
     }
 
-    std::cout << text.str();
+    std::cout << manuscript.str();
     return 0;
 }

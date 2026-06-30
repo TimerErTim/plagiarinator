@@ -1,7 +1,7 @@
+#include <iostream>
 #include <string>
 #include <sstream>
-#include <iostream>
-// adapted from classmate submission
+#include <vector>
 
 using std::cin;
 using std::cout;
@@ -18,30 +18,37 @@ class LinkedList
     Node* hd;
     size_t sz;
 
-public:
-    LinkedList(): hd(nullptr), sz(0) {}
-    ~LinkedList() { clear(); }
-
-    void clear() {
-        while (hd)
-{ Node* t = hd; hd = hd->nxt; delete t; }
-        sz = 0;
-    }
-
-    void push_back(const T& v) {
-        Node* node = new Node(v);
+    void attachTail(Node* node)
+    {
         if (!hd) hd = node;
-        else {
+        else
+        {
             Node* p = hd;
             while (p->nxt) p = p->nxt;
             p->nxt = node;
         }
+    }
+
+public:
+    LinkedList(): hd(nullptr), sz(0) {}
+    ~LinkedList() { clear(); }
+
+    void clear()
+    {
+        while (hd) { Node* t = hd; hd = hd->nxt; delete t; }
+        sz = 0;
+    }
+
+    void push_back(const T& v)
+    {
+        attachTail(new Node(v));
         sz++;
     }
 
     size_t size() const { return sz; }
 
-    class Iterator {
+    class Iterator
+    {
         Node* cur;
     public:
         Iterator(Node* n): cur(n) {}
@@ -62,13 +69,13 @@ LinkedList<T> merge_sorted(const LinkedList<T>& L, const LinkedList<T>& R)
 {
     LinkedList<T> out;
     auto i = L.begin(), j = R.begin();
-    while (i != L.end() && j != R.end()) {
-        if (*i <= *j)
-{ out.push_back(*i); ++i; }
+    while (i != L.end() && j != R.end())
+    {
+        if (*i <= *j) { out.push_back(*i); ++i; }
         else { out.push_back(*j); ++j; }
     }
-    for (; i != L.end(); ++i) out.push_back(*i);
-    for (; j != R.end(); ++j) out.push_back(*j);
+    while (i != L.end()) { out.push_back(*i); ++i; }
+    while (j != R.end()) { out.push_back(*j); ++j; }
     return out;
 }
 
@@ -76,19 +83,23 @@ LinkedList<int> parseInts(const string& line)
 {
     LinkedList<int> lst;
     istringstream iss(line);
+    std::vector<int> tmp;
     int v;
-    while (iss >> v) lst.push_back(v);
+    while (iss >> v) tmp.push_back(v);
+    for (size_t idx = 0; idx < tmp.size(); ++idx)
+        lst.push_back(tmp[idx]);
     return lst;
 }
 
 int main()
 {
-    string lineA, lineB;
-    getline(cin, lineA);
-    getline(cin, lineB);
-    auto out = merge_sorted(parseInts(lineA), parseInts(lineB));
+    string l2, l1;
+    getline(cin, l2);
+    getline(cin, l1);
+    auto merged = merge_sorted(parseInts(l1), parseInts(l2));
     bool sep = false;
-    for (auto it = out.begin(); it != out.end(); ++it) {
+    for (auto it = merged.begin(); it != merged.end(); ++it)
+    {
         if (sep) cout << ' ';
         cout << *it;
         sep = true;

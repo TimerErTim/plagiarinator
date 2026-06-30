@@ -1,10 +1,9 @@
-#include <cctype>
-#include <algorithm>
-#include <iostream>
 #include <cstring>
-#include <vector>
+#include <cctype>
 #include <sstream>
-// quick submit
+#include <vector>
+#include <iostream>
+#include <algorithm>
 
 class StringBuffer {
     char* storage;
@@ -17,9 +16,7 @@ public:
         std::memcpy(storage, raw, length + 1);
     }
 
-    ~StringBuffer() {
-        delete[] storage;
-    }
+    ~StringBuffer() { delete[] storage; }
 
     StringBuffer(const StringBuffer& orig) {
         length = orig.length;
@@ -41,7 +38,7 @@ public:
         std::size_t l = 0, r = length;
         while (l < r && std::isspace(static_cast<unsigned char>(storage[l]))) l++;
         while (r > l && std::isspace(static_cast<unsigned char>(storage[r - 1]))) r--;
-        for (std::size_t i = 0; l < r; ++l, ++i)
+        for (std::size_t i = 0; l < r; l++, i++)
             storage[i] = storage[l];
         length = r - l;
         storage[length] = '\0';
@@ -56,23 +53,20 @@ public:
 };
 
 int main() {
-    std::vector<StringBuffer> collection;
+    std::vector<StringBuffer> batch;
     std::stringstream input;
     input << std::cin.rdbuf();
     std::string row;
     while (std::getline(input, row))
-        collection.emplace_back(row.c_str());
+        batch.emplace_back(row.c_str());
 
-    for (StringBuffer& sb : collection)
-        sb.trim();
-
-    collection.erase(
-        std::remove_if(collection.begin(), collection.end(),
+    for (StringBuffer& sb : batch) sb.trim();
+    batch.erase(
+        std::remove_if(batch.begin(), batch.end(),
                        [](const StringBuffer& sb) { return sb.size() == 0; }),
-        collection.end());
-
-    std::sort(collection.begin(), collection.end());
-    for (const StringBuffer& sb : collection)
+        batch.end());
+    std::sort(batch.begin(), batch.end());
+    for (const StringBuffer& sb : batch)
         std::cout << sb.c_str() << '\n';
     return 0;
 }

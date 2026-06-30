@@ -1,49 +1,63 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <type_traits>
-// TODO: refactor later
+// found online
 
-namespace util {
+namespace mutate
+{
 
-template <typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    for (std::size_t i = 0; i < data.size(); ++i)
-        for (std::size_t j = i + 1; j < data.size(); ++j)
-            if (data[j] < data[i]) std::swap(data[i], data[j]);
+template <typename Piece>
+void naiveNumericSort(std::vector<Piece>& chain)
+{
+    for (std::size_t head = 0; head < chain.size(); ++head)
+        for (std::size_t tail = head + 1; tail < chain.size(); ++tail)
+            if (chain[tail] < chain[head]) std::swap(chain[head], chain[tail]);
 }
 
-template <typename T>
-typename std::enable_if<!std::is_arithmetic<T>::value, void>::type
-sort_values(std::vector<T>& data) {
-    std::sort(data.begin(), data.end(), [](const T& p, const T& q) {
-        return (p.size() < q.size()) || (p.size() == q.size() && p < q);
+template <typename Piece>
+typename std::enable_if<std::is_arithmetic<Piece>::value, void>::type
+sort_values(std::vector<Piece>& chain)
+{
+    naiveNumericSort(chain);
+}
+
+template <typename Piece>
+typename std::enable_if<!std::is_arithmetic<Piece>::value, void>::type
+sort_values(std::vector<Piece>& chain)
+{
+    std::sort(chain.begin(), chain.end(), [](const Piece& low, const Piece& high)
+    {
+        return (low.size() < high.size()) || (low.size() == high.size() && low < high);
     });
 }
 
-}  // namespace util
+}  // namespace mutate
 
-int main() {
-    std::string typ;
-    std::size_t n;
-    if (!(std::cin >> typ >> n)) return 0;
+int main()
+{
+    std::string channel;
+    std::size_t volume;
+    if (!(std::cin >> channel >> volume)) return 0;
 
-    if (typ == "STR") {
-        std::vector<std::string> tokens(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> tokens[i];
-        util::sort_values(tokens);
-        for (std::size_t i = 0; i < n; ++i)
-            std::cout << (i ? " " : "") << tokens[i];
-        std::cout << '\n';
-    } else {
-        std::vector<double> nums(n);
-        for (std::size_t i = 0; i < n; ++i) std::cin >> nums[i];
-        util::sort_values(nums);
-        for (std::size_t i = 0; i < n; ++i)
-            std::cout << (i ? " " : "") << nums[i];
-        std::cout << '\n';
+    if (channel == "STR")
+    {
+        std::vector<std::string> chain(volume);
+        for (std::size_t lane = 0; lane < volume; ++lane) std::cin >> chain[lane];
+        mutate::sort_values(chain);
+        for (std::size_t lane = 0; lane < volume; ++lane)
+            std::cout << (lane ? " " : "") << chain[lane];
+        std::cout << std::endl;
+    }
+    else
+    {
+        std::vector<double> chain(volume);
+        for (std::size_t lane = 0; lane < volume; ++lane) std::cin >> chain[lane];
+        mutate::sort_values(chain);
+        for (std::size_t lane = 0; lane < volume; ++lane)
+            std::cout << (lane ? " " : "") << chain[lane];
+        std::cout << std::endl;
     }
     return 0;
 }

@@ -1,9 +1,10 @@
 #include <vector>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <variant>
-// TODO: refactor later
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <stdexcept>
+// borrowed from roommate's homework
 
 struct Number { int value; };
 struct Add {};
@@ -13,21 +14,21 @@ struct Div {};
 
 using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
-struct NodeRef {
-    Expr kind;
-    int left = -1;
-    int right = -1;
+struct DagNode {
+    Expr tag;
+    int lhs = -1;
+    int rhs = -1;
 };
 
-int compute(const std::vector<NodeRef>& g, int id) {
+int eval_tree(const std::vector<DagNode>& dag, int id) {
     return std::visit(
         [&](auto tag) -> int {
             using T = std::decay_t<decltype(tag)>;
-            const NodeRef& n = g[static_cast<std::size_t>(id)];
+            const DagNode& n = dag[static_cast<std::size_t>(id)];
             if constexpr (std::is_same_v<T, Number>) return tag.value;
             else {
-                int a = compute(g, n.left);
-                int b = compute(g, n.right);
+                int a = eval_tree(dag, n.lhs);
+                int b = eval_tree(dag, n.rhs);
                 if constexpr (std::is_same_v<T, Add>) return a + b;
                 else if constexpr (std::is_same_v<T, Sub>) return a - b;
                 else if constexpr (std::is_same_v<T, Mul>) return a * b;
@@ -37,38 +38,38 @@ int compute(const std::vector<NodeRef>& g, int id) {
                 }
             }
         },
-        g[static_cast<std::size_t>(id)].kind);
+        dag[static_cast<std::size_t>(id)].tag);
 }
 
 int main() {
-    std::string buf;
-    while (std::getline(std::cin, buf)) {
-        if (buf.empty()) break;
-        std::vector<NodeRef> graph;
-        std::vector<int> sp;
-        std::istringstream iss(buf);
-        std::string w;
-        while (iss >> w) {
-            if (w == "+" || w == "-" || w == "*" || w == "/") {
-                int r = sp.back(); sp.pop_back();
-                int l = sp.back(); sp.pop_back();
-                NodeRef node;
-                node.left = l;
-                node.right = r;
-                if (w == "+") node.kind = Add{};
-                else if (w == "-") node.kind = Sub{};
-                else if (w == "*") node.kind = Mul{};
-                else node.kind = Div{};
-                sp.push_back(static_cast<int>(graph.size()));
-                graph.push_back(node);
+    std::string row;
+    while (std::getline(std::cin, row)) {
+        if (row.empty()) break;
+        std::vector<DagNode> dag;
+        std::vector<int> stk;
+        std::istringstream lex(row);
+        std::string sym;
+        while (lex >> sym) {
+            if (sym == "+" || sym == "-" || sym == "*" || sym == "/") {
+                int r = stk.back(); stk.pop_back();
+                int l = stk.back(); stk.pop_back();
+                DagNode node;
+                node.lhs = l;
+                node.rhs = r;
+                if (sym == "+") node.tag = Add{};
+                else if (sym == "-") node.tag = Sub{};
+                else if (sym == "*") node.tag = Mul{};
+                else node.tag = Div{};
+                stk.push_back(static_cast<int>(dag.size()));
+                dag.push_back(node);
             } else {
-                NodeRef leaf{Number{std::stoi(w)}, -1, -1};
-                sp.push_back(static_cast<int>(graph.size()));
-                graph.push_back(leaf);
+                DagNode leaf{Number{std::stoi(sym)}, -1, -1};
+                stk.push_back(static_cast<int>(dag.size()));
+                dag.push_back(leaf);
             }
         }
         try {
-            std::cout << compute(graph, sp.back()) << '\n';
+            std::cout << eval_tree(dag, stk.back()) << std::endl;
         } catch (...) {
             std::cout << "ERROR\n";
         }

@@ -51,19 +51,19 @@ public:
 
 int main()
 {
-    string word;
+    string token;
     size_t cap;
-    cin >> word >> cap;
+    cin >> token >> cap;
     LRUCache<string, int> lru(cap);
-    string cmd;
-    while (cin >> cmd) {
-        if (cmd == "END") break;
-        if (cmd == "GET") {
+    string verb;
+    while (cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "GET") {
             string k; cin >> k;
             int v;
             if (lru.get(k, v)) cout << "HIT " << v << endl;
             else cout << "MISS" << endl;
-        } else if (cmd == "PUT") {
+        } else if (verb == "PUT") {
             string k; int v; cin >> k >> v;
             lru.put(k, v);
         }

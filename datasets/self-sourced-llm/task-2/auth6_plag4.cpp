@@ -1,7 +1,6 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-// quick submit
 
 template <typename T>
 class LinkedList {
@@ -11,14 +10,14 @@ class LinkedList {
         Node(const T& x) : value(x), next(nullptr) {}
     };
 
-    Node* word_;
+    Node* head_;
     std::size_t length_;
 
 public:
-    LinkedList() : word_(nullptr), length_(0) {}
+    LinkedList() : head_(nullptr), length_(0) {}
 
     ~LinkedList() {
-        Node* current = word_;
+        Node* current = head_;
         while (current != nullptr) {
             Node* doomed = current;
             current = current->next;
@@ -28,10 +27,10 @@ public:
 
     void push_back(const T& item) {
         Node* fresh = new Node(item);
-        if (word_ == nullptr)
-            word_ = fresh;
+        if (head_ == nullptr)
+            head_ = fresh;
         else {
-            Node* walker = word_;
+            Node* walker = head_;
             while (walker->next != nullptr)
                 walker = walker->next;
             walker->next = fresh;
@@ -51,19 +50,19 @@ public:
         bool operator!=(const Iterator& other) const { return node_ != other.node_; }
     };
 
-    Iterator begin() { return Iterator(word_); }
+    Iterator begin() { return Iterator(head_); }
     Iterator end() { return Iterator(nullptr); }
-    Iterator begin() const { return Iterator(word_); }
+    Iterator begin() const { return Iterator(head_); }
     Iterator end() const { return Iterator(nullptr); }
 };
 
 template <typename T>
-LinkedList<T> merge_sorted(const LinkedList<T>& first, const LinkedList<T>& second) {
+LinkedList<T> merge_sorted(const LinkedList<T>& lhs, const LinkedList<T>& rhs) {
     LinkedList<T> combined;
-    auto it1 = first.begin();
-    auto it2 = second.begin();
-    auto end1 = first.end();
-    auto end2 = second.end();
+    auto it1 = lhs.begin();
+    auto it2 = rhs.begin();
+    auto end1 = lhs.end();
+    auto end2 = rhs.end();
 
     while (it1 != end1 && it2 != end2) {
         if (*it1 <= *it2) {
@@ -93,16 +92,16 @@ namespace io {
 }
 
 int main() {
-    LinkedList<int> seqA = io::readSequence(std::cin);
-    LinkedList<int> seqB = io::readSequence(std::cin);
-    LinkedList<int> tmp = merge_sorted(seqA, seqB);
+    LinkedList<int> listA = io::readSequence(std::cin);
+    LinkedList<int> listB = io::readSequence(std::cin);
+    LinkedList<int> result = merge_sorted(listA, listB);
 
     bool leading = true;
-    for (auto iter = tmp.begin(); iter != tmp.end(); ++iter) {
+    for (auto iter = result.begin(); iter != result.end(); ++iter) {
         if (!leading) std::cout << ' ';
         std::cout << *iter;
         leading = false;
     }
-    std::cout << '\n';
+    std::cout << std::endl;
     return 0;
 }

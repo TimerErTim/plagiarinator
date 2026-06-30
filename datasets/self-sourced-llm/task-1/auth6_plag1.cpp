@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <cstring>
+#include <cctype>
+#include <algorithm>
 
 namespace {
 
@@ -57,25 +56,23 @@ public:
     }
 };
 
-} // namespace
+}
 
 int main() {
-    std::vector<StringBuffer> lines;
-    std::string buf;
-    while (std::getline(std::cin, buf))
-        lines.emplace_back(buf.c_str());
+    std::vector<StringBuffer> rows;
+    std::string lineBuf;
+    while (std::getline(std::cin, lineBuf))
+        rows.emplace_back(lineBuf.c_str());
 
-    for (StringBuffer& row : lines)
+    for (StringBuffer& row : rows)
         row.trim();
 
-    lines.erase(std::remove_if(lines.begin(), lines.end(),
-                              [](const StringBuffer& r) {
-                                  return r.size() == 0;
-                              }),
-               lines.end());
+    rows.erase(std::remove_if(rows.begin(), rows.end(),
+                              [](const StringBuffer& r) { return r.size() == 0; }),
+               rows.end());
 
-    std::sort(lines.begin(), lines.end());
-    for (const StringBuffer& row : lines)
+    std::sort(rows.begin(), rows.end());
+    for (const StringBuffer& row : rows)
         std::cout << row.c_str() << std::endl;
     return 0;
 }

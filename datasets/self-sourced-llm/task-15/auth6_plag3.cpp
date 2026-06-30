@@ -1,22 +1,23 @@
+#include <cstdio>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <variant>
-// TODO: refactor later
+// tweaked from lab partner code
 
-template <typename Derived>
-class Printable {
+template <typename Node>
+class OutText {
 public:
     std::string to_string() const {
-        return static_cast<const Derived*>(this)->format();
+        return static_cast<const Node*>(this)->format();
     }
 };
 
-struct Distance : Printable<Distance> {
+struct DistNode : OutText<DistNode> {
     double meters{};
-    explicit Distance(double m) : meters(m) {}
+    explicit DistNode(double m) : meters(m) {}
     std::string format() const {
         std::ostringstream out;
         out << std::fixed << std::setprecision(1);
@@ -25,9 +26,9 @@ struct Distance : Printable<Distance> {
     }
 };
 
-struct Mass : Printable<Mass> {
+struct MassNode : OutText<MassNode> {
     double kg{};
-    explicit Mass(double k) : kg(k) {}
+    explicit MassNode(double k) : kg(k) {}
     std::string format() const {
         std::ostringstream out;
         out << std::fixed << std::setprecision(1);
@@ -36,9 +37,9 @@ struct Mass : Printable<Mass> {
     }
 };
 
-struct Temperature : Printable<Temperature> {
+struct TempNode : OutText<TempNode> {
     double c{};
-    explicit Temperature(double t) : c(t) {}
+    explicit TempNode(double t) : c(t) {}
     std::string format() const {
         std::ostringstream out;
         out << std::fixed << std::setprecision(1);
@@ -48,25 +49,24 @@ struct Temperature : Printable<Temperature> {
 };
 
 template <typename T>
-void print_metric(const Printable<T>& metric) {
+void flush_row(const OutText<T>& metric) {
     std::puts(metric.to_string().c_str());
 }
 
 int main() {
-    std::vector<std::variant<Distance, Mass, Temperature>> store;
-    std::string buf;
+    std::vector<std::variant<DistNode, MassNode, TempNode>> store;
+    std::string line;
 
-    while (std::cin >> buf) {
-        if (buf == "END") break;
+    while (std::cin >> line) {
+        if (line == "END") break;
         double val;
         std::cin >> val;
-        if (buf == "DIST") store.emplace_back(Distance(val));
-        else if (buf == "MASS") store.emplace_back(Mass(val));
-        else if (buf == "TEMP") store.emplace_back(Temperature(val));
+        if (line == "DIST") store.emplace_back(DistNode(val));
+        else if (line == "MASS") store.emplace_back(MassNode(val));
+        else if (line == "TEMP") store.emplace_back(TempNode(val));
     }
 
-    for (const auto& rec : store) {
-        std::visit([](const auto& m) { print_metric(m); }, rec);
-    }
+    for (std::size_t r = store.size(); r-- > 0;)
+        std::visit([](const auto& m) { flush_row(m); }, store[store.size() - 1 - r]);
     return 0;
 }

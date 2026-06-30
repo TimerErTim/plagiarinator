@@ -1,85 +1,97 @@
-#include <string>
 #include <iostream>
 #include <memory>
-// TODO: refactor later
+#include <string>
+// adapted from classmate submission
 
 class Parser;
 
-class State {
+class State
+{
 public:
     virtual ~State() = default;
-    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
+    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& record) = 0;
 };
 
-class Parser {
+class Parser
+{
 public:
     std::unique_ptr<State> state;
-    int counts[3] = {0, 0, 0};
-    int rejected = 0;
+    int tally_info = 0, tally_warn = 0, tally_err = 0, tally_bad = 0;
 
-    void tally(const std::string& tag) {
-        if (tag == "INFO") ++counts[0];
-        else if (tag == "WARN") ++counts[1];
-        else if (tag == "ERROR") ++counts[2];
+    void bump_tag(const std::string& tag)
+    {
+        if (tag == "INFO") ++tally_info;
+        else if (tag == "WARN") ++tally_warn;
+        else if (tag == "ERROR") ++tally_err;
     }
 };
 
-class HeaderState : public State {
+class HeaderState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& record) override;
 };
 
-class BodyState : public State {
+class BodyState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& record) override;
 };
 
-class DoneState : public State {
+class DoneState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser&, const std::string&) override {
+    std::unique_ptr<State> handle(Parser&, const std::string&) override
+    {
         return std::make_unique<DoneState>();
     }
 };
 
-static bool split_level(const std::string& line, std::string& level) {
-    if (line.size() < 2 || line[0] != '[') return false;
-    std::size_t pos = line.find(']');
+static bool peel_tag(const std::string& record, std::string& tag)
+{
+    if (record.size() < 2 || record[0] != '[') return false;
+    std::size_t pos = record.find(']');
     if (pos == std::string::npos) return false;
-    level.assign(line, 1, pos - 1);
-    return level == "INFO" || level == "WARN" || level == "ERROR";
+    tag.assign(record, 1, pos - 1);
+    return tag == "INFO" || tag == "WARN" || tag == "ERROR";
 }
 
-std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& record)
+{
+    if (record == "END") return std::make_unique<DoneState>();
     std::string tag;
-    if (split_level(line, tag)) {
-        ctx.tally(tag);
+    if (peel_tag(record, tag))
+    {
+        ctx.bump_tag(tag);
         return std::make_unique<BodyState>();
     }
-    ++ctx.rejected;
+    ++ctx.tally_bad;
     return std::make_unique<HeaderState>();
 }
 
-std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& record)
+{
+    if (record == "END") return std::make_unique<DoneState>();
     std::string tag;
-    if (split_level(line, tag)) {
-        ctx.tally(tag);
+    if (peel_tag(record, tag))
+    {
+        ctx.bump_tag(tag);
         return std::make_unique<BodyState>();
     }
-    ++ctx.rejected;
+    ++ctx.tally_bad;
     return std::make_unique<BodyState>();
 }
 
-int main() {
-    Parser machine;
-    machine.state = std::make_unique<HeaderState>();
-    for (std::string buf; std::getline(std::cin, buf);)
-        machine.state = machine.state->handle(machine, buf);
+int main()
+{
+    Parser runner;
+    runner.state = std::make_unique<HeaderState>();
+    for (std::string record; std::getline(std::cin, record);)
+        runner.state = runner.state->handle(runner, record);
 
-    std::cout << "INFO: " << machine.counts[0] << '\n';
-    std::cout << "WARN: " << machine.counts[1] << '\n';
-    std::cout << "ERROR: " << machine.counts[2] << '\n';
-    std::cout << "REJECTED: " << machine.rejected << '\n';
+    std::cout << "INFO: " << runner.tally_info << std::endl;
+    std::cout << "WARN: " << runner.tally_warn << std::endl;
+    std::cout << "ERROR: " << runner.tally_err << std::endl;
+    std::cout << "REJECTED: " << runner.tally_bad << std::endl;
     return 0;
 }

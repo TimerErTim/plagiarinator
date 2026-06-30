@@ -1,5 +1,5 @@
 #include <iostream>
-// quick submit
+#include <utility>
 
 template <typename Elem>
 class Vector {
@@ -55,10 +55,10 @@ public:
 };
 
 int main() {
-    std::size_t n;
-    std::cin >> n;
+    std::size_t item_count;
+    std::cin >> item_count;
     Vector<int> all;
-    for (std::size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < item_count; ++i) {
         int x;
         std::cin >> x;
         all.push_back(x);

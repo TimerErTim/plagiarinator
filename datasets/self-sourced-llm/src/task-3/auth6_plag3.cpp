@@ -1,51 +1,59 @@
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-// from lab partner
+#include <vector>
+// borrowed from roommate's homework
 
-struct GraphNode {
-    std::string label;
+struct GraphNode
+{
+    std::string tag;
     std::vector<std::shared_ptr<GraphNode>> edges;
 };
 
-class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> pool;
+class Graph
+{
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> table;
 
-    std::shared_ptr<GraphNode> touch(const std::string& id) {
-        auto iter = pool.find(id);
-        if (iter != pool.end()) return iter->second;
+    std::shared_ptr<GraphNode> touch(const std::string& id)
+    {
+        auto iter = table.find(id);
+        if (iter != table.end()) return iter->second;
         std::shared_ptr<GraphNode> created = std::make_shared<GraphNode>();
-        created->label = id;
-        pool[id] = created;
+        created->tag = id;
+        table[id] = created;
         return created;
     }
 
 public:
     void addNode(const std::string& id) { touch(id); }
 
-    void addEdge(const std::string& src, const std::string& dst) {
-        touch(src)->edges.emplace_back(touch(dst));
+    void addEdge(const std::string& src, const std::string& dst)
+    {
+        touch(src)->edges.push_back(touch(dst));
     }
 
-    bool query(const std::string& src, const std::string& dst) const {
-        auto startIt = pool.find(src);
-        if (startIt == pool.end()) return false;
+    bool query(const std::string& src, const std::string& dst) const
+    {
+        auto startIt = table.find(src);
+        if (startIt == table.end()) return false;
 
         std::queue<std::shared_ptr<GraphNode>> pending;
         std::unordered_set<std::string> visited;
         pending.push(startIt->second);
         visited.insert(src);
 
-        while (!pending.empty()) {
+        while (!pending.empty())
+        {
             std::shared_ptr<GraphNode> active = pending.front();
             pending.pop();
-            if (active->label == dst) return true;
-            for (const std::shared_ptr<GraphNode>& neighbor : active->edges) {
-                if (visited.insert(neighbor->label).second)
+            if (active->tag == dst) return true;
+            for (std::size_t k = active->edges.size(); k-- > 0;)
+            {
+                const std::shared_ptr<GraphNode>& neighbor = active->edges[k];
+                if (visited.insert(neighbor->tag).second)
                     pending.push(neighbor);
             }
         }
@@ -53,22 +61,27 @@ public:
     }
 };
 
-int main() {
-    Graph g;
-    for (std::string ln; std::cin >> ln;) {
-        if (ln == "END") break;
-        if (ln == "ADD_NODE") {
+int main()
+{
+    Graph net;
+    for (std::string token_v; std::cin >> token_v;)
+    {
+        if (token_v == "END") break;
+        if (token_v == "ADD_NODE")
+        {
             std::string name;
             std::cin >> name;
-            g.addNode(name);
-        } else if (ln == "ADD_EDGE") {
+            net.addNode(name);
+        } else if (token_v == "ADD_EDGE")
+        {
             std::string u, v;
             std::cin >> u >> v;
-            g.addEdge(u, v);
-        } else if (ln == "QUERY") {
+            net.addEdge(u, v);
+        } else if (token_v == "QUERY")
+        {
             std::string u, v;
             std::cin >> u >> v;
-            std::cout << (g.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
+            std::cout << (net.query(u, v) ? "REACHABLE" : "UNREACHABLE") << '\n';
         }
     }
     return 0;

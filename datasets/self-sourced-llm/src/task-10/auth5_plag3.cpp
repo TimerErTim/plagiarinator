@@ -1,65 +1,85 @@
 #include <vector>
 #include <iostream>
 #include <string>
-// TODO: refactor later
+// my friend sent me this template
 
 class IntBST {
-    struct Node { int x; Node* lo; Node* hi; Node(int v): x(v), lo(0), hi(0) {} };
-    Node* rt;
+    struct Unit { int mark; Unit* lesser; Unit* greater; Unit(int m): mark(m), lesser(0), greater(0) {} };
+    Unit* crown;
 
-    void kill(Node* n) { if (n) { kill(n->lo); kill(n->hi); delete n; } }
-
-    Node* put(Node* n, int v) {
-        if (!n) return new Node(v);
-        if (v < n->x) n->lo = put(n->lo, v);
-        else if (v > n->x) n->hi = put(n->hi, v);
-        return n;
+    void erase(Unit* u) {
+        if (!u) return;
+        std::vector<Unit*> trail;
+        std::vector<Unit*> work;
+        work.push_back(u);
+        while (!work.empty()) {
+            Unit* cur = work.back();
+            work.pop_back();
+            trail.push_back(cur);
+            if (cur->lesser) work.push_back(cur->lesser);
+            if (cur->greater) work.push_back(cur->greater);
+        }
+        for (std::size_t k = trail.size(); k-- > 0;)
+            delete trail[k];
     }
 
-    bool got(const Node* n, int v) const {
-        if (!n) return false;
-        if (v == n->x) return true;
-        return v < n->x ? got(n->lo, v) : got(n->hi, v);
+    Unit* embed(Unit* u, int m) {
+        if (!u) return new Unit(m);
+        if (m < u->mark) u->lesser = embed(u->lesser, m);
+        else if (m > u->mark) u->greater = embed(u->greater, m);
+        return u;
     }
 
-    void dump(const Node* n, std::vector<int>& o) const {
-        if (!n) return;
-        dump(n->lo, o); o.push_back(n->x); dump(n->hi, o);
+    bool present(const Unit* u, int m) const {
+        if (!u) return false;
+        if (m == u->mark) return true;
+        if (m < u->mark) return present(u->lesser, m);
+        return present(u->greater, m);
     }
 
-    Node* low(Node* n) const { while (n && n->lo) n = n->lo; return n; }
+    void unfold(const Unit* u, std::vector<int>& tray) const {
+        if (!u) return;
+        unfold(u->lesser, tray);
+        tray.push_back(u->mark);
+        unfold(u->greater, tray);
+    }
+
+    Unit* bottom(Unit* u) const {
+        while (u && u->lesser) u = u->lesser;
+        return u;
+    }
 
 public:
-    IntBST(): rt(0) {}
-    ~IntBST() { kill(rt); }
-    void insert(int v) { rt = put(rt, v); }
-    bool contains(int v) const { return got(rt, v); }
-    void inorder(std::vector<int>& o) const { dump(rt, o); }
-    int& min() { return low(rt)->x; }
-    const int& min() const { return low(rt)->x; }
-    bool empty() const { return !rt; }
+    IntBST(): crown(0) {}
+    ~IntBST() { erase(crown); }
+    void insert(int v) { crown = embed(crown, v); }
+    bool contains(int v) const { return present(crown, v); }
+    void inorder(std::vector<int>& o) const { unfold(crown, o); }
+    int& min() { return bottom(crown)->mark; }
+    const int& min() const { return bottom(crown)->mark; }
+    bool empty() const { return !crown; }
 };
 
 int main() {
-    IntBST hold;
+    IntBST tree;
     std::string tok;
     while (std::cin >> tok) {
         if (tok == "DONE") break;
-        hold.insert(std::stoi(tok));
+        tree.insert(std::stoi(tok));
     }
     while (std::cin >> tok) {
         if (tok == "DONE") break;
         if (tok == "CONTAINS") {
             int q; std::cin >> q;
-            std::cout << (hold.contains(q) ? "YES" : "NO") << std::endl;
+            std::cout << (tree.contains(q) ? "YES" : "NO") << std::endl;
         } else if (tok == "MIN") {
-            if (hold.empty()) std::cout << "EMPTY\n";
-            else std::cout << hold.min() << std::endl;
+            if (tree.empty()) std::cout << "EMPTY" << std::endl;
+            else std::cout << tree.min() << std::endl;
         } else if (tok == "PRINT") {
-            std::vector<int> vals; hold.inorder(vals);
-            for (std::size_t i = 0; i < vals.size(); ++i) {
-                if (i) std::cout << ' ';
-                std::cout << vals[i];
+            std::vector<int> vals; tree.inorder(vals);
+            for (std::size_t idx = 0; idx < vals.size(); ++idx) {
+                if (idx) std::cout << ' ';
+                std::cout << vals[idx];
             }
             std::cout << std::endl;
         }

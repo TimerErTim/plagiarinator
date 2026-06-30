@@ -1,9 +1,8 @@
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <cstring>
+#include <cctype>
+#include <algorithm>
 
 class StringBuffer {
     char* chars;
@@ -13,7 +12,7 @@ public:
     StringBuffer(const char* cstr) : chars(nullptr), sz(0) {
         sz = std::strlen(cstr);
         chars = new char[sz + 1];
-        for (std::size_t i = 0; i <= sz; ++i) chars[i] = cstr[i];
+        for (std::size_t i = 0; i <= sz; i++) chars[i] = cstr[i];
     }
 
     ~StringBuffer() { delete[] chars; }
@@ -39,7 +38,7 @@ public:
         while (b < e && std::isspace(static_cast<unsigned char>(chars[b]))) b++;
         while (e > b && std::isspace(static_cast<unsigned char>(chars[e - 1]))) e--;
         std::size_t w = 0;
-        for (std::size_t r = b; r < e; ++r) chars[w++] = chars[r];
+        for (std::size_t r = b; r < e; r++) chars[w++] = chars[r];
         chars[w] = '\0';
         sz = w;
     }
@@ -53,17 +52,17 @@ int main() {
     std::vector<StringBuffer> list;
     std::string s;
     while (std::getline(std::cin, s))
-        list.emplace_back(StringBuffer(s.c_str()));
+        list.emplace_back(s.c_str());
 
     for (auto it = list.begin(); it != list.end(); ++it)
         it->trim();
 
-    std::vector<StringBuffer> filtered;
-    for (const auto& elem : list)
-        if (elem.size() > 0) filtered.emplace_back(elem);
+    std::vector<StringBuffer> kept;
+    for (const auto& sb : list)
+        if (sb.size() > 0) kept.emplace_back(sb);
 
-    std::sort(filtered.begin(), filtered.end());
-    for (const auto& elem : filtered)
-        std::cout << elem.c_str() << std::endl;
+    std::sort(kept.begin(), kept.end());
+    for (const auto& sb : kept)
+        std::cout << sb.c_str() << std::endl;
     return 0;
 }

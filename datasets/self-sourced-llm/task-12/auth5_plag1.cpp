@@ -1,9 +1,9 @@
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <variant>
 #include <vector>
-// cleaned up version
+#include <variant>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <stdexcept>
 
 struct Number { int value; };
 struct Add {};
@@ -15,25 +15,25 @@ using Expr = std::variant<Number, Add, Sub, Mul, Div>;
 
 struct NodeRef {
     Expr kind;
-    int lhs = -1;
-    int rhs = -1;
+    int left = -1;
+    int right = -1;
 };
 
-int eval_graph(const std::vector<NodeRef>& g, int id) {
+int compute(const std::vector<NodeRef>& g, int id) {
     return std::visit(
         [&](auto tag) -> int {
             using T = std::decay_t<decltype(tag)>;
             const NodeRef& n = g[static_cast<std::size_t>(id)];
             if constexpr (std::is_same_v<T, Number>) return tag.value;
             else {
-                int lhs = eval_graph(g, n.lhs);
-                int rhs = eval_graph(g, n.rhs);
-                if constexpr (std::is_same_v<T, Add>) return lhs + rhs;
-                else if constexpr (std::is_same_v<T, Sub>) return lhs - rhs;
-                else if constexpr (std::is_same_v<T, Mul>) return lhs * rhs;
+                int a = compute(g, n.left);
+                int b = compute(g, n.right);
+                if constexpr (std::is_same_v<T, Add>) return a + b;
+                else if constexpr (std::is_same_v<T, Sub>) return a - b;
+                else if constexpr (std::is_same_v<T, Mul>) return a * b;
                 else {
-                    if (rhs == 0) throw std::string("err");
-                    return lhs / rhs;
+                    if (b == 0) throw std::string("err");
+                    return a / b;
                 }
             }
         },
@@ -41,36 +41,36 @@ int eval_graph(const std::vector<NodeRef>& g, int id) {
 }
 
 int main() {
-    std::string s;
-    while (std::getline(std::cin, s)) {
-        if (s.empty()) break;
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) break;
         std::vector<NodeRef> graph;
         std::vector<int> sp;
-        std::istringstream iss(s);
-        std::string piece;
-        while (iss >> piece) {
-            if (piece == "+" || piece == "-" || piece == "*" || piece == "/") {
-                int rhs = sp.back(); sp.pop_back();
-                int lhs = sp.back(); sp.pop_back();
+        std::istringstream iss(line);
+        std::string w;
+        while (iss >> w) {
+            if (w == "+" || w == "-" || w == "*" || w == "/") {
+                int r = sp.back(); sp.pop_back();
+                int l = sp.back(); sp.pop_back();
                 NodeRef node;
-                node.lhs = lhs;
-                node.rhs = rhs;
-                if (piece == "+") node.kind = Add{};
-                else if (piece == "-") node.kind = Sub{};
-                else if (piece == "*") node.kind = Mul{};
+                node.left = l;
+                node.right = r;
+                if (w == "+") node.kind = Add{};
+                else if (w == "-") node.kind = Sub{};
+                else if (w == "*") node.kind = Mul{};
                 else node.kind = Div{};
-                sp.push_back(static_cast<int>(graph.size()));
-                graph.push_back(node);
+                sp.emplace_back(static_cast<int>(graph.size()));
+                graph.emplace_back(node);
             } else {
-                NodeRef leaf{Number{std::stoi(piece)}, -1, -1};
-                sp.push_back(static_cast<int>(graph.size()));
-                graph.push_back(leaf);
+                NodeRef leaf{Number{std::stoi(w)}, -1, -1};
+                sp.emplace_back(static_cast<int>(graph.size()));
+                graph.emplace_back(leaf);
             }
         }
         try {
-            std::cout << eval_graph(graph, sp.back()) << '\n';
+            std::cout << compute(graph, sp.back()) << std::endl;
         } catch (...) {
-            std::cout << "ERROR\n";
+            std::cout << "ERROR" << std::endl;
         }
     }
     return 0;

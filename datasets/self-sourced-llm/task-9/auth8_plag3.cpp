@@ -1,54 +1,45 @@
 #include <vector>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <string>
 #include <utility>
-// TODO: refactor later
+#include <functional>
+#include <iostream>
+#include <iomanip>
+#include <string>
+// cleaned up version (mostly)
 
-namespace monitoring {
-
-class Sensor {
-    double body;
-    std::vector<std::pair<std::string, std::function<void(double)>>> pool;
-
-    void broadcast() {
-        for (const auto& item : pool) {
-            std::cout << std::fixed << std::setprecision(1)
-                      << "[" << item.first << "] temp=" << body << '\n';
-            if (item.second)
-                item.second(body);
-        }
-    }
+class ObserverSensor {
+    double currentReading_;
+    std::vector<std::pair<std::string, std::function<void(double)>>> attached_;
 
 public:
     void subscribe(const std::string& name, std::function<void(double)> callback) {
-        pool.emplace_back(name, std::move(callback));
+        attached_.emplace_back(name, std::move(callback));
     }
 
     void set_value(double celsius) {
-        body = celsius;
-        broadcast();
+        currentReading_ = celsius;
+        for (const auto& sub : attached_) {
+            std::cout << std::fixed << std::setprecision(1)
+                      << "[" << sub.first << "] temp=" << currentReading_ << '\n';
+            if (sub.second) sub.second(currentReading_);
+        }
     }
 
-    double value() const { return body; }
+    double value() const { return currentReading_; }
 };
 
-} // namespace monitoring
-
 int main() {
-    monitoring::Sensor dev;
-    std::string verb;
-    while (std::cin >> verb) {
-        if (verb == "END") break;
-        if (verb == "SUB") {
-            std::string typ;
-            std::cin >> typ;
-            dev.subscribe(typ, [](double) {});
-        } else if (verb == "SET") {
-            double degrees;
-            std::cin >> degrees;
-            dev.set_value(degrees);
+    ObserverSensor sensor;
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "SUB") {
+            std::string name;
+            std::cin >> name;
+            sensor.subscribe(name, [](double) {});
+        } else if (token == "SET") {
+            double v;
+            std::cin >> v;
+            sensor.set_value(v);
         }
     }
     return 0;

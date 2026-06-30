@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-// TODO: refactor later
+// found this online and tweaked it
 
 struct Image {
     std::string name;
@@ -10,31 +10,31 @@ struct Image {
 };
 
 class ImageCache {
-    std::unordered_map<std::string, std::weak_ptr<Image>> pool_;
+    std::unordered_map<std::string, std::weak_ptr<Image>> weak_slots_;
 
 public:
     std::shared_ptr<Image> load(const std::string& key, int pixels) {
-        if (auto existing = pool_[key].lock())
-            return existing;
-        auto img = std::make_shared<Image>(Image{key, pixels});
-        pool_[key] = img;
-        return img;
+        if (auto cached = weak_slots_[key].lock())
+            return cached;
+        auto fresh = std::make_shared<Image>(Image{key, pixels});
+        weak_slots_[key] = fresh;
+        return fresh;
     }
 
     std::size_t size() const {
-        std::size_t alive = 0;
-        for (const auto& kv : pool_)
-            if (!kv.second.expired()) ++alive;
-        return alive;
+        std::size_t cnt = 0;
+        for (const auto& pair : weak_slots_)
+            if (!pair.second.expired()) ++cnt;
+        return cnt;
     }
 
-    void drop_all() { pool_.clear(); }
+    void drop_all() { weak_slots_.clear(); }
 
     bool query_pixels(const std::string& key, int& out) const {
-        auto it = pool_.find(key);
-        if (it == pool_.end()) return false;
-        if (auto sp = it->second.lock()) {
-            out = sp->pixel_count;
+        auto pos = weak_slots_.find(key);
+        if (pos == weak_slots_.end()) return false;
+        if (auto alive = pos->second.lock()) {
+            out = alive->pixel_count;
             return true;
         }
         return false;
@@ -42,28 +42,28 @@ public:
 };
 
 int main() {
-    ImageCache box;
-    std::string ln;
-    while (std::cin >> ln) {
-        if (ln == "END") break;
-        if (ln == "LOAD") {
-            std::string val;
-            int tmp;
-            std::cin >> val >> tmp;
+    ImageCache img_store;
+    std::string token;
+    while (std::cin >> token) {
+        if (token == "END") break;
+        if (token == "LOAD") {
+            std::string id;
+            int px_count;
+            std::cin >> id >> px_count;
             {
-                auto obj = box.load(val, tmp);
-                std::cout << "loaded " << obj->name << " pixels=" << obj->pixel_count << '\n';
+                auto handle = img_store.load(id, px_count);
+                std::cout << "loaded " << handle->name << " pixels=" << handle->pixel_count << '\n';
             }
-        } else if (ln == "QUERY") {
-            std::string val;
-            std::cin >> val;
-            int tmp = 0;
-            if (box.query_pixels(val, tmp))
-                std::cout << "pixels=" << tmp << '\n';
+        } else if (token == "QUERY") {
+            std::string id;
+            std::cin >> id;
+            int px_count = 0;
+            if (img_store.query_pixels(id, px_count))
+                std::cout << "pixels=" << px_count << std::endl;
             else
                 std::cout << "EXPIRED\n";
-        } else if (ln == "DROP_ALL") {
-            box.drop_all();
+        } else if (token == "DROP_ALL") {
+            img_store.drop_all();
         }
     }
     return 0;

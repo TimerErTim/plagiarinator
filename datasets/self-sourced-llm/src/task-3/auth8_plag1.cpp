@@ -1,12 +1,11 @@
-#include <iostream>
-#include <memory>
-#include <queue>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-// cleaned up version
+#include <iostream>
+#include <memory>
+#include <queue>
 
 struct GraphNode {
     std::string label;
@@ -14,14 +13,14 @@ struct GraphNode {
 };
 
 class Graph {
-    std::unordered_map<std::string, std::shared_ptr<GraphNode>> index_;
+    std::unordered_map<std::string, std::shared_ptr<GraphNode>> indexk_;
 
     std::shared_ptr<GraphNode> resolve(const std::string& name) {
-        auto it = index_.find(name);
-        if (it != index_.end()) return it->second;
+        auto it = indexk_.find(name);
+        if (it != indexk_.end()) return it->second;
         std::shared_ptr<GraphNode> node = std::make_shared<GraphNode>();
         node->label = name;
-        index_.emplace(name, node);
+        indexk_.emplace(name, node);
         return node;
     }
 
@@ -33,8 +32,8 @@ public:
     }
 
     bool query(const std::string& from, const std::string& to) const {
-        auto start = index_.find(from);
-        if (start == index_.end()) return false;
+        auto start = indexk_.find(from);
+        if (start == indexk_.end()) return false;
 
         std::queue<std::shared_ptr<GraphNode>> q;
         std::unordered_set<std::string> seen;
@@ -45,7 +44,8 @@ public:
             auto cur = q.front();
             q.pop();
             if (cur->label == to) return true;
-            for (const auto& nbr : cur->edges) {
+            for (std::size_t i = 0; i < cur->edges.size(); ++i) {
+                const auto& nbr = cur->edges[i];
                 if (seen.insert(nbr->label).second)
                     q.push(nbr);
             }
@@ -55,25 +55,25 @@ public:
 };
 
 int main() {
-    Graph graph;
-    std::stringstream stream;
-    stream << std::cin.rdbuf();
-    std::string buf;
-    while (std::getline(stream, buf)) {
-        if (buf.empty()) continue;
-        std::istringstream ls(buf);
-        std::string cmd;
-        ls >> cmd;
-        if (cmd == "END") break;
-        if (cmd == "ADD_NODE") {
+    Graph net;
+    std::stringstream tmp_input;
+    tmp_input << std::cin.rdbuf();
+    std::string input;
+    while (std::getline(tmp_input, input)) {
+        if (input.empty()) continue;
+        std::istringstream ls(input);
+        std::string cmd_v;
+        ls >> cmd_v;
+        if (cmd_v == "END") break;
+        if (cmd_v == "ADD_NODE") {
             std::string n; ls >> n;
-            graph.addNode(n);
-        } else if (cmd == "ADD_EDGE") {
+            net.addNode(n);
+        } else if (cmd_v == "ADD_EDGE") {
             std::string u, v; ls >> u >> v;
-            graph.addEdge(u, v);
-        } else if (cmd == "QUERY") {
+            net.addEdge(u, v);
+        } else if (cmd_v == "QUERY") {
             std::string u, v; ls >> u >> v;
-            std::cout << (graph.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;
+            std::cout << (net.query(u, v) ? "REACHABLE" : "UNREACHABLE") << std::endl;
         }
     }
     return 0;

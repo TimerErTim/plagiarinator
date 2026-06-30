@@ -1,8 +1,7 @@
-#include <iomanip>
 #include <iostream>
-#include <unordered_map>
+#include <iomanip>
 #include <string>
-// quick submit
+#include <unordered_map>
 
 struct ConfigStore {
     std::unordered_map<std::string, std::string> values;
@@ -55,23 +54,23 @@ bool numeric_token(const std::string& s) {
 }
 
 int main() {
-    ConfigStore ref;
+    ConfigStore settings;
     {
-        std::string str;
-        while (std::getline(std::cin, str) && !str.empty()) {
-            auto p = str.find('=');
-            ref.values[str.substr(0, p)] = str.substr(p + 1);
+        std::string line;
+        while (std::getline(std::cin, line) && !line.empty()) {
+            auto p = line.find('=');
+            settings.values[line.substr(0, p)] = line.substr(p + 1);
         }
     }
 
-    std::string elem;
-    while (std::cin >> elem) {
-        if (elem == "END") break;
-        if (elem == "GET") {
-            std::string tag;
-            std::cin >> tag;
-            log_line(std::cout, ref.has(tag) ? ref.get(tag) : std::string("MISSING"));
-        } else if (elem == "LOG") {
+    std::string verb;
+    while (std::cin >> verb) {
+        if (verb == "END") break;
+        if (verb == "GET") {
+            std::string k;
+            std::cin >> k;
+            log_line(std::cout, settings.has(k) ? settings.get(k) : std::string("MISSING"));
+        } else if (verb == "LOG") {
             std::string t1, t2, t3;
             if (!(std::cin >> t1)) continue;
             if (std::cin >> t2) {

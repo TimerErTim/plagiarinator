@@ -1,7 +1,6 @@
-#include <iostream>
-#include <memory>
 #include <string>
-// cleaned up version
+#include <memory>
+#include <iostream>
 
 class Parser;
 
@@ -74,8 +73,9 @@ std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
 int main() {
     Parser ctx;
     ctx.state = std::make_unique<HeaderState>();
-    for (std::string s; std::getline(std::cin, s);)
-        ctx.state = ctx.state->handle(ctx, s);
+    std::string line;
+    while (std::getline(std::cin, line))
+        ctx.state = ctx.state->handle(ctx, line);
 
     std::cout << "INFO: " << ctx.counts[0] << std::endl;
     std::cout << "WARN: " << ctx.counts[1] << std::endl;

@@ -1,63 +1,75 @@
 #include <cstring>
 #include <cctype>
-#include <iostream>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 class StringBuffer {
-    char* data_;
+    char* payload_;
     std::size_t len_;
 
 public:
     StringBuffer(const char* s) {
         len_ = std::strlen(s);
-        data_ = new char[len_ + 1];
-        std::strcpy(data_, s);
+        payload_ = new char[len_ + 1];
+        std::strcpy(payload_, s);
     }
 
-    ~StringBuffer() { delete[] data_; }
+    ~StringBuffer() { delete[] payload_; }
 
     StringBuffer(const StringBuffer& o) {
         len_ = o.len_;
-        data_ = new char[len_ + 1];
-        std::strcpy(data_, o.data_);
+        payload_ = new char[len_ + 1];
+        std::strcpy(payload_, o.payload_);
     }
 
     StringBuffer& operator=(const StringBuffer& o) {
         if (this != &o) {
-            delete[] data_;
+            delete[] payload_;
             len_ = o.len_;
-            data_ = new char[len_ + 1];
-            std::strcpy(data_, o.data_);
+            payload_ = new char[len_ + 1];
+            std::strcpy(payload_, o.payload_);
         }
         return *this;
     }
 
     void trim() {
-        std::size_t a = 0;
-        while (a < len_ && std::isspace(static_cast<unsigned char>(data_[a]))) ++a;
-        std::size_t b = len_;
-        while (b > a && std::isspace(static_cast<unsigned char>(data_[b - 1]))) --b;
-        std::size_t m = b - a;
-        for (std::size_t i = 0; i < m; ++i) data_[i] = data_[a + i];
-        data_[m] = '\0';
-        len_ = m;
+        std::size_t start = 0;
+        while (start < len_ && std::isspace(static_cast<unsigned char>(payload_[start])))
+            ++start;
+        std::size_t end = len_;
+        while (end > start && std::isspace(static_cast<unsigned char>(payload_[end - 1])))
+            --end;
+        std::size_t newLen = end - start;
+        for (std::size_t i = 0; i < newLen; ++i)
+            payload_[i] = payload_[start + i];
+        payload_[newLen] = '\0';
+        len_ = newLen;
     }
 
-    const char* c_str() const { return data_; }
+    const char* c_str() const { return payload_; }
     std::size_t size() const { return len_; }
-    bool operator<(const StringBuffer& o) const { return std::strcmp(data_, o.data_) < 0; }
+
+    bool operator<(const StringBuffer& o) const {
+        return std::strcmp(payload_, o.payload_) < 0;
+    }
 };
 
 int main() {
-    std::vector<StringBuffer> names;
-    std::string line;
-    while (std::getline(std::cin, line)) names.emplace_back(line.c_str());
-    for (auto& n : names) n.trim();
-    names.erase(std::remove_if(names.begin(), names.end(),
+    std::vector<StringBuffer> batch;
+    std::string raw;
+    while (std::getline(std::cin, raw))
+        batch.push_back(raw.c_str());
+
+    for (auto& n : batch)
+        n.trim();
+
+    batch.erase(std::remove_if(batch.begin(), batch.end(),
                                [](const StringBuffer& s) { return s.size() == 0; }),
-                names.end());
-    std::sort(names.begin(), names.end());
-    for (const auto& n : names) std::cout << n.c_str() << '\n';
+                batch.end());
+    std::sort(batch.begin(), batch.end());
+
+    for (const auto& n : batch)
+        std::cout << n.c_str() << '\n';
     return 0;
 }

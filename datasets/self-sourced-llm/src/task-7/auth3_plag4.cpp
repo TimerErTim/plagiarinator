@@ -1,10 +1,9 @@
+#include <string>
+#include <vector>
+#include <memory>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <memory>
-#include <vector>
-#include <string>
-// quick submit
 
 class Vehicle {
 public:
@@ -14,21 +13,21 @@ public:
 };
 
 class Car : public Vehicle {
-    double elemRate_;
+    double consumption_;
 public:
-    explicit Car(double litersPer100) : elemRate_(litersPer100) {}
+    explicit Car(double litersPer100) : consumption_(litersPer100) {}
     double fuel_needed(double distance_km) const override {
-        return elemRate_ * distance_km / 100.0;
+        return consumption_ * distance_km / 100.0;
     }
     std::string type() const override { return "CAR"; }
 };
 
 class Truck : public Vehicle {
-    double elemRate_;
+    double rate_;
 public:
-    explicit Truck(double rateVal) : elemRate_(rateVal) {}
+    explicit Truck(double litersPerKm) : rate_(litersPerKm) {}
     double fuel_needed(double distance_km) const override {
-        return elemRate_ * distance_km;
+        return rate_ * distance_km;
     }
     std::string type() const override { return "TRUCK"; }
 };

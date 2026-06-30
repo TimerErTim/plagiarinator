@@ -1,6 +1,5 @@
-#include <iostream>
 #include <vector>
-// cleaned up version
+#include <iostream>
 
 template <typename T>
 class Matrix {
@@ -29,14 +28,14 @@ public:
 
     Matrix operator+(const Matrix& rhs) const {
         Matrix result(rowCount_, colCount_);
-        for (std::size_t idx = 0; idx < elements_.size(); ++idx)
+        for (std::size_t idx = 0; idx < elements_.size(); idx++)
             result.elements_[idx] = elements_[idx] + rhs.elements_[idx];
         return result;
     }
 
     Matrix operator*(const Matrix& rhs) const {
         if (!compatibleMultiply(colCount_, rhs.rowCount_))
-            return Matrix(0, 0); // signal via empty - handled in main
+            return Matrix(0, 0);
         Matrix product(rowCount_, rhs.colCount_);
         for (std::size_t i = 0; i < rowCount_; ++i) {
             for (std::size_t j = 0; j < rhs.colCount_; ++j) {
@@ -57,7 +56,7 @@ public:
                 if (j > 0) out << ' ';
                 out << mat(i, j);
             }
-            out << '\n';
+            out << std::endl;
         }
         return out;
     }

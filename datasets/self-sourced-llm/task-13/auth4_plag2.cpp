@@ -1,10 +1,9 @@
-#include <vector>
-#include <thread>
-#include <queue>
-#include <mutex>
-#include <iostream>
 #include <condition_variable>
-// adapted from classmate submission
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
 
 namespace sync {
 
@@ -12,22 +11,24 @@ template <typename T>
 class BlockingQueue {
     std::queue<T> inner_;
     std::size_t max_;
-    mutable std::mutex store_;
+    mutable std::mutex m_;
     std::condition_variable can_push_;
     std::condition_variable can_pop_;
 
 public:
     explicit BlockingQueue(std::size_t capacity) : max_(capacity) {}
 
-    void push(T value) {
-        std::unique_lock<std::mutex> ul(store_);
+    void push(T value)
+    {
+        std::unique_lock<std::mutex> ul(m_);
         can_push_.wait(ul, [&] { return inner_.size() < max_; });
         inner_.push(std::move(value));
         can_pop_.notify_one();
     }
 
-    T pop() {
-        std::unique_lock<std::mutex> ul(store_);
+    T pop()
+    {
+        std::unique_lock<std::mutex> ul(m_);
         can_pop_.wait(ul, [&] { return !inner_.empty(); });
         T v = std::move(inner_.front());
         inner_.pop();
@@ -35,47 +36,59 @@ public:
         return v;
     }
 
-    std::size_t size() const {
-        std::lock_guard<std::mutex> g(store_);
+    std::size_t size() const
+    {
+        std::lock_guard<std::mutex> g(m_);
         return inner_.size();
     }
 };
 
 }  // namespace sync
 
-int main()
+void start_producers(sync::BlockingQueue<int>& box, std::size_t P, std::size_t N,
+                     std::vector<std::thread>& threads)
+{
+    int id = 0;
+    for (std::size_t i = 0; i < P; ++i)
+    {
+        std::size_t cnt = N / P + (i < N % P ? 1 : 0);
+        int from = id;
+        id += static_cast<int>(cnt);
+        threads.emplace_back([&, cnt, from]() {
+            std::size_t j = 0;
+            while (j < cnt)
+            {
+                box.push(from + static_cast<int>(j));
+                ++j;
+            }
+        });
+    }
+}
 
+int main()
 {
     using sync::BlockingQueue;
 
     std::size_t P = 0, C = 0, N = 0;
     std::string s;
-    std::cin >> s >> P >> s >> C >> s >> N;
+    std::size_t p_tmp = 0, c_tmp = 0, n_tmp = 0;
+    std::cin >> s >> p_tmp >> s >> c_tmp >> s >> n_tmp;
+    N = n_tmp;
+    C = c_tmp;
+    P = p_tmp;
 
     BlockingQueue<int> box(N + 1);
     std::vector<std::thread> threads;
     std::mutex stop_mu;
     std::size_t got = 0;
 
-    int k = 0;
-    for (std::size_t i = 0; i < P; ++i) 
-{
-        std::size_t cnt = N / P + (i < N % P ? 1 : 0);
-        int from = k;
-        k += static_cast<int>(cnt);
-        threads.emplace_back([&, cnt, from]() 
-{
-            for (std::size_t j = 0; j < cnt; ++j)
-                box.push(from + static_cast<int>(j));
-        });
-    }
+    start_producers(box, P, N, threads);
 
-    for (std::size_t i = 0; i < C; ++i) 
-{
-        threads.emplace_back([&]() 
-{
-            for (;;) 
-{
+    for (std::size_t i = 0; i < C; ++i)
+    {
+        threads.emplace_back([&]() {
+            for (;;)
+            {
                 int v = box.pop();
                 if (v == -1) return;
                 std::cout << "got " << v << '\n';
@@ -85,8 +98,8 @@ int main()
                     ++got;
                     last = (got == N);
                 }
-                if (last) 
-{
+                if (last)
+                {
                     for (std::size_t t = 0; t < C; ++t)
                         box.push(-1);
                 }

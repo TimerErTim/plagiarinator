@@ -1,84 +1,91 @@
-#include <vector>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
-// from lab partner
+#include <vector>
+#include <fstream>
+#include <iomanip>
+// borrowed from roommate's homework
 
-class FileWriter {
-    std::ofstream body;
-    std::string tag;
+class FileWriter
+{
+    std::ofstream streamOut_;
+    std::string pathVal_;
 
 public:
     explicit FileWriter(const std::string& path)
-        : tag(path), body(path) {}
+        : pathVal_(path), streamOut_(path) {}
 
-    ~FileWriter() {
-        if (body.is_open())
-            body.close();
+    ~FileWriter()
+    {
+        if (streamOut_.is_open())
+            streamOut_.close();
     }
 
     FileWriter(const FileWriter&) = delete;
     FileWriter& operator=(const FileWriter&) = delete;
 
-    FileWriter(FileWriter&& moved) noexcept
-        : body(std::move(moved.body)),
-          tag(std::move(moved.tag)) {}
+    FileWriter(FileWriter&& donor) noexcept
+        : streamOut_(std::move(donor.streamOut_)),
+          pathVal_(std::move(donor.pathVal_)) {}
 
-    FileWriter& operator=(FileWriter&& moved) noexcept {
-        if (this != &moved) {
-            if (body.is_open()) body.close();
-            body = std::move(moved.body);
-            tag = std::move(moved.tag);
+    FileWriter& operator=(FileWriter&& donor) noexcept
+    {
+        if (this != &donor)
+        {
+            if (streamOut_.is_open()) streamOut_.close();
+            streamOut_ = std::move(donor.streamOut_);
+            pathVal_ = std::move(donor.pathVal_);
         }
         return *this;
     }
 
-    void write_line(const std::string& content) {
-        body << content << std::endl;
+    void write_line(const std::string& txt)
+    {
+        streamOut_ << txt << std::endl;
     }
 };
 
-namespace grading {
-    char forScore(int score) {
-        if (score >= 90) return 'A';
-        if (score >= 80) return 'B';
-        if (score >= 70) return 'C';
-        if (score >= 60) return 'D';
-        return 'F';
-    }
+char scoreToLetter(int pts)
+{
+    if (pts >= 90) return 'A';
+    if (pts >= 80) return 'B';
+    if (pts >= 70) return 'C';
+    if (pts >= 60) return 'D';
+    return 'F';
 }
 
-int main() {
+int main()
+{
     struct Student { std::string name; int score; };
     std::vector<Student> roster;
     std::string inputLine;
-    while (std::getline(std::cin, inputLine)) {
+    while (std::getline(std::cin, inputLine))
+    {
         std::size_t delim = inputLine.find(',');
         roster.push_back({inputLine.substr(0, delim),
                           std::stoi(inputLine.substr(delim + 1))});
     }
 
-    FileWriter ref("report.txt");
-    ref.write_line("Student Report");
-    ref.write_line("--------------");
+    FileWriter writer("report.txt");
+    writer.write_line("Student Report");
+    writer.write_line("--------------");
 
     double runningTotal = 0.0;
-    for (const Student& s : roster) {
+    for (const Student& s : roster)
+    {
         runningTotal += s.score;
         std::ostringstream lineBuilder;
         lineBuilder << s.name << ": " << s.score
-                    << " [" << grading::forScore(s.score) << "]";
-        ref.write_line(lineBuilder.str());
+                    << " [" << scoreToLetter(s.score) << "]";
+        writer.write_line(lineBuilder.str());
     }
 
     std::ostringstream averageLine;
     averageLine << std::fixed << std::setprecision(1)
                 << "Average: " << runningTotal / roster.size();
-    ref.write_line(averageLine.str());
+    writer.write_line(averageLine.str());
 
-    std::cout << "Report written to report.txt" << '\n';
+    std::cout << "Report written to report.txt" << std::endl;
     return 0;
 }

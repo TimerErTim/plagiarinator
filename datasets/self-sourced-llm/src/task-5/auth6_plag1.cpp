@@ -1,7 +1,7 @@
+#include <unordered_map>
 #include <iostream>
 #include <list>
 #include <string>
-#include <unordered_map>
 // cleaned up version
 
 template <typename Key, typename Value>
@@ -9,25 +9,25 @@ class LRUCache {
     using NodeList = std::list<std::pair<Key, Value>>;
     using MapType = std::unordered_map<Key, typename NodeList::iterator>;
 
-    std::size_t capacityLimit;
-    NodeList recencyList;
-    MapType keyIndex;
+    std::size_t maxItems;
+    NodeList queue;
+    MapType map;
 
     void moveToFront(typename NodeList::iterator where) {
-        recencyList.splice(recencyList.begin(), recencyList, where);
+        queue.splice(queue.begin(), queue, where);
     }
 
     void dropOldest() {
-        keyIndex.erase(recencyList.back().first);
-        recencyList.pop_back();
+        map.erase(queue.back().first);
+        queue.pop_back();
     }
 
 public:
-    explicit LRUCache(std::size_t capacity) : capacityLimit(capacity) {}
+    explicit LRUCache(std::size_t capacity) : maxItems(capacity) {}
 
     bool get(const Key& key, Value& output) {
-        auto iterator = keyIndex.find(key);
-        if (iterator == keyIndex.end())
+        auto iterator = map.find(key);
+        if (iterator == map.end())
             return false;
         output = iterator->second->second;
         moveToFront(iterator->second);
@@ -35,16 +35,16 @@ public:
     }
 
     void put(const Key& key, const Value& value) {
-        auto iterator = keyIndex.find(key);
-        if (iterator != keyIndex.end()) {
+        auto iterator = map.find(key);
+        if (iterator != map.end()) {
             iterator->second->second = value;
             moveToFront(iterator->second);
             return;
         }
-        if (recencyList.size() >= capacityLimit)
+        if (queue.size() >= maxItems)
             dropOldest();
-        recencyList.emplace_front(key, value);
-        keyIndex[key] = recencyList.begin();
+        queue.emplace_front(key, value);
+        map[key] = queue.begin();
     }
 };
 

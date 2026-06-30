@@ -1,89 +1,103 @@
-#include <string>
 #include <iostream>
 #include <memory>
-// TODO: refactor later
+#include <string>
+// quick submit before deadline
 
 class Parser;
 
-class State {
+class State
+{
 public:
     virtual ~State() = default;
-    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& line) = 0;
+    virtual std::unique_ptr<State> handle(Parser& ctx, const std::string& row) = 0;
 };
 
-class Parser {
+class Parser
+{
 public:
     std::unique_ptr<State> state;
-    int info_n = 0, warn_n = 0, error_n = 0, bad_n = 0;
+    int hits_info = 0, hits_warn = 0, hits_error = 0, hits_bad = 0;
 };
 
-class HeaderState : public State {
+class HeaderState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& row) override;
 };
 
-class BodyState : public State {
+class BodyState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser& ctx, const std::string& line) override;
+    std::unique_ptr<State> handle(Parser& ctx, const std::string& row) override;
 };
 
-class DoneState : public State {
+class DoneState : public State
+{
 public:
-    std::unique_ptr<State> handle(Parser&, const std::string&) override {
+    std::unique_ptr<State> handle(Parser&, const std::string&) override
+    {
         return std::unique_ptr<State>(new DoneState());
     }
 };
 
-namespace logparse {
+namespace logparse
+{
 
-bool level_of(const std::string& line, std::string& out) {
-    if (line.size() < 3 || line.front() != '[') return false;
-    std::size_t idx = line.find(']');
+bool level_of(const std::string& row, std::string& token)
+{
+    if (row.size() < 3 || row.front() != '[') return false;
+    std::size_t idx = row.find(']');
     if (idx == std::string::npos) return false;
-    out = line.substr(1, idx - 1);
-    return out == "INFO" || out == "WARN" || out == "ERROR";
+    token = row.substr(1, idx - 1);
+    return token == "INFO" || token == "WARN" || token == "ERROR";
 }
 
-void bump(Parser& ctx, const std::string& lvl) {
-    if (lvl == "INFO") ++ctx.info_n;
-    else if (lvl == "WARN") ++ctx.warn_n;
-    else ++ctx.error_n;
+void bump(Parser& ctx, const std::string& token)
+{
+    if (token == "INFO") ++ctx.hits_info;
+    else if (token == "WARN") ++ctx.hits_warn;
+    else ++ctx.hits_error;
 }
 
 }  // namespace logparse
 
-std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (logparse::level_of(line, lvl)) {
-        logparse::bump(ctx, lvl);
+std::unique_ptr<State> HeaderState::handle(Parser& ctx, const std::string& row)
+{
+    if (row == "END") return std::make_unique<DoneState>();
+    std::string token;
+    if (logparse::level_of(row, token))
+    {
+        logparse::bump(ctx, token);
         return std::make_unique<BodyState>();
     }
-    ++ctx.bad_n;
+    ++ctx.hits_bad;
     return std::make_unique<HeaderState>();
 }
 
-std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& line) {
-    if (line == "END") return std::make_unique<DoneState>();
-    std::string lvl;
-    if (logparse::level_of(line, lvl)) {
-        logparse::bump(ctx, lvl);
+std::unique_ptr<State> BodyState::handle(Parser& ctx, const std::string& row)
+{
+    if (row == "END") return std::make_unique<DoneState>();
+    std::string token;
+    if (logparse::level_of(row, token))
+    {
+        logparse::bump(ctx, token);
         return std::make_unique<BodyState>();
     }
-    ++ctx.bad_n;
+    ++ctx.hits_bad;
     return std::make_unique<BodyState>();
 }
 
-int main() {
-    Parser p;
-    p.state = std::make_unique<HeaderState>();
-    std::string s;
-    while (std::getline(std::cin, s))
-        p.state = p.state->handle(p, s);
+int main()
+{
+    Parser machine;
+    machine.state = std::make_unique<HeaderState>();
+    std::string row;
+    while (std::getline(std::cin, row))
+        machine.state = machine.state->handle(machine, row);
 
-    std::cout << "INFO: " << p.info_n << '\n';
-    std::cout << "WARN: " << p.warn_n << '\n';
-    std::cout << "ERROR: " << p.error_n << '\n';
-    std::cout << "REJECTED: " << p.bad_n << '\n';
+    std::cout << "INFO: " << machine.hits_info << std::endl;
+    std::cout << "WARN: " << machine.hits_warn << std::endl;
+    std::cout << "ERROR: " << machine.hits_error << std::endl;
+    std::cout << "REJECTED: " << machine.hits_bad << std::endl;
     return 0;
 }

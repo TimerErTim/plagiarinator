@@ -1,9 +1,8 @@
-#include <iomanip>
-#include <iostream>
-#include <memory>
-#include <string>
 #include <vector>
-// cleaned up version
+#include <memory>
+#include <iostream>
+#include <iomanip>
+#include <string>
 
 class Vehicle {
 public:
@@ -42,21 +41,21 @@ std::unique_ptr<Vehicle> create_vehicle(const std::string& kind, std::istream& i
 }
 
 int main() {
-    std::vector<std::unique_ptr<Vehicle>> V;
-    std::vector<double> D;
-    std::string k;
-    while(std::cin>>k) {
-        auto p=create_vehicle(k,std::cin);
-        if(!p){std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR\n";continue;}
+    std::vector<std::unique_ptr<Vehicle>> fleet;
+    std::vector<double> dists;
+    std::string tag;
+    while(std::cin>>tag) {
+        auto unit=create_vehicle(tag,std::cin);
+        if(!unit){std::string rest;std::getline(std::cin,rest);std::cout<<"ERROR"<<std::endl;continue;}
         double d;std::cin>>d;
-        V.push_back(std::move(p)); D.push_back(d);
+        fleet.emplace_back(std::move(unit)); dists.push_back(d);
     }
-    double s=0;
-    for(size_t i=0;i<V.size();++i){
-        double f=V[i]->fuel_needed(D[i]); s+=f;
-        std::cout<<"Trip "<<i+1<<": "<<V[i]->type()
-                 <<" needs "<<std::fixed<<std::setprecision(2)<<f<<" liters\n";
+    double sum=0;
+    for(size_t i=0;i<fleet.size();i++){
+        double f=fleet[i]->fuel_needed(dists[i]); sum+=f;
+        std::cout<<"Trip "<<i+1<<": "<<fleet[i]->type()
+                 <<" needs "<<std::fixed<<std::setprecision(2)<<f<<" liters"<<std::endl;
     }
-    std::cout<<"TOTAL "<<std::fixed<<std::setprecision(2)<<s<<" liters\n";
+    std::cout<<"TOTAL "<<std::fixed<<std::setprecision(2)<<sum<<" liters"<<std::endl;
     return 0;
 }
