@@ -6,12 +6,12 @@ pub fn main() {
     let device = burn::backend::flex::FlexDevice::default();
 
     let (_, cpp_test_dataset) = train_test_cpp_dataset().unwrap();
-    let test_loader = make_testset_loader::<InferenceBackend>(
+    let test_loader = make_testset_loader(
         cpp_test_dataset.plagiarized_pairs,
         cpp_test_dataset.authentic_pairs,
-        &device,
     );
     let model = load_trained_model::<InferenceBackend>(&device);
+    eprintln!("Model loaded, running validation...");
     let validation_output = validate(model, test_loader.iter());
     println!(
         "{}",

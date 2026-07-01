@@ -29,8 +29,7 @@ use logging::create_tensorboard_logger;
 use rand::SeedableRng;
 
 use crate::{
-    loading::{chunked_iter, make_testset_loader, make_trainset_loader, PrefetchIterator},
-    validation::{validate, validation_from_tensor_predictions},
+    loading::{PrefetchIterator, chunked_iter, make_testset_loader, make_trainset_loader}, validation::{validate, validation_from_predictions, validation_from_tensors},
 };
 
 pub fn main() {
@@ -79,10 +78,9 @@ pub fn main() {
 
     let (cpp_train_dataset, cpp_test_dataset) = train_test_cpp_dataset().unwrap();
     let num_train_items = cpp_train_dataset.len();
-    let cpp_test_items = make_testset_loader::<InfBackend>(
+    let cpp_test_items = make_testset_loader(
         cpp_test_dataset.plagiarized_pairs.clone(),
         cpp_test_dataset.authentic_pairs.clone(),
-        &device,
     );
     let train_loader = make_trainset_loader::<AdBackend>(
         cpp_train_dataset.plagiarized_pairs,
@@ -213,7 +211,7 @@ pub fn main() {
         let loss = loss_fn.forward(predictions.clone(), targets.clone());
 
         // Logging
-        let stats = validation_from_tensor_predictions(loss.clone(), predictions, targets.float());
+        let stats = validation_from_tensors(loss.clone(), predictions, targets.float());
         print!(".");
         tensorboard_logger.log_scalar("training/loss", stats.average_loss, step as u64);
         tensorboard_logger.log_scalar(

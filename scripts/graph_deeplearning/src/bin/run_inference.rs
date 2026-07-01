@@ -1,6 +1,5 @@
 use burn::backend::Autodiff;
-use burn_store::ModuleSnapshot;
-use decider_model::data::{analyze_plagiarism, parse_cpp_file};
+use decider_model::data::{analyze_plagiarism, analyze_plagiarism_all_pairs, parse_cpp_file};
 use graph_deeplearning::load_trained_model;
 
 pub fn main() {
@@ -11,22 +10,25 @@ pub fn main() {
 
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 3 {
+    if args.len() < 3 {
         eprintln!(
-            "Usage: {} <item1> <item2>",
+            "Usage: {} <item1> <item2> [item3] [item4] [...]",
             args.first().map(|s| s.as_str()).unwrap_or("run_inference")
         );
         std::process::exit(1);
     }
 
-    let item1 = &args[1];
-    let item2 = &args[2];
-
     let model = load_trained_model::<Autodiff<InferenceBackend>>(&device);
+    
+    let items = args[1..].iter().map(|s| s.as_str()).collect::<Vec<_>>();
+    let mut 
+    files = items.iter().map(|s| parse_cpp_file(s)).collect::<Vec<_>>();
 
-    let file1 = parse_cpp_file(item1);
-    let file2 = parse_cpp_file(item2);
-
-    let analysis = analyze_plagiarism(file1, file2, model).unwrap();
-    println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
+    if files.len() == 2 {
+        let analysis = analyze_plagiarism(files.pop().unwrap(), files.pop().unwrap(), model).unwrap();
+        println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
+    } else {
+        let analysis = analyze_plagiarism_all_pairs(&files, model).unwrap();
+        println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
+    }
 }

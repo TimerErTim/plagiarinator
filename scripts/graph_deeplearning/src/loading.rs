@@ -13,7 +13,7 @@ use std::{
 
 use burn::{prelude::Backend, tensor::Int};
 use data_loading::dataset_loader::FilePair;
-use decider_model::data::{parse_cpp_to_tree, Graph};
+use decider_model::data::{Graph, ParsedFile, parse_cpp_file, parse_cpp_to_tree};
 use rand::{seq::SliceRandom, Rng, RngExt};
 
 #[derive(Debug, Clone)]
@@ -24,52 +24,43 @@ pub struct PlagiarismTrainItem<B: Backend> {
     pub label: bool,
 }
 
-pub struct PlagiarismTestSetLoader<B: Backend> {
-    plagiarized_pairs: Vec<FilePair>,
-    authentic_pairs: Vec<FilePair>,
-    device: B::Device,
+#[derive(Debug, Clone)]
+pub struct PlagiarismTestItem {
+    pub file_1: ParsedFile,
+    pub file_2: ParsedFile,
+    /// True if plagiarization, false otherwise
+    pub label: bool,
 }
 
-impl<B: Backend> PlagiarismTestSetLoader<B> {
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = PlagiarismTrainItem<B>> + use<'a, B> {
+pub struct PlagiarismTestSetLoader {
+    plagiarized_pairs: Vec<FilePair>,
+    authentic_pairs: Vec<FilePair>,
+}
+
+impl PlagiarismTestSetLoader {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = PlagiarismTestItem> + use<'a> {
         let all_pairs = self
             .plagiarized_pairs
             .iter()
             .map(|pair| (pair, true))
             .chain(self.authentic_pairs.iter().map(|pair| (pair, false)));
         all_pairs.filter_map(|(pair, label)| {
-            Some(PlagiarismTrainItem {
-                graph_1: Graph::from_treesitter_ast(
-                    parse_cpp_to_tree(BufReader::new(
-                        File::open(pair.left_path.clone()).unwrap_or_else(|_| {
-                            panic!("Failed to open file: {}", pair.left_path.display())
-                        }),
-                    )),
-                    &self.device,
-                )?,
-                graph_2: Graph::from_treesitter_ast(
-                    parse_cpp_to_tree(BufReader::new(
-                        File::open(pair.right_path.clone()).unwrap_or_else(|_| {
-                            panic!("Failed to open file: {}", pair.right_path.display())
-                        }),
-                    )),
-                    &self.device,
-                )?,
+            Some(PlagiarismTestItem {
+                file_1: parse_cpp_file(pair.left_path.clone()),
+                file_2: parse_cpp_file(pair.right_path.clone()),
                 label,
             })
         })
     }
 }
 
-pub fn make_testset_loader<B: Backend>(
+pub fn make_testset_loader(
     plagiarized_pairs: Vec<FilePair>,
     authentic_pairs: Vec<FilePair>,
-    device: &B::Device,
-) -> PlagiarismTestSetLoader<B> {
+) -> PlagiarismTestSetLoader {
     PlagiarismTestSetLoader {
         plagiarized_pairs,
         authentic_pairs,
-        device: device.clone(),
     }
 }
 
