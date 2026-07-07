@@ -74,6 +74,16 @@ fn find_student_files(assignment_dir: impl AsRef<Path>) -> FxHashMap<String, Pat
         if !path.is_file() {
             continue;
         }
+        // Check if file is empty or contains no symbols (non-whitespace).
+        let Ok(metadata) = fs::metadata(&path) else { continue; };
+        if metadata.len() == 0 {
+            continue;
+        }
+        let Ok(content) = fs::read_to_string(&path) else { continue; };
+        if content.trim().is_empty() {
+            continue;
+        }
+
         if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
             if name.starts_with("student") {
                 if let Some(stem) = name.split('.').next() {
