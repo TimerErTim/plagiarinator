@@ -50,6 +50,10 @@ raw = true
 raw_args = true
 run = "cargo run --release --package graph_deeplearning --bin run_inference"
 
+[tasks."annembed:export"]
+dir = "{{ config_root }}"
+run = "cargo run --release --package annembed_export"
+
 [tasks."run:tensorboard"]
 description = "Run TensorBoard to visualize the training progress"
 tools."pipx:tensorboard" = "latest"

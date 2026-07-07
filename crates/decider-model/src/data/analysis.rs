@@ -142,38 +142,35 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
     })
 }
 
+pub fn embed_files<B: Backend>(
+    model: &PlagiarismDecider<B>,
+    files: &[ParsedFile],
+) -> Result<Vec<Tensor<B, 1>>, PlagiarismAnalysisError> {
+    let model_device = model.devices().first().unwrap().clone();
+
+    eprintln!("Embedding the files...");
+    let embeddings = files
+        .iter()
+        .map(|file| {
+            eprint!(".");
+            let graph = Graph::from_flattened_ast(&file.ast, &model_device)
+                .ok_or(PlagiarismAnalysisError::EmptyAST(file.file_path.clone()))?;
+            let embedded_graph = model.embed_graph(graph);
+            Ok(model.compress_embedded_graph(embedded_graph))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    eprintln!("");
+
+    Ok(embeddings)
+}
+
 pub fn analyze_plagiarism_pairs<B: Backend>(
     files: &[ParsedFile],
     indices: &[(usize, usize)],
     model: PlagiarismDecider<B>
 ) -> Result<MultiplePlagiarismInsights, PlagiarismAnalysisError> {
-    // Mark model as not requiring gradients
     let model = model.no_grad();
-    let model_device = model.devices().first().unwrap().clone();
-
-    struct FileEmbedding<B: Backend> {
-        pub embedded_representation: Tensor<B, 1>,
-    }
-
-    // Embed the files
-    eprintln!("Embedding the files...");
-    let file_embeddings = files.iter().map(|file| {
-        eprint!(".");
-        // Build a graph
-        let graph = Graph::from_flattened_ast(&file.ast, &model_device)
-            .ok_or(PlagiarismAnalysisError::EmptyAST(file.file_path.clone()))?;
-
-        // Embed the graph nodes
-        let embedded_graph = model.embed_graph(graph);
-
-        // Compress the embedded graph into a lower dimensional vector
-        let embedded_representation = model.compress_embedded_graph(embedded_graph);
-
-        Ok(FileEmbedding {
-            embedded_representation,
-        })
-    }).collect::<Result<Vec<_>, _>>()?;
-    eprintln!("");
+    let file_embeddings = embed_files(&model, files)?;
 
     // Compute pairwise similarities
     eprintln!("Computing pairwise similarities...");
@@ -185,8 +182,8 @@ pub fn analyze_plagiarism_pairs<B: Backend>(
 
         // Perform forward pass in order to get the plagiarism likelihood score
         let plagiarism_probability = model.similarity_probability(
-            file_1.embedded_representation.clone(), 
-            file_2.embedded_representation.clone()
+            file_1.clone(),
+            file_2.clone(),
         );
         let plagiarism_probability_float = plagiarism_probability.clone().into_scalar().to_f64();
 

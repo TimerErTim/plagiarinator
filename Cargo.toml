@@ -2,6 +2,7 @@
 members = [
     "scripts/data_loading",
     "scripts/graph_deeplearning",
+    "scripts/annembed_export",
     "crates/*",
 ]
 resolver = "2"

@@ -1,0 +1,16 @@
+[package]
+name = "annembed_export"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+data_loading = { path = "../data_loading" }
+graph_deeplearning = { path = "../graph_deeplearning" }
+decider-model = { path = "../../crates/decider-model" }
+annembed = { version = "0.1.6", features = ["openblas-static"] }
+hnsw_rs = "0.3"
+burn = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rustc-hash = { workspace = true }
+clap = { version = "4", features = ["derive"] }
