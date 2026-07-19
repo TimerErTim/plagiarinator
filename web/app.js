@@ -1,6 +1,7 @@
 import init, {
   analyze_importance,
-  compare_sources,
+  compare_embeddings,
+  embed_source,
   plagiarism_threshold_value,
 } from "./pkg/decider_wasm.js";
 
@@ -19,10 +20,16 @@ const upload2 = document.getElementById("upload-2");
 
 let wasmReady = false;
 let compareTimer = null;
+let compareGeneration = 0;
+let importanceInFlight = false;
 let lastScore = null;
 let lastDecision = null;
 let highlightsActive = false;
 let importanceBySide = { 1: [], 2: [] };
+const embeddingCache = {
+  1: { content: null, embedding: null },
+  2: { content: null, embedding: null },
+};
 
 function escapeHtml(text) {
   return text
@@ -36,7 +43,7 @@ function renderPlainHighlight(side, text) {
   target.innerHTML = escapeHtml(text || "");
 }
 
-function normalizeImportanceAcrossFiles(spans1, spans2) {
+function normalizeImportanceForDisplay(spans1, spans2) {
   const allWeights = [...spans1, ...spans2].map((span) => span.weight);
   if (allWeights.length === 0) {
     return { 1: spans1, 2: spans2 };
@@ -46,7 +53,7 @@ function normalizeImportanceAcrossFiles(spans1, spans2) {
   const max = Math.max(...allWeights);
   const range = max - min;
 
-  const normalize = (spans) => {
+  const toDisplayRange = (spans) => {
     if (range < 1e-9) {
       return spans.map((span) => ({ ...span, weight: 0 }));
     }
@@ -57,8 +64,8 @@ function normalizeImportanceAcrossFiles(spans1, spans2) {
   };
 
   return {
-    1: normalize(spans1),
-    2: normalize(spans2),
+    1: toDisplayRange(spans1),
+    2: toDisplayRange(spans2),
   };
 }
 
@@ -98,6 +105,15 @@ function syncEditorScroll(side) {
   const highlight = side === 1 ? highlight1 : highlight2;
   highlight.scrollTop = textarea.scrollTop;
   highlight.scrollLeft = textarea.scrollLeft;
+}
+
+function invalidateEmbeddingCache(side = null) {
+  if (side === 1 || side === null) {
+    embeddingCache[1] = { content: null, embedding: null };
+  }
+  if (side === 2 || side === null) {
+    embeddingCache[2] = { content: null, embedding: null };
+  }
 }
 
 function clearHighlights() {
@@ -147,43 +163,92 @@ function scheduleCompare() {
   }
 
   clearTimeout(compareTimer);
-  compareTimer = setTimeout(runCompare, 250);
+  compareTimer = setTimeout(() => {
+    void runCompare();
+  }, 250);
 }
 
-function runCompare() {
+async function getEmbeddingForSide(side, content) {
+  const cache = embeddingCache[side];
+  if (cache.content === content && cache.embedding) {
+    return cache.embedding;
+  }
+
+  const result = embed_source(content);
+  if (result.error) {
+    invalidateEmbeddingCache(side);
+    throw new Error(result.error);
+  }
+
+  cache.content = content;
+  cache.embedding = result.embedding;
+  return cache.embedding;
+}
+
+async function runCompare() {
+  if (!wasmReady) {
+    return;
+  }
+
+  const generation = ++compareGeneration;
   const left = source1.value;
   const right = source2.value;
 
   if (!left.trim() || !right.trim()) {
+    if (generation !== compareGeneration) {
+      return;
+    }
     scoreValue.textContent = "—";
     decisionValue.textContent = "Waiting for input";
     decisionValue.className = "mt-2 text-sm font-medium text-slate-400";
     lastScore = null;
     lastDecision = null;
     hideParseWarning();
+    invalidateEmbeddingCache();
     return;
   }
 
-  const result = compare_sources(left, right);
-  if (result.error) {
+  try {
+    const embedding1 = await getEmbeddingForSide(1, left);
+    const embedding2 = await getEmbeddingForSide(2, right);
+    if (generation !== compareGeneration) {
+      return;
+    }
+
+    const result = compare_embeddings(embedding1, embedding2);
+    if (generation !== compareGeneration) {
+      return;
+    }
+
+    if (result.error) {
+      showParseWarning("Parse issue on last edit — score unchanged");
+      return;
+    }
+
+    hideParseWarning();
+    setScore(result.score, result.decision);
+    statusBar.textContent = `Similarity updated at ${new Date().toLocaleTimeString()}`;
+  } catch {
+    if (generation !== compareGeneration) {
+      return;
+    }
     showParseWarning("Parse issue on last edit — score unchanged");
-    return;
   }
-
-  hideParseWarning();
-  setScore(result.score, result.decision);
-  statusBar.textContent = `Similarity updated at ${new Date().toLocaleTimeString()}`;
 }
 
 async function runImportanceAnalysis() {
-  if (!wasmReady) {
+  if (!wasmReady || importanceInFlight) {
     return;
   }
 
+  importanceInFlight = true;
   analyzeBtn.disabled = true;
   statusBar.textContent = "Computing AST influence…";
+  await new Promise((resolve) => setTimeout(resolve, 0));
 
   const result = analyze_importance(source1.value, source2.value);
+
+  importanceInFlight = false;
   analyzeBtn.disabled = false;
 
   if (result.error) {
@@ -194,7 +259,7 @@ async function runImportanceAnalysis() {
 
   hideParseWarning();
   highlightsActive = true;
-  importanceBySide = normalizeImportanceAcrossFiles(
+  importanceBySide = normalizeImportanceForDisplay(
     result.file_1.importance,
     result.file_2.importance,
   );
@@ -202,13 +267,14 @@ async function runImportanceAnalysis() {
   statusBar.textContent = "AST influence highlighting applied";
 }
 
-function handleInput() {
+function handleInput(side) {
   clearHighlights();
   hideParseWarning();
+  invalidateEmbeddingCache(side);
   scheduleCompare();
 }
 
-function wireUpload(input, textarea) {
+function wireUpload(input, textarea, side) {
   input.addEventListener("change", async () => {
     const file = input.files?.[0];
     if (!file) {
@@ -216,12 +282,12 @@ function wireUpload(input, textarea) {
     }
     textarea.value = await file.text();
     input.value = "";
-    handleInput();
+    handleInput(side);
   });
 }
 
 function wireEditor(textarea, side) {
-  textarea.addEventListener("input", handleInput);
+  textarea.addEventListener("input", () => handleInput(side));
   textarea.addEventListener("scroll", () => syncEditorScroll(side));
 }
 
@@ -243,8 +309,10 @@ async function boot() {
 
 wireEditor(source1, 1);
 wireEditor(source2, 2);
-wireUpload(upload1, source1);
-wireUpload(upload2, source2);
-analyzeBtn.addEventListener("click", runImportanceAnalysis);
+wireUpload(upload1, source1, 1);
+wireUpload(upload2, source2, 2);
+analyzeBtn.addEventListener("click", () => {
+  void runImportanceAnalysis();
+});
 
 boot();

@@ -130,6 +130,31 @@ pub fn similarity_score<B: Backend>(
     Ok(score.into_scalar().to_f64())
 }
 
+pub fn file_embedding<B: Backend>(
+    file: ParsedFile,
+    model: PlagiarismDecider<B>,
+) -> Result<Tensor<B, 1>, PlagiarismAnalysisError> {
+    let model = model.no_grad();
+    let model_device = model.devices().first().unwrap().clone();
+
+    let graph = Graph::from_flattened_ast(&file.ast, &model_device)
+        .ok_or(PlagiarismAnalysisError::EmptyAST(file.file_path))?;
+    let embedded_graph = model.embed_graph(graph);
+    Ok(model.compress_embedded_graph(embedded_graph))
+}
+
+pub fn similarity_from_embeddings<B: Backend>(
+    embedding_1: Tensor<B, 1>,
+    embedding_2: Tensor<B, 1>,
+    model: PlagiarismDecider<B>,
+) -> f64 {
+    let model = model.no_grad();
+    model
+        .similarity_probability(embedding_1, embedding_2)
+        .into_scalar()
+        .to_f64()
+}
+
 pub fn analyze_plagiarism<B: AutodiffBackend>(
     file_1: ParsedFile,
     file_2: ParsedFile,
