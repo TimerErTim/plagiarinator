@@ -178,6 +178,7 @@ pub fn main() {
                 parse_cpp_file(item.left_path),
                 parse_cpp_file(item.right_path),
                 model.clone(),
+                true,
             )
             .unwrap();
             serde_json::to_writer_pretty(

@@ -134,6 +134,7 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
     file_1: ParsedFile,
     file_2: ParsedFile,
     model: PlagiarismDecider<B>,
+    normalize_importance: bool,
 ) -> Result<PlagiarismInsights, PlagiarismAnalysisError> {
     // Mark model as not requiring gradients
     let model = model.no_grad();
@@ -170,12 +171,24 @@ pub fn analyze_plagiarism<B: AutodiffBackend>(
         file_1: AnalyzedFile {
             file_path: file_1.file_path.clone(),
             file_content: file_1.file_content.clone(),
-            importance: leaf_nodes_hirarchical_mean_importance(&file_1.ast, nodes_1_importance.iter_dim(0).map(|weight_t| weight_t.into_scalar().to_f64())),
+            importance: leaf_nodes_hirarchical_mean_importance(
+                &file_1.ast,
+                nodes_1_importance
+                    .iter_dim(0)
+                    .map(|weight_t| weight_t.into_scalar().to_f64()),
+                normalize_importance,
+            ),
         },
         file_2: AnalyzedFile {
             file_path: file_2.file_path.clone(),
             file_content: file_2.file_content.clone(),
-            importance: leaf_nodes_hirarchical_mean_importance(&file_2.ast, nodes_2_importance.iter_dim(0).map(|weight_t| weight_t.into_scalar().to_f64())),
+            importance: leaf_nodes_hirarchical_mean_importance(
+                &file_2.ast,
+                nodes_2_importance
+                    .iter_dim(0)
+                    .map(|weight_t| weight_t.into_scalar().to_f64()),
+                normalize_importance,
+            ),
         },
     })
 }
@@ -260,6 +273,7 @@ pub fn analyze_plagiarism_all_pairs<B: Backend>(
 fn leaf_nodes_hirarchical_mean_importance(
     ast: &FlattenedAST,
     node_weights: impl Iterator<Item = f64>,
+    normalize: bool,
 ) -> Vec<(f64, FileRange)> {
     // Skip the root node because it is not part of the graph representation
     let ast_nodes_importance = ast
@@ -299,6 +313,9 @@ fn leaf_nodes_hirarchical_mean_importance(
     // Standardize the leaf weights: subtract mean and divide by std deviation
     if leaf_weights.is_empty() {
         return vec![];
+    }
+    if !normalize {
+        return leaf_weights;
     }
     let (min, max) = leaf_weights.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), (w, _)| {
         (min.min(*w), max.max(*w))

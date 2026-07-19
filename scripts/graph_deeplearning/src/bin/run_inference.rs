@@ -25,7 +25,7 @@ pub fn main() {
     files = items.iter().map(|s| parse_cpp_file(s)).collect::<Vec<_>>();
 
     if files.len() == 2 {
-        let analysis = analyze_plagiarism(files.pop().unwrap(), files.pop().unwrap(), model).unwrap();
+        let analysis = analyze_plagiarism(files.pop().unwrap(), files.pop().unwrap(), model, true).unwrap();
         println!("{}", serde_json::to_string_pretty(&analysis).unwrap());
     } else {
         let analysis = analyze_plagiarism_all_pairs(&files, model).unwrap();

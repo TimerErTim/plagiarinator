@@ -51,7 +51,7 @@ impl PlagiarismModel {
     ) -> PyResult<Bound<'py, PyAny>> {
         let file1 = parse_cpp_file(path1);
         let file2 = parse_cpp_file(path2);
-        let insights = analyze_plagiarism(file1, file2, self.model.clone())
+        let insights = analyze_plagiarism(file1, file2, self.model.clone(), true)
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
         insights_to_python(py, insights)
     }

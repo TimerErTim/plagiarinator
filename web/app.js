@@ -36,6 +36,32 @@ function renderPlainHighlight(side, text) {
   target.innerHTML = escapeHtml(text || "");
 }
 
+function normalizeImportanceAcrossFiles(spans1, spans2) {
+  const allWeights = [...spans1, ...spans2].map((span) => span.weight);
+  if (allWeights.length === 0) {
+    return { 1: spans1, 2: spans2 };
+  }
+
+  const min = Math.min(...allWeights);
+  const max = Math.max(...allWeights);
+  const range = max - min;
+
+  const normalize = (spans) => {
+    if (range < 1e-9) {
+      return spans.map((span) => ({ ...span, weight: 0 }));
+    }
+    return spans.map((span) => ({
+      ...span,
+      weight: (span.weight - min) / range,
+    }));
+  };
+
+  return {
+    1: normalize(spans1),
+    2: normalize(spans2),
+  };
+}
+
 function renderImportanceHighlight(side, text, spans) {
   const target = side === 1 ? highlight1 : highlight2;
   if (!text) {
@@ -167,12 +193,11 @@ async function runImportanceAnalysis() {
   }
 
   hideParseWarning();
-  setScore(result.score, result.decision);
   highlightsActive = true;
-  importanceBySide = {
-    1: result.file_1.importance,
-    2: result.file_2.importance,
-  };
+  importanceBySide = normalizeImportanceAcrossFiles(
+    result.file_1.importance,
+    result.file_2.importance,
+  );
   updateHighlights();
   statusBar.textContent = "AST influence highlighting applied";
 }

@@ -12,9 +12,10 @@ use decider_model::{
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-type Model = PlagiarismDecider<Autodiff<NdArray>>;
+type InferenceModel = PlagiarismDecider<NdArray>;
+type AutodiffModel = PlagiarismDecider<Autodiff<NdArray>>;
 
-static MODEL: OnceLock<Model> = OnceLock::new();
+static INFERENCE_MODEL: OnceLock<InferenceModel> = OnceLock::new();
 
 const MODEL_WEIGHTS: &[u8] = include_bytes!("../weights/model.bpk");
 
@@ -24,12 +25,18 @@ fn plagiarism_threshold() -> f64 {
         .unwrap_or(0.5)
 }
 
-fn model() -> &'static Model {
-    MODEL.get_or_init(|| {
+fn inference_model() -> &'static InferenceModel {
+    INFERENCE_MODEL.get_or_init(|| {
         let device = Default::default();
         let mut store = BurnpackStore::from_static(MODEL_WEIGHTS);
         load_model(&device, &mut store)
     })
+}
+
+fn fresh_autodiff_model() -> AutodiffModel {
+    let device = Default::default();
+    let mut store = BurnpackStore::from_static(MODEL_WEIGHTS);
+    load_model(&device, &mut store)
 }
 
 #[derive(Serialize)]
@@ -106,7 +113,7 @@ fn analyzed_file_to_response(file: AnalyzedFile) -> AnalyzedFileResponse {
 #[wasm_bindgen(start)]
 pub fn init_wasm() {
     console_error_panic_hook::set_once();
-    let _ = model();
+    let _ = inference_model();
 }
 
 #[wasm_bindgen]
@@ -135,7 +142,7 @@ pub fn compare_sources(file_1: &str, file_2: &str) -> JsValue {
         }
     };
 
-    match similarity_score(parsed_1, parsed_2, model().clone()) {
+    match similarity_score(parsed_1, parsed_2, inference_model().clone()) {
         Ok(score) => serde_wasm_bindgen::to_value(&CompareResponse {
             score,
             decision: decision_for(score),
@@ -170,18 +177,29 @@ pub fn analyze_importance(file_1: &str, file_2: &str) -> JsValue {
         }
     };
 
-    match analyze_plagiarism(parsed_1, parsed_2, model().clone()) {
-        Ok(insights) => {
-            let score = insights.plagiarism_score;
-            serde_wasm_bindgen::to_value(&AnalyzeResponse {
-                score,
-                decision: decision_for(score),
-                threshold: plagiarism_threshold(),
-                file_1: analyzed_file_to_response(insights.file_1),
-                file_2: analyzed_file_to_response(insights.file_2),
+    let score = match similarity_score(
+        parsed_1.clone(),
+        parsed_2.clone(),
+        inference_model().clone(),
+    ) {
+        Ok(score) => score,
+        Err(error) => {
+            return serde_wasm_bindgen::to_value(&ErrorResponse {
+                error: analysis_error_message(&error),
             })
-            .unwrap_or(JsValue::NULL)
+            .unwrap_or(JsValue::NULL);
         }
+    };
+
+    match analyze_plagiarism(parsed_1, parsed_2, fresh_autodiff_model(), false) {
+        Ok(insights) => serde_wasm_bindgen::to_value(&AnalyzeResponse {
+            score,
+            decision: decision_for(score),
+            threshold: plagiarism_threshold(),
+            file_1: analyzed_file_to_response(insights.file_1),
+            file_2: analyzed_file_to_response(insights.file_2),
+        })
+        .unwrap_or(JsValue::NULL),
         Err(error) => serde_wasm_bindgen::to_value(&ErrorResponse {
             error: analysis_error_message(&error),
         })
