@@ -7,6 +7,9 @@ members = [
 ]
 resolver = "2"
 
+[patch.crates-io]
+tree-sitter-cpp = { path = "crates/tree-sitter-cpp" }
+
 
 [workspace.dependencies]
 serde = "1.0.228"
@@ -18,7 +21,7 @@ rustc-hash = "2.1.2"
 rand = "0.10.1"
 thiserror = "2.0.10"
 # Autodiff for CPU; `graph_deeplearning` enables `burn/cuda` when built with `--features cuda`.
-burn  = { version =  "0.21.0", features = ["flex", "ndarray", "openblas", "autodiff", "autotune", "fusion"], default-features = false}
+burn  = { version =  "0.21.0", features = ["ndarray", "autodiff", "autotune", "fusion"], default-features = false}
 burn-store = { version = "0.21.0", features = [] }
 
 [profile.dev.package."*"]

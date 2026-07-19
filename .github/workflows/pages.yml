@@ -1,0 +1,67 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare model weights
+        run: |
+          mkdir -p crates/decider-wasm/weights
+          if [ -f crates/decider-wasm/weights/model.bpk ]; then
+            echo "Using committed model weights"
+          elif [ -n "${{ vars.MODEL_WEIGHTS_PATH }}" ] && [ -f "${{ vars.MODEL_WEIGHTS_PATH }}" ]; then
+            cp "${{ vars.MODEL_WEIGHTS_PATH }}" crates/decider-wasm/weights/model.bpk
+          else
+            echo "Model weights missing. Commit crates/decider-wasm/weights/model.bpk or set the MODEL_WEIGHTS_PATH repository variable."
+            exit 1
+          fi
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+
+      - name: Install clang
+        run: sudo apt-get update && sudo apt-get install -y clang
+
+      - name: Build WASM package
+        env:
+          PLAGIARISM_THRESHOLD: ${{ vars.PLAGIARISM_THRESHOLD || '0.5' }}
+          CC_wasm32_unknown_unknown: clang
+        run: wasm-pack build crates/decider-wasm --target web --out-dir ../../web/pkg --release
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

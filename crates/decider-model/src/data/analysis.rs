@@ -15,22 +15,43 @@ use crate::{
     data::{FileRange, FlattenedAST, Graph},
 };
 
-pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
+#[derive(Debug, Error)]
+pub enum CppParseError {
+    #[error("failed to set C++ language")]
+    Language,
+    #[error("failed to parse C++ code")]
+    Parse,
+}
+
+pub fn try_parse_cpp_to_tree(source: &[u8]) -> Result<tree_sitter::Tree, CppParseError> {
     let mut parser = tree_sitter::Parser::new();
     parser
         .set_language(&tree_sitter_cpp::LANGUAGE.into())
-        .expect("Failed to set language to C++");
+        .map_err(|_| CppParseError::Language)?;
 
     parser
-        .parse(
-            reader
-                .bytes()
-                .map(|b| b.expect("Failed to read bytes"))
-                .collect::<Vec<u8>>()
-                .as_slice(),
-            None,
-        )
-        .expect("Failed to parse C++ code")
+        .parse(source, None)
+        .ok_or(CppParseError::Parse)
+}
+
+pub fn parse_cpp_to_tree(reader: impl Read) -> tree_sitter::Tree {
+    let bytes = reader
+        .bytes()
+        .map(|b| b.expect("Failed to read bytes"))
+        .collect::<Vec<u8>>();
+    try_parse_cpp_to_tree(&bytes).expect("Failed to parse C++ code")
+}
+
+pub fn parsed_file_from_content(
+    path: impl Into<PathBuf>,
+    content: String,
+) -> Result<ParsedFile, CppParseError> {
+    let ast = try_parse_cpp_to_tree(content.as_bytes())?;
+    Ok(ParsedFile {
+        file_path: path.into(),
+        file_content: content,
+        ast: FlattenedAST::from_treesitter_ast(ast),
+    })
 }
 
 pub fn parse_cpp_file(path: impl AsRef<Path>) -> ParsedFile {
@@ -90,6 +111,23 @@ pub struct ParsedFile {
     pub file_path: PathBuf,
     pub file_content: String,
     pub ast: FlattenedAST,
+}
+
+pub fn similarity_score<B: Backend>(
+    file_1: ParsedFile,
+    file_2: ParsedFile,
+    model: PlagiarismDecider<B>,
+) -> Result<f64, PlagiarismAnalysisError> {
+    let model = model.no_grad();
+    let model_device = model.devices().first().unwrap().clone();
+
+    let graph_1 = Graph::from_flattened_ast(&file_1.ast, &model_device)
+        .ok_or(PlagiarismAnalysisError::EmptyAST(file_1.file_path.clone()))?;
+    let graph_2 = Graph::from_flattened_ast(&file_2.ast, &model_device)
+        .ok_or(PlagiarismAnalysisError::EmptyAST(file_2.file_path.clone()))?;
+
+    let score = model.forward(graph_1, graph_2);
+    Ok(score.into_scalar().to_f64())
 }
 
 pub fn analyze_plagiarism<B: AutodiffBackend>(

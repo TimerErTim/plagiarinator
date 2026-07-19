@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plagiarism Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              panel: "#111827",
+              editor: "#0b1220",
+              accent: "#38bdf8",
+              warn: "#fbbf24",
+              plagiarism: "#f87171",
+              original: "#4ade80",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .editor-stack {
+        position: relative;
+        min-height: 28rem;
+      }
+
+      .editor-highlight,
+      .editor-input {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        font-size: 0.875rem;
+        line-height: 1.5rem;
+        tab-size: 2;
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 1rem;
+      }
+
+      .editor-highlight {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+        pointer-events: none;
+        color: #e5e7eb;
+      }
+
+      .editor-input {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        min-height: 28rem;
+        resize: vertical;
+        background: transparent;
+        color: transparent;
+        caret-color: #e5e7eb;
+        border: 0;
+        outline: none;
+      }
+
+      .editor-input::selection {
+        background: rgba(56, 189, 248, 0.35);
+      }
+
+      mark.importance {
+        border-radius: 0.125rem;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8">
+      <header class="flex flex-col gap-2">
+        <p class="text-sm uppercase tracking-[0.2em] text-slate-400">C++ plagiarism detector</p>
+        <h1 class="text-3xl font-semibold text-white">Realtime source comparison</h1>
+        <p class="max-w-3xl text-sm text-slate-400">
+          Compare two C++ sources with an embedded graph model. Similarity updates as you type;
+          gradient-based AST highlighting is available on demand.
+        </p>
+      </header>
+
+      <section
+        class="grid gap-4 rounded-2xl border border-slate-800 bg-panel p-5 md:grid-cols-[1fr_auto_1fr]"
+      >
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-medium text-slate-300">File 1</h2>
+            <label
+              class="cursor-pointer rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:border-accent hover:text-white"
+            >
+              Upload
+              <input id="upload-1" type="file" accept=".cpp,.cc,.cxx,.h,.hpp,.txt" class="hidden" />
+            </label>
+          </div>
+          <div class="editor-stack rounded-xl border border-slate-800 bg-editor">
+            <pre id="highlight-1" class="editor-highlight" aria-hidden="true"></pre>
+            <textarea
+              id="source-1"
+              class="editor-input"
+              spellcheck="false"
+              placeholder="// Paste or upload the first C++ file"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-center justify-center gap-4 px-2 py-4 md:py-0">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-5 text-center">
+            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Similarity</p>
+            <p id="score-value" class="mt-2 text-4xl font-semibold text-white">—</p>
+            <p id="decision-value" class="mt-2 text-sm font-medium text-slate-400">Waiting for input</p>
+            <p id="threshold-label" class="mt-3 text-xs text-slate-500"></p>
+          </div>
+          <button
+            id="analyze-btn"
+            class="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled
+          >
+            Highlight AST influence
+          </button>
+          <p id="parse-warning" class="hidden max-w-[12rem] text-center text-xs text-warn/80"></p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-medium text-slate-300">File 2</h2>
+            <label
+              class="cursor-pointer rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:border-accent hover:text-white"
+            >
+              Upload
+              <input id="upload-2" type="file" accept=".cpp,.cc,.cxx,.h,.hpp,.txt" class="hidden" />
+            </label>
+          </div>
+          <div class="editor-stack rounded-xl border border-slate-800 bg-editor">
+            <pre id="highlight-2" class="editor-highlight" aria-hidden="true"></pre>
+            <textarea
+              id="source-2"
+              class="editor-input"
+              spellcheck="false"
+              placeholder="// Paste or upload the second C++ file"
+            ></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="status-bar"
+        class="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-400"
+      >
+        Loading model…
+      </section>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
