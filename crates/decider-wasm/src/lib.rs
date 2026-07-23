@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use burn::backend::{autodiff::Autodiff, ndarray::NdArray};
+use burn::backend::{autodiff::Autodiff, Flex};
 use burn::store::BurnpackStore;
 use burn::tensor::cast::ToElement;
 use burn::Tensor;
@@ -14,8 +14,9 @@ use decider_model::{
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-type InferenceModel = PlagiarismDecider<NdArray>;
-type AutodiffModel = PlagiarismDecider<Autodiff<NdArray>>;
+type InferenceBackend = Flex;
+type InferenceModel = PlagiarismDecider<InferenceBackend>;
+type AutodiffModel = PlagiarismDecider<Autodiff<InferenceBackend>>;
 
 static INFERENCE_MODEL: OnceLock<InferenceModel> = OnceLock::new();
 static AUTODIFF_MODEL: OnceLock<AutodiffModel> = OnceLock::new();
@@ -44,14 +45,14 @@ fn autodiff_model() -> &'static AutodiffModel {
     })
 }
 
-fn representation_to_vec(tensor: Tensor<NdArray, 1>) -> Vec<f32> {
+fn representation_to_vec(tensor: Tensor<InferenceBackend, 1>) -> Vec<f32> {
     tensor
         .iter_dim(0)
         .map(|value| value.into_scalar().to_f32())
         .collect()
 }
 
-fn tensor_from_embedding(embedding: &[f32]) -> Result<Tensor<NdArray, 1>, String> {
+fn tensor_from_embedding(embedding: &[f32]) -> Result<Tensor<InferenceBackend, 1>, String> {
     if embedding.len() != REPRESENTATION_SIZE {
         return Err(format!(
             "expected embedding length {REPRESENTATION_SIZE}, got {}",

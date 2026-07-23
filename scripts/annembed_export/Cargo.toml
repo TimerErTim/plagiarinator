@@ -9,7 +9,7 @@ graph_deeplearning = { path = "../graph_deeplearning" }
 decider-model = { path = "../../crates/decider-model" }
 annembed = { version = "0.1.6", features = ["openblas-static"] }
 hnsw_rs = "0.3"
-burn = { workspace = true, features = ["flex", "openblas"] }
+burn = { workspace = true, features = ["flex", "ndarray", "openblas"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rustc-hash = { workspace = true }

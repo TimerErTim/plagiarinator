@@ -8,7 +8,7 @@ name = "decider_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-burn = { workspace = true, features = ["flex", "openblas"] }
+burn = { workspace = true, features = ["flex", "ndarray", "openblas"] }
 burn-store = { workspace = true, features = ["burnpack"] }
 decider-model = { path = "../decider-model" }
 pyo3 = { version = "0.26.0", features = ["extension-module"] }

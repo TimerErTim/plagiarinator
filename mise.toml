@@ -17,6 +17,7 @@ MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260701_201949/chec
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 TENSORBOARD_LOG_DIR="{{ config_root }}/out/tensorboard-logs"
+PLAGIARISM_THRESHOLD="0.93"
 
 [tasks."fix:rust"]
 run = "cargo clippy --fix"

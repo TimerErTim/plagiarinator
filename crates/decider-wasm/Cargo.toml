@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-burn = { workspace = true, default-features = false, features = ["ndarray", "autodiff", "store"] }
+burn = { workspace = true, default-features = false, features = ["flex", "autodiff", "store"] }
 burn-store = { workspace = true, features = ["burnpack"] }
 decider-model = { path = "../decider-model" }
 serde = { workspace = true, features = ["derive"] }
