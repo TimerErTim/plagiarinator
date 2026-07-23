@@ -1,9 +1,9 @@
-import init, {
-  analyze_importance,
-  compare_embeddings,
-  embed_source,
-  plagiarism_threshold_value,
-} from "./pkg/decider_wasm.js";
+import {
+  analyzeImportance,
+  compareEmbeddings,
+  embedSource,
+  initWasmWorker,
+} from "./wasm-client.js";
 
 const source1 = document.getElementById("source-1");
 const source2 = document.getElementById("source-2");
@@ -21,6 +21,7 @@ const upload2 = document.getElementById("upload-2");
 let wasmReady = false;
 let compareTimer = null;
 let compareGeneration = 0;
+let analyzeGeneration = 0;
 let importanceInFlight = false;
 let lastScore = null;
 let lastDecision = null;
@@ -174,7 +175,7 @@ async function getEmbeddingForSide(side, content) {
     return cache.embedding;
   }
 
-  const result = embed_source(content);
+  const result = await embedSource(content);
   if (result.error) {
     invalidateEmbeddingCache(side);
     throw new Error(result.error);
@@ -215,7 +216,7 @@ async function runCompare() {
       return;
     }
 
-    const result = compare_embeddings(embedding1, embedding2);
+    const result = await compareEmbeddings(embedding1, embedding2);
     if (generation !== compareGeneration) {
       return;
     }
@@ -241,33 +242,52 @@ async function runImportanceAnalysis() {
     return;
   }
 
+  const generation = ++analyzeGeneration;
   importanceInFlight = true;
   analyzeBtn.disabled = true;
   statusBar.textContent = "Computing AST influence…";
-  await new Promise((resolve) => setTimeout(resolve, 0));
 
-  const result = analyze_importance(source1.value, source2.value);
+  try {
+    const result = await analyzeImportance(source1.value, source2.value);
+    if (generation !== analyzeGeneration) {
+      return;
+    }
 
-  importanceInFlight = false;
-  analyzeBtn.disabled = false;
+    if (result.error) {
+      showParseWarning(result.error);
+      statusBar.textContent = "AST influence analysis failed";
+      return;
+    }
 
-  if (result.error) {
-    showParseWarning(result.error);
+    hideParseWarning();
+    highlightsActive = true;
+    importanceBySide = normalizeImportanceForDisplay(
+      result.file_1.importance,
+      result.file_2.importance,
+    );
+    updateHighlights();
+    statusBar.textContent = "AST influence highlighting applied";
+  } catch (error) {
+    if (generation !== analyzeGeneration) {
+      return;
+    }
+    showParseWarning(error.message);
     statusBar.textContent = "AST influence analysis failed";
-    return;
+  } finally {
+    if (generation === analyzeGeneration) {
+      importanceInFlight = false;
+      analyzeBtn.disabled = false;
+    }
   }
-
-  hideParseWarning();
-  highlightsActive = true;
-  importanceBySide = normalizeImportanceForDisplay(
-    result.file_1.importance,
-    result.file_2.importance,
-  );
-  updateHighlights();
-  statusBar.textContent = "AST influence highlighting applied";
 }
 
 function handleInput(side) {
+  analyzeGeneration += 1;
+  if (importanceInFlight) {
+    importanceInFlight = false;
+    analyzeBtn.disabled = false;
+    statusBar.textContent = "AST influence cancelled — source changed";
+  }
   clearHighlights();
   hideParseWarning();
   invalidateEmbeddingCache(side);
@@ -293,9 +313,8 @@ function wireEditor(textarea, side) {
 
 async function boot() {
   try {
-    await init();
+    const { threshold } = await initWasmWorker();
     wasmReady = true;
-    const threshold = plagiarism_threshold_value();
     thresholdLabel.textContent = `Decision threshold: ${threshold.toFixed(2)}`;
     analyzeBtn.disabled = false;
     statusBar.textContent = "Model loaded. Start typing or upload two C++ files.";
