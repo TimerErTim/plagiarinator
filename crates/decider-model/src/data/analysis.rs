@@ -300,58 +300,83 @@ fn leaf_nodes_hirarchical_mean_importance(
     node_weights: impl Iterator<Item = f64>,
     normalize: bool,
 ) -> Vec<(f64, FileRange)> {
-    // Skip the root node because it is not part of the graph representation
-    let ast_nodes_importance = ast
-        .nodes
-        .iter()
-        .enumerate()
-        .skip(1)
-        .zip(node_weights)
-        .map(|((node_idx, node), weight)| (weight, node_idx, node.range.clone() ));
-    let mut parent_acc_imp = FxHashMap::default();
-    let parents_map = ast
+    let graph_weights: Vec<f64> = node_weights.collect();
+    let expected_graph_nodes = ast.nodes.len().saturating_sub(1);
+    if graph_weights.len() != expected_graph_nodes || expected_graph_nodes == 0 {
+        return vec![];
+    }
+
+    // Graph construction drops the AST root (index 0); graph node i maps to AST node i + 1.
+    let mut ast_weights = vec![0.0; ast.nodes.len()];
+    for (graph_idx, &weight) in graph_weights.iter().enumerate() {
+        ast_weights[graph_idx + 1] = weight;
+    }
+
+    let parents_map: FxHashMap<usize, usize> = ast
         .edges
         .iter()
         .map(|(child, parent)| (*child, *parent))
-        .collect::<FxHashMap<_, _>>();
-    let node_idx_with_children = parents_map.values().cloned().collect::<FxHashSet<_>>();
-    let mut leafs = FxHashSet::default();
-    for (weight, node_idx, range) in ast_nodes_importance {
-        let (parent_weight, parent_counts) = parents_map
-            .get(&node_idx)
-            .cloned()
-            .and_then(|parent_idx| parent_acc_imp.get(&parent_idx).cloned())
-            .unwrap_or((0.0, 0));
-        parent_acc_imp.insert(node_idx, (parent_weight + weight, parent_counts + 1));
-        if !node_idx_with_children.contains(&node_idx) {
-            leafs.insert((node_idx, range));
+        .collect();
+    let nodes_with_children: FxHashSet<usize> = parents_map.values().copied().collect();
+
+    let mut leaf_weights = Vec::new();
+    for (node_idx, node) in ast.nodes.iter().enumerate().skip(1) {
+        if nodes_with_children.contains(&node_idx) {
+            continue;
         }
+        let importance =
+            hierarchical_path_mean_importance(node_idx, &ast_weights, &parents_map);
+        leaf_weights.push((importance, node.range.clone()));
     }
-    let leaf_weights = leafs
-        .into_iter()
-        .map(|(node_idx, range)| {
-            let (parent_weight, parent_counts) =
-                parent_acc_imp.get(&node_idx).cloned().unwrap_or((0.0, 1));
-            (f64::abs(parent_weight / parent_counts as f64), range)
-        })
-        .collect::<Vec<_>>();
-    // Standardize the leaf weights: subtract mean and divide by std deviation
+
     if leaf_weights.is_empty() {
         return vec![];
     }
-    if !normalize {
-        return leaf_weights;
+
+    if normalize {
+        normalize_importance_weights(&mut leaf_weights);
     }
-    let (min, max) = leaf_weights.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), (w, _)| {
-        (min.min(*w), max.max(*w))
-    });
+
+    leaf_weights
+}
+
+fn hierarchical_path_mean_importance(
+    leaf_idx: usize,
+    ast_weights: &[f64],
+    parents_map: &FxHashMap<usize, usize>,
+) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0;
+    let mut current = leaf_idx;
+
+    while current != 0 {
+        sum += ast_weights[current];
+        count += 1;
+        current = parents_map.get(&current).copied().unwrap_or(0);
+    }
+
+    if count == 0 {
+        return 0.0;
+    }
+
+    sum / count as f64
+}
+
+fn normalize_importance_weights(leaf_weights: &mut [(f64, FileRange)]) {
+    let (min, max) = leaf_weights
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), (weight, _)| {
+            (min.min(*weight), max.max(*weight))
+        });
+
     if (max - min).abs() < f64::EPSILON {
-        // If all weights are equal, return zeros for all
-        leaf_weights.into_iter().map(|(_, range)| (0.0, range)).collect()
-    } else {
-        leaf_weights
-            .into_iter()
-            .map(|(w, range)| ((w - min) / (max - min), range))
-            .collect()
+        for (weight, _) in leaf_weights.iter_mut() {
+            *weight = 0.5;
+        }
+        return;
+    }
+
+    for (weight, _) in leaf_weights.iter_mut() {
+        *weight = (*weight - min) / (max - min);
     }
 }

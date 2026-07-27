@@ -351,6 +351,11 @@ async function runImportanceAnalysis() {
       return;
     }
 
+    console.log("importance (raw from WASM)", {
+      file_1: result.file_1.importance,
+      file_2: result.file_2.importance,
+    });
+
     hideParseWarning();
     highlightsActive = true;
     importanceBySide = normalizeImportanceForDisplay(
@@ -359,6 +364,7 @@ async function runImportanceAnalysis() {
       source1.value,
       source2.value,
     );
+    console.log("importance (normalized for display)", importanceBySide);
     updateHighlights();
     statusBar.textContent = "AST influence highlighting applied";
   } catch (error) {
