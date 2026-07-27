@@ -41,8 +41,13 @@ function escapeHtml(text) {
 
 function renderPlainHighlight(side, text) {
   const target = side === 1 ? highlight1 : highlight2;
-  target.innerHTML = escapeHtml(text || "");
+  const content = text || "";
+  target.innerHTML = escapeHtml(content) + trailingNewlineSuffix(content);
   syncEditorScroll(side);
+}
+
+function trailingNewlineSuffix(text) {
+  return text.endsWith("\n") ? "\n" : "";
 }
 
 function buildByteToCharLookup(text) {
@@ -72,6 +77,7 @@ function mergeSpansToRuns(text, spans) {
 
   const lookup = buildByteToCharLookup(text);
   const weights = new Float64Array(text.length);
+  const covered = new Uint8Array(text.length);
 
   for (const span of spans) {
     const startByte = Math.max(0, Math.min(span.start_byte, lookup.length - 1));
@@ -84,6 +90,7 @@ function mergeSpansToRuns(text, spans) {
     }
 
     for (let i = start; i < end; i += 1) {
+      covered[i] = 1;
       weights[i] = Math.max(weights[i], weight);
     }
   }
@@ -91,12 +98,17 @@ function mergeSpansToRuns(text, spans) {
   const runs = [];
   let index = 0;
   while (index < text.length) {
+    const isCovered = covered[index];
     const weight = weights[index];
     let next = index + 1;
-    while (next < text.length && weights[next] === weight) {
+    while (
+      next < text.length &&
+      covered[next] === isCovered &&
+      weights[next] === weight
+    ) {
       next += 1;
     }
-    if (weight > 0) {
+    if (isCovered) {
       runs.push({ start: index, end: next, weight });
     }
     index = next;
@@ -176,6 +188,7 @@ function renderImportanceHighlight(side, text, runs) {
     html += escapeHtml(text.slice(cursor));
   }
 
+  html += trailingNewlineSuffix(text);
   target.innerHTML = html;
   syncEditorScroll(side);
 }
