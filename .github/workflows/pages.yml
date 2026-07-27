@@ -41,14 +41,16 @@ jobs:
       - name: Install wasm-pack
         run: cargo install wasm-pack --locked
 
+      - name: Install mise
+        uses: jdx/mise-action@v4
+
       - name: Install clang
         run: sudo apt-get update && sudo apt-get install -y clang
 
       - name: Build WASM package
         env:
-          PLAGIARISM_THRESHOLD: ${{ vars.PLAGIARISM_THRESHOLD || '0.5' }}
           CC_wasm32_unknown_unknown: clang
-        run: wasm-pack build crates/decider-wasm --target web --out-dir ../../web/pkg --release
+        run: mise x -- wasm-pack build crates/decider-wasm --target web --out-dir ../../web/pkg --release
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

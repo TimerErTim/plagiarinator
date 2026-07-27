@@ -13,7 +13,6 @@ typst = "0.14.2"
 
 [env]
 _.python.venv = { path = "venv", create = true, python = "3.14" } # use a specific python version
-MODEL_WEIGHTS_PATH="{{ config_root }}/out/deep_learning/run_20260701_201949/checkpoints/model_20260701_201949_78000.bpk"
 TYPST_ROOT="{{ config_root }}"
 TYPST_FONT_PATHS="{{ config_root }}/resources/fonts/"
 TENSORBOARD_LOG_DIR="{{ config_root }}/out/tensorboard-logs"
