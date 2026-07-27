@@ -23,12 +23,18 @@
     </script>
     <style>
       .editor-stack {
-        position: relative;
+        display: grid;
         min-height: 28rem;
       }
 
       .editor-highlight,
       .editor-input {
+        grid-area: 1 / 1;
+        box-sizing: border-box;
+        margin: 0;
+        border: 0;
+        width: 100%;
+        min-height: 28rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
           "Courier New", monospace;
         font-size: 0.875rem;
@@ -36,27 +42,24 @@
         tab-size: 2;
         white-space: pre-wrap;
         word-break: break-word;
+        overflow-wrap: break-word;
         padding: 1rem;
       }
 
       .editor-highlight {
-        position: absolute;
-        inset: 0;
         overflow: auto;
         pointer-events: none;
         color: #e5e7eb;
+        z-index: 0;
       }
 
       .editor-input {
-        position: relative;
         z-index: 1;
-        width: 100%;
-        min-height: 28rem;
         resize: vertical;
+        overflow: auto;
         background: transparent;
         color: transparent;
         caret-color: #e5e7eb;
-        border: 0;
         outline: none;
       }
 
@@ -65,7 +68,12 @@
       }
 
       mark.importance {
-        border-radius: 0.125rem;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        color: inherit;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
       }
     </style>
   </head>
@@ -94,7 +102,7 @@
             </label>
           </div>
           <div class="editor-stack rounded-xl border border-slate-800 bg-editor">
-            <pre id="highlight-1" class="editor-highlight" aria-hidden="true"></pre>
+            <div id="highlight-1" class="editor-highlight" aria-hidden="true"></div>
             <textarea
               id="source-1"
               class="editor-input"
@@ -132,7 +140,7 @@
             </label>
           </div>
           <div class="editor-stack rounded-xl border border-slate-800 bg-editor">
-            <pre id="highlight-2" class="editor-highlight" aria-hidden="true"></pre>
+            <div id="highlight-2" class="editor-highlight" aria-hidden="true"></div>
             <textarea
               id="source-2"
               class="editor-input"
