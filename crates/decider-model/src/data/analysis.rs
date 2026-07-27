@@ -371,7 +371,7 @@ fn normalize_importance_weights(leaf_weights: &mut [(f64, FileRange)]) {
 
     if (max - min).abs() < f64::EPSILON {
         for (weight, _) in leaf_weights.iter_mut() {
-            *weight = 0.5;
+            *weight = 0.0;
         }
         return;
     }
